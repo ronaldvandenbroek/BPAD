@@ -3,6 +3,7 @@ import traceback
 import time
 # import mlflow
 from multiprocessing import Process
+import multiprocessing
 
 import pandas as pd
 
@@ -55,16 +56,16 @@ def fit_and_eva(dataset_name, ad, fit_kwargs=None , ad_kwargs=None):
 
         ##trace level
         trace_p, trace_r, trace_f1, trace_aupr = cal_best_PRF(dataset.case_target, trace_level_abnormal_scores)
-        print("trace")
-        print(trace_p, trace_r, trace_f1, trace_aupr)
+        print("Trace-level anomaly detection")
+        print(f'precision: {trace_p}, recall: {trace_r}, F1-score: {trace_f1}, AP: {trace_aupr}')
 
         if event_level_abnormal_scores is not None:
             ##event level
             eventTemp = dataset.binary_targets.sum(2).flatten()
             eventTemp[eventTemp > 1] = 1
             event_p, event_r, event_f1, event_aupr = cal_best_PRF(eventTemp, event_level_abnormal_scores.flatten())
-            print("event")
-            print(event_p, event_r, event_f1, event_aupr)
+            print("Event-level anomaly detection")
+            print(f'precision: {event_p}, recall: {event_r}, F1-score: {event_f1}, AP: {event_aupr}')
         else:
             event_p, event_r, event_f1, event_aupr = 0,0,0,0
 
@@ -72,8 +73,8 @@ def fit_and_eva(dataset_name, ad, fit_kwargs=None , ad_kwargs=None):
         if attr_level_abnormal_scores is not None:
             attr_p, attr_r, attr_f1, attr_aupr = cal_best_PRF(dataset.binary_targets.flatten(),
                                                               attr_level_abnormal_scores.flatten())
-            print("attr")
-            print(attr_p, attr_r, attr_f1,attr_aupr)
+            print("Attribute-level anomaly detection")
+            print(f'precision: {attr_p}, recall: {attr_r}, F1-score: {attr_f1}, AP: {attr_aupr}')
         else:
             attr_p, attr_r, attr_f1, attr_aupr = 0, 0, 0, 0
 
@@ -102,6 +103,8 @@ def fit_and_eva(dataset_name, ad, fit_kwargs=None , ad_kwargs=None):
 
 
 if __name__ == '__main__':
+    multiprocessing.set_start_method('spawn')
+
     dataset_names = os.listdir(EVENTLOG_DIR)
     dataset_names.sort()
     if 'cache' in dataset_names:
@@ -125,7 +128,7 @@ if __name__ == '__main__':
         dict(ad=LikelihoodPlusAnomalyDetector),  ## Multi-perspective, attr-level    --- Multi-perspective anomaly detection in business process execution events (extended to support the use of external threshold)
         dict(ad=NaiveAnomalyDetector),  # Control flow, trace-level    ---Algorithms for anomaly detection of traces in logs of process aware information systems
         dict(ad=SamplingAnomalyDetector),  # Control flow, trace-level    ---Algorithms for anomaly detection of traces in logs of process aware information systems
-        dict(ad=DAE, fit_kwargs=dict(epochs=20, batch_size=64)),  ## Multi-perspective, attr-level    ---Analyzing business process anomalies using autoencoders
+        dict(ad=DAE, fit_kwargs=dict(epochs=100, batch_size=64)),  ## Multi-perspective, attr-level    ---Analyzing business process anomalies using autoencoders
         dict(ad=BINetv3, fit_kwargs=dict(epochs=20, batch_size=64)), ## Multi-perspective, attr-level  ---BINet: Multi-perspective business process anomaly classification
         dict(ad=BINetv2, fit_kwargs=dict(epochs=20, batch_size=64)), ## Multi-perspective, attr-level  ---BINet: Multivariate business process anomaly detection using deep learning
         dict(ad=GAMA,ad_kwargs=dict(n_epochs=20)), ## Multi-perspective, attr-level    ---GAMA: A Multi-graph-based Anomaly Detection Framework for Business Processes via Graph Neural Networks
