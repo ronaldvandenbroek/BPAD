@@ -94,7 +94,7 @@ class DAE(NNAnomalyDetector):
 
         # Compile model
         model.compile(
-            optimizer=adam_v2.Adam(lr=0.0001, beta_2=0.99),
+            optimizer=adam_v2.Adam(learning_rate=0.0001, beta_2=0.99),
             loss='mean_squared_error',
         )
 

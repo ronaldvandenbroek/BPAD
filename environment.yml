@@ -1,0 +1,29 @@
+﻿name: rcvdb-thesis-bpad
+channels:
+  - pyg
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.9
+  - numpy=1.24.3
+  - scikit-learn=1.3.0
+  - pyg=2.3.0
+  - pandas=2.0.3
+  - gensim=4.3.0
+  - pip
+  - pip:
+          - torch==1.13.0
+          - tensorflow==2.10.0
+          - pm4py==2.7.4
+
+# RCVDB: TODO Try to get Tensorflow on the GPU working
+# Follow instructions: https://www.tensorflow.org/install/pip#windows-wsl2
+# https://www.tensorflow.org/install/source#gpu 
+# tensorflow 2.10.0 needs:
+# cuDNN 8.1 https://docs.nvidia.com/deeplearning/cudnn/latest/installation/windows.html
+# CUDA 11.2 
+
+# Setup environment:
+# conda env remove --name "rcvdb-thesis-bpad"
+# conda env create -f environment.yml
+# conda activate rcvdb-thesis-bpad

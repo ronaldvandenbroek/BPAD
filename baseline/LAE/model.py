@@ -7,7 +7,6 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.optim.lr_scheduler
 from torch.autograd import Variable
-from torchvision import transforms
 
 class EncoderLSTM(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers, device):
@@ -20,8 +19,8 @@ class EncoderLSTM(nn.Module):
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
 
         # initialize weights
-        nn.init.xavier_uniform(self.lstm.weight_ih_l0, gain=np.sqrt(2))
-        nn.init.xavier_uniform(self.lstm.weight_hh_l0, gain=np.sqrt(2))
+        nn.init.xavier_uniform_(self.lstm.weight_ih_l0, gain=np.sqrt(2))
+        nn.init.xavier_uniform_(self.lstm.weight_hh_l0, gain=np.sqrt(2))
 
     def forward(self, input):
         h0 = Variable(torch.FloatTensor(self.num_layers, input.size(0), self.hidden_size).zero_().to(self.device), requires_grad=False)

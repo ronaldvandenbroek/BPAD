@@ -12,6 +12,8 @@ def cal_best_PRF(y_true,probas_pred):
     precisions, recalls, thresholds = precision_recall_curve(
         y_true, probas_pred)
 
+    # RCVDB: TODO Check if this error is significant
+    # RuntimeWarning: invalid value encountered in divide
     f1s=(2*precisions*recalls)/(precisions+recalls)
     f1s[np.isnan(f1s)] = 0
 

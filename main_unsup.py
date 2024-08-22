@@ -1,6 +1,7 @@
 import os
 import traceback
 import time
+import warnings
 # import mlflow
 from multiprocessing import Process
 import multiprocessing
@@ -24,6 +25,9 @@ from utils.dataset import Dataset
 from utils.eval import cal_best_PRF
 from utils.fs import EVENTLOG_DIR, ROOT_DIR
 
+# RCVDB: Supressing Sklearn LabelEncoder InconsistentVersionWarning as this seems an internal package issue
+from sklearn.exceptions import InconsistentVersionWarning
+warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
 
 def fit_and_eva(dataset_name, ad, fit_kwargs=None , ad_kwargs=None):
     if ad_kwargs is None:
@@ -84,7 +88,9 @@ def fit_and_eva(dataset_name, ad, fit_kwargs=None , ad_kwargs=None):
                                  }])
         if os.path.exists(resPath):
             data = pd.read_csv(resPath)
-            data = data.append(datanew,ignore_index=True)
+            # RCVDB: Updating outdated code:
+            # data = data.append(datanew,ignore_index=True)
+            data = pd.concat([data, datanew], ignore_index=True)
         else:
             data = datanew
         data.to_csv(resPath ,index=False)

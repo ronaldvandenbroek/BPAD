@@ -7,7 +7,6 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.optim.lr_scheduler
 from torch.autograd import Variable
-from torchvision import transforms
 
 
 class VAEModel(nn.Module):
@@ -32,11 +31,11 @@ class VAEModel(nn.Module):
         self.dout = nn.Dropout(p=0.2)
 
         # initialize weights
-        nn.init.xavier_uniform(self.fc1.weight, gain=np.sqrt(2))
-        nn.init.xavier_uniform(self.fc21.weight, gain=np.sqrt(2))
-        nn.init.xavier_uniform(self.fc22.weight, gain=np.sqrt(2))
-        nn.init.xavier_uniform(self.fc3.weight, gain=np.sqrt(2))
-        nn.init.xavier_uniform(self.fc4.weight, gain=np.sqrt(2))
+        nn.init.xavier_uniform_(self.fc1.weight, gain=np.sqrt(2))
+        nn.init.xavier_uniform_(self.fc21.weight, gain=np.sqrt(2))
+        nn.init.xavier_uniform_(self.fc22.weight, gain=np.sqrt(2))
+        nn.init.xavier_uniform_(self.fc3.weight, gain=np.sqrt(2))
+        nn.init.xavier_uniform_(self.fc4.weight, gain=np.sqrt(2))
 
     def encode(self, x):
         # x --> fc1 --> relu --> fc21
