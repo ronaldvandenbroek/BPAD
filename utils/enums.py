@@ -87,6 +87,33 @@ class Class(object):
     def items():
         return dict(zip(Class.keys(), Class.values()))
 
+# RCVDB: Enum representing the possible anomaly perspectives
+class Perspective(object):
+    NORMAL = 0
+    ORDER = 1
+    ATTRIBUTE = 2
+    ARRIVAL_TIME = 3
+    WORKLOAD = 4
+
+    @staticmethod
+    def values():
+        return ['Normal', 'Order', 'Attribute', 'Arrival Time', 'Workload']
+
+    @staticmethod
+    def colors():
+        return ['#F5F5F5', '#F44336', '#3F51B5', '#F57F17', '#388E3C']
+
+    @staticmethod
+    def color(key):
+        return dict(zip(Class.keys(), Class.colors())).get(key)
+
+    @staticmethod
+    def keys():
+        return [Perspective.NORMAL, Perspective.ORDER, Perspective.ATTRIBUTE, Perspective.ARRIVAL_TIME, Perspective.WORKLOAD]
+
+    @staticmethod
+    def items():
+        return dict(zip(Class.keys(), Class.values()))
 
 class PadMode(object):
     PRE = 'pre'

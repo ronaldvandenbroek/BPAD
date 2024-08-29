@@ -19,12 +19,12 @@ import sys
 
 import numpy as np
 
-
 from processmining.case import Case
 from processmining.event import Event
-from utils.enums import Class
+from utils.enums import Class, Perspective
 
-
+ # RCVDB: TODO Rework all the prettify label functions
+ # RCVDB: TODO Potentially delete all generation code from this class as that is handled by the other version of the code (or merge them)
 class Anomaly(object):
     """Base class for anomaly implementations."""
 
@@ -50,9 +50,9 @@ class Anomaly(object):
         return n
 
     @staticmethod
-    def targets(label, num_events, num_attributes):
+    def targets(targets, event_index, label):
         """Return targets for the anomaly."""
-        return np.zeros((num_events, num_attributes), dtype=int) + Class.NORMAL
+        return targets, Perspective.NORMAL
 
     @staticmethod
     def pretty_label(label):
@@ -159,12 +159,10 @@ class ReworkAnomaly(Anomaly):
         return case
 
     @staticmethod
-    def targets(label, num_events, num_attributes):
-        targets = Anomaly.targets(label, num_events, num_attributes)
-        start = label['attr']['start'] + 1
+    def targets(targets, event_index, label):
         size = label['attr']['size']
-        targets[start:start + size, 0] = Class.REWORK
-        return targets
+        targets[event_index:event_index + size, 0, Perspective.ORDER] = 1
+        return targets, Perspective.ORDER
 
     @staticmethod
     def pretty_label(label):
@@ -205,11 +203,9 @@ class SkipSequenceAnomaly(Anomaly):
         return case
 
     @staticmethod
-    def targets(label, num_events, num_attributes):
-        targets = Anomaly.targets(label, num_events, num_attributes)
-        start = label['attr']['start'] + 1
-        targets[start, 0] = Class.SKIP
-        return targets
+    def targets(targets, event_index, label):
+        targets[event_index, 0, Perspective.ORDER] = 1
+        return targets, Perspective.ORDER
 
     @staticmethod
     def pretty_label(label):
@@ -252,14 +248,14 @@ class LateAnomaly(Anomaly):
         return case
 
     @staticmethod
-    def targets(label, num_events, num_attributes):
-        targets = Anomaly.targets(label, num_events, num_attributes)
+    def targets(targets, event_index, label):
+        # RCVDB: TODO Check if shift_from and shift_to is needed
         s = label['attr']['shift_from'] + 1
         e = label['attr']['shift_to'] + 1
         size = label['attr']['size']
-        targets[s, 0] = Class.SHIFT
-        targets[e:e + size, 0] = Class.LATE
-        return targets
+        targets[s, 0, Perspective.ORDER] = 1 #Class.SHIFT
+        targets[e:e + size, 0, Perspective.ORDER] = 1 #Class.LATE
+        return targets, Perspective.ORDER
 
     @staticmethod
     def pretty_label(label):
@@ -303,14 +299,14 @@ class EarlyAnomaly(Anomaly):
         return case
 
     @staticmethod
-    def targets(label, num_events, num_attributes):
-        targets = Anomaly.targets(label, num_events, num_attributes)
+    def targets(targets, event_index, label):
+        # RCVDB: TODO Check if shift_from and shift_to is needed
         s = label['attr']['shift_from'] + 1
         e = label['attr']['shift_to'] + 1
         size = label['attr']['size']
-        targets[s, 0] = Class.SHIFT
-        targets[e:e + size, 0] = Class.EARLY
-        return targets
+        targets[s, 0, Perspective.ORDER] = 1 #Class.SHIFT
+        targets[e:e + size, 0, Perspective.ORDER] = 1 #Class.LATE
+        return targets, Perspective.ORDER
 
     @staticmethod
     def pretty_label(label):
@@ -417,13 +413,18 @@ class AttributeAnomaly(Anomaly):
         return case
 
     @staticmethod
-    def targets(label, num_events, num_attributes):
-        targets = Anomaly.targets(label, num_events, num_attributes)
-        indices = label['attr']['index']
-        attribute_indices = label['attr']['attribute_index']
-        for i, j in zip(indices, attribute_indices):
-            targets[i + 1, j + 1] = Class.ATTRIBUTE
-        return targets
+    def targets(targets, event_index, label):
+        # print(label['attr'])
+        # RCVDB: Check if these attribute indexes are correct
+        attribute_indices = label['attr']['index']
+        for index in attribute_indices:
+            # RCVDB: index + 1 goes out of bounds
+            # RCVDB: TODO Problem seems to be on the data generation side, where the attributes are mixed in with other columns
+            # RCVDB: Potential fix is to make sure that the attribute columns are at the leftmost side
+            # RCVDB: Temp solution here: Ignore all out of bounds attibutes
+            if index < targets.shape[1]:
+                targets[event_index, index, Perspective.ATTRIBUTE] = 1
+        return targets, Perspective.ATTRIBUTE
 
     @staticmethod
     def pretty_label(label):
@@ -432,55 +433,6 @@ class AttributeAnomaly(Anomaly):
         index = [i + 1 for i in label['attr']['index']]
         original = label['attr']['original']
         return f'{name} {affected} at {index} was {original}'
-
-
-class ReplaceAnomaly(Anomaly):
-    """Replace n events by random events coming from the case."""
-
-    def __init__(self, max_replacements=1):
-        self.max_replacements = max_replacements
-        super(ReplaceAnomaly, self).__init__()
-
-    def apply_to_case(self, case):
-        if len(case) <= 2:
-            return NoneAnomaly().apply_to_case(case)
-
-        num_replacements = np.random.randint(1, min(int(len(case) / 3), self.max_replacements) + 1)
-        places = sorted(np.random.choice(np.arange(len(case) - 1, step=2), num_replacements, replace=False))
-
-        t = case.events
-
-        replaced = [t[i].json for i in places]
-
-        for place in places:
-            t = t[:place] + [self.generate_random_event()] + t[place + 1:]
-        case.events = t
-
-        case.attributes['label'] = dict(
-            anomaly=str(self),
-            attr=dict(
-                indices=[int(i) for i in places],
-                replaced=replaced
-            )
-        )
-
-        return case
-
-    @staticmethod
-    def targets(label, num_events, num_attributes):
-        targets = Anomaly.targets(label, num_events, num_attributes)
-        for i in label['attr']['indices']:
-            targets[i + 1, 0] = Class.REPLACE
-            targets[i + 1, 1:] = Class.ATTRIBUTE
-        return targets
-
-    @staticmethod
-    def pretty_label(label):
-        name = label['anomaly']
-        replaced = ', '.join([e['name'] for e in label['attr']['replaced']])
-        indices = ', '.join([str(i + 1) for i in label['attr']['indices']])
-        return f'{name} {replaced} at {indices}'
-
 
 class InsertAnomaly(Anomaly):
     """Add n random events."""
@@ -512,12 +464,10 @@ class InsertAnomaly(Anomaly):
         return case
 
     @staticmethod
-    def targets(label, num_events, num_attributes):
-        targets = Anomaly.targets(label, num_events, num_attributes)
-        for i in label['attr']['indices']:
-            targets[i + 1, 0] = Class.INSERT
-            targets[i + 1, 1:] = Class.ATTRIBUTE
-        return targets
+    def targets(targets, event_index, label):
+        targets[event_index, 0, Perspective.ORDER] = 1 #Class.INSERT
+        targets[event_index, 1:, Perspective.ATTRIBUTE] = 1 #Class.ATTRIBUTE        
+        return targets, Perspective.ORDER
 
     @staticmethod
     def pretty_label(label):
@@ -559,11 +509,9 @@ class SkipAnomaly(Anomaly):
         return case
 
     @staticmethod
-    def targets(label, num_events, num_attributes):
-        targets = Anomaly.targets(label, num_events, num_attributes)
-        for i in label['attr']['indices']:
-            targets[i + 1, 0] = Class.SKIP
-        return targets
+    def targets(targets, event_index, label):
+        targets[event_index, 0, Perspective.ORDER] = 1 #Class.SKIP
+        return targets, Perspective.ORDER
 
     @staticmethod
     def pretty_label(label):
@@ -572,79 +520,100 @@ class SkipAnomaly(Anomaly):
         skipped = ', '.join([e['name'] for e in label['attr']['skipped']])
         return f'{name} {skipped} at {indices}'
 
+# RCVDB: Implementing arrival-time anomaly
+class ArrivalTimeAnomaly(Anomaly):
+    """Change n event timestamps to be outside of the expected distribution"""
 
-class SkipAndInsertAnomaly(Anomaly):
-    """Skip n single events and insert m single events."""
+    def __init__(self, max_events=1, max_scale=2):
+        self.max_events = max_events
+        self.max_scale = max_scale
+        self.perspective = 'arrival_time' # RCVDB: Specify in which anomaly perspective category the anomaly falls
+        super(ArrivalTimeAnomaly, self).__init__()
 
-    def __init__(self, max_skips=1, max_inserts=1):
-        self.max_skips = max_skips
-        self.max_inserts = max_inserts
-        super(SkipAndInsertAnomaly, self).__init__()
+    def apply_to_case(self, case:Case):
+        n = np.random.randint(1, min(len(case), self.max_events) + 1)
+        event_indices = sorted(np.random.choice(range(len(case)), n, replace=False))
 
-    def apply_to_case(self, case):
-        if len(case) <= 2:
-            return NoneAnomaly().apply_to_case(case)
+        # RCVDB: Only mark which events should be ArrivalTime anomalous, timestamps are added in postprocessing 
+        for event_index in event_indices:
+            case[event_index].set_anomaly_label(dict(
+                anomaly=str(self)
+            ))
 
-        num_skips = np.random.randint(1, min(int(len(case) / 2), self.max_skips) + 1)
-        skip_places = sorted(np.random.choice(range(len(case) - 1), num_skips, replace=False))
-
-        skipped = [case.events[i].json for i in skip_places]
-        t = [case.events[i] for i in range(len(case)) if i not in skip_places]
-
-        skip_places -= np.arange(len(skip_places))
-
-        num_inserts = np.random.randint(1, min(int(len(t) / 2), self.max_inserts) + 1)
-        insert_places = sorted(np.random.choice(range(len(t) - 1), num_inserts, replace=False))
-        insert_places2 = insert_places + np.arange(len(insert_places))
-
-        for place in insert_places2:
-            t = t[:place] + [self.generate_random_event()] + t[place:]
-
-        case.events = t
-
-        skip_places = skip_places + np.array([np.sum(insert_places < s) for s in skip_places])
-        skip_places = list(set(skip_places))
-
-        case.attributes['label'] = dict(
-            anomaly=str(self),
-            attr=dict(
-                skips=[int(i) for i in skip_places],
-                skipped=skipped,
-                inserts=[int(i) for i in insert_places2]
-            )
-        )
+        case.set_anomaly_label(dict(
+            anomaly=str(self)
+        ))
 
         return case
 
     @staticmethod
-    def targets(label, num_events, num_attributes):
-        targets = Anomaly.targets(label, num_events, num_attributes)
-        for i in label['attr']['inserts']:
-            targets[i + 1, 0] = Class.INSERT
-            targets[i + 1, 1:] = Class.ATTRIBUTE
-        for i in label['attr']['skips']:
-            targets[i + 1, 0] = Class.SKIP
-        return targets
+    def targets(targets, event_index, label):
+        targets[event_index, 0, Perspective.ARRIVAL_TIME] = 1
+        return targets, Perspective.ARRIVAL_TIME
 
     @staticmethod
     def pretty_label(label):
         name = label['anomaly']
-        inserts = ', '.join([str(i + 1) for i in label['attr']['inserts']])
-        skips = ', '.join([str(i + 1) for i in label['attr']['skips']])
-        skipped = ', '.join([e['name'] for e in label['attr']['skipped']])
-        return f'{name} skip {skipped} at {skips} and insert at {inserts}'
+        start = label['attr']['start'] + 1
+        inserted = label['attr']['inserted']
+        return f'{name} {", ".join([e["name"] for e in inserted])} at {start}'
 
+# RCVDB: Implementing global workload anomaly
+class GlobalWorkLoadAnomaly(Anomaly):
+    """Change n event timestamps to be outside of the expected distribution"""
 
+    def __init__(self):
+        super(GlobalWorkLoadAnomaly, self).__init__()
+
+    @staticmethod
+    def targets(targets, event_index, label):
+        targets[event_index, 0, Perspective.WORKLOAD] = 1
+        return targets, Perspective.WORKLOAD
+
+    @staticmethod
+    def pretty_label(label):
+        name = label['anomaly']
+        start = label['attr']['start'] + 1
+        inserted = label['attr']['inserted']
+        return f'{name} {", ".join([e["name"] for e in inserted])} at {start}'
+    
+# RCVDB: Implementing local workload anomaly
+class LocalWorkLoadAnomaly(Anomaly):
+    """Change n event timestamps to be outside of the expected distribution"""
+
+    def __init__(self):
+        super(LocalWorkLoadAnomaly, self).__init__()
+
+    @staticmethod
+    def targets(targets, event_index, label):
+        # RCVDB: Differs from the global workload in that it targets the resource
+        # RCVDBL TODO Ensure that the resource is always in the 1st attribute index
+        targets[event_index, 1, Perspective.WORKLOAD] = 1
+        return targets, Perspective.WORKLOAD
+
+    @staticmethod
+    def pretty_label(label):
+        name = label['anomaly']
+        start = label['attr']['start'] + 1
+        inserted = label['attr']['inserted']
+        return f'{name} {", ".join([e["name"] for e in inserted])} at {start}'
+
+    
 ANOMALIES = dict((s[:-7], anomaly) for s, anomaly in inspect.getmembers(sys.modules[__name__], inspect.isclass))
 
-
-def label_to_targets(label, num_events, num_attributes):
+# RCVDB: Reworked label_to_targets to enable multi-label anomaly detection
+def label_to_targets(targets, event_index, label):
+    # If label is normal, then can skip
     if label == 'normal':
-        return NoneAnomaly.targets(label, num_events, num_attributes)
+        return targets, Perspective.NORMAL
     else:
-        return ANOMALIES.get(label['anomaly']).targets(label, num_events, num_attributes)
+        # RCVDB: TODO Check if event_index + 1 is needed as this is done in every anomaly
+        event_index = event_index + 1
 
+        anomaly:Anomaly = ANOMALIES.get(label['anomaly'])
+        return anomaly.targets(targets, event_index, label)
 
+# RCVDB: TODO prettify label
 def prettify_label(label):
     if label == 'normal':
         return 'Normal'

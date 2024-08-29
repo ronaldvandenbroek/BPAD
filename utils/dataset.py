@@ -21,11 +21,12 @@ import numpy as np
 import torch
 from torch_geometric.data import Data
 from utils.anomaly import label_to_targets
-from utils.enums import AttributeType
+from utils.enums import AttributeType, Perspective
 from utils.enums import Class
 from utils.enums import PadMode
 from utils.fs import EventLogFile
 from processmining.event import Event
+from processmining.case import Case
 from processmining.log import EventLog
 
 
@@ -74,8 +75,9 @@ class Dataset(object):
         if self.dataset_name is not None:
             self.load(self.dataset_name)
 
-        self.labeled_indices = np.random.choice(self.anomaly_indices, size=max(int(
-            len(self.anomaly_indices) * self.label_percent),1), replace=False)  ### Used by weakly supervised methods to indicate indices of labeled anomalies during training
+        # RCVDB: TODO Support the weakly supervised methods
+        # self.labeled_indices = np.random.choice(self.anomaly_indices, size=max(int(
+        #     len(self.anomaly_indices) * self.label_percent),1), replace=False)  ### Used by weakly supervised methods to indicate indices of labeled anomalies during training
 
     def load(self, dataset_name):
         """
@@ -87,16 +89,17 @@ class Dataset(object):
         """
         el_file = EventLogFile(dataset_name)
         self.dataset_name = el_file.name
-
-        # Check for cache
-        if el_file.cache_file.exists():
-            self._load_dataset_from_cache(el_file.cache_file)
-            self._gen_trace_graphs()
-            self._gen_trace_graphs_GAE()
+        
+        # RCVDB: Skipping caching TODO reimplement
+        # # Check for cache
+        # if el_file.cache_file.exists():
+        #     self._load_dataset_from_cache(el_file.cache_file)
+        #     self._gen_trace_graphs()
+        #     self._gen_trace_graphs_GAE()
 
 
         # Else generator from event log
-        elif el_file.path.exists():
+        if el_file.path.exists():
             self._event_log = EventLog.load(el_file.path)
             self.from_event_log(self._event_log)
             self._cache_dataset(el_file.cache_file)
@@ -428,13 +431,40 @@ class Dataset(object):
         :param event_log:
         :return:
         """
-        labels = np.asarray([case.attributes['label'] for case in event_log if
-                             case.attributes is not None and 'label' in case.attributes])
-
-        # +1 for end event
+        # RCVDB: Create a target matix for multi-perspective anomaly detection
+        # +1 for end event and +1 for start event
         num_events = event_log.max_case_len + 2
         num_attributes = event_log.num_event_attributes
-        targets = np.asarray([label_to_targets(label, num_events, num_attributes) for label in labels])
+        num_perspectives = len(Perspective.keys())
+        num_cases = len(event_log.cases)
+
+        labels = np.full((num_cases, num_events, num_perspectives), fill_value=Perspective.NORMAL)
+        targets = []
+        for case_index, case in enumerate(event_log):
+            case:Case
+            case_targets = np.full((num_events, num_attributes, num_perspectives), fill_value=Perspective.NORMAL) 
+            for event_index, event in enumerate(case.events):
+                event:Event
+                if event.attributes['label'] is not None and 'label' in event.attributes:
+                    event_labels = case.attributes['label']
+                    for label in event_labels:
+                        # Encode the label into the targets:
+                        case_targets, perspective = label_to_targets(case_targets, event_index, label)
+
+                        # Encode the perspective into labels
+                        labels[case_index, event_index, perspective] = 1
+
+            # Create a list of labels per case
+            targets.append(case_targets)
+
+        # Should result in a 4d tensor of size (num_cases, num_events, num_attributes, num_perspectives)
+        targets = np.asarray(targets)
+        print(targets.shape)
+
+        # Should result in a 3d tensor of size (num_cases, num_events, num_perspectives)
+        # Was initially a list of strings with one label per case, now it represents all perspectives present per event in each case
+        labels = np.asarray(labels)
+        print(labels.shape)
 
         return targets, labels
 
@@ -452,7 +482,6 @@ class Dataset(object):
 
         :return: feature_columns, case_lens
         """
-
         if include_attributes is None:
             include_attributes = event_log.event_attribute_keys
 

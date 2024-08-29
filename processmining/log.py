@@ -60,16 +60,21 @@ class EventLog(object):
     @property
     def event_attribute_keys(self):
         attributes = ['name']
+        # print(f'Attributes: {self.attributes.keys()}')
         if 'global_attributes' in self.attributes.keys() and 'event' in self.attributes['global_attributes'].keys():
+            # print(f"Global Attributes: {self.attributes['global_attributes'].keys()}")
+            # RCVDB: Ignore event level label
             ignored = ['concept:name', 'time:timestamp', 'lifecycle:transition', 'EventID', 'activityNameEN',
                        'activityNameNL', 'dateFinished', 'question', 'product', 'EventOrigin', 'Action',
-                       'organization involved', 'impact','concept:instance']
+                       'organization involved', 'impact','concept:instance', 'label']
 
             attributes += sorted(
                 [key for key in self.attributes['global_attributes']['event'].keys() if key not in ignored])
         else:
+            # RCVDB: Ignore event level label
+            # TODO: Change name of label to _label in generation to simplify code
             attributes += sorted(
-                [key for key in list(self.cases[0].events[0].attributes.keys()) if not key.startswith('_')])
+                [key for key in list(self.cases[0].events[0].attributes.keys()) if not(key.startswith('_') or key == 'label')])
         return attributes
 
     @property
