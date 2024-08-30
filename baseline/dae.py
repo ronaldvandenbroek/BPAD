@@ -131,29 +131,41 @@ class DAE(NNAnomalyDetector):
 
         predictions= np.concatenate(predictions, 0)
 
+        # RCVDB: TODO Probably need to redesign the below part from scratch to allow for multi-class classification
+
         # Calculate error
         errors = np.power(dataset.flat_onehot_features_2d - predictions, 2)
         errors = errors * np.expand_dims(~dataset.mask, 2).repeat(dataset.attribute_dims.sum(), 2).reshape(
             dataset.mask.shape[0], -1)
 
         trace_level_abnormal_scores = errors.sum(1) / (dataset.case_lens * dataset.attribute_dims.sum())
+        print(f'Trace-level error scores shape: {trace_level_abnormal_scores.shape}')
+        print(f'Trace-level error scores example: {trace_level_abnormal_scores[0]}')
 
         # Split the errors according to the events
         split_event = np.cumsum(np.tile(dataset.attribute_dims.sum(), [dataset.max_len]), dtype=int)[:-1]
         errors_event = np.split(errors, split_event, axis=1)
         errors_event = np.array([np.mean(a, axis=1) if len(a) > 0 else 0.0 for a in errors_event])
         event_level_abnormal_scores = errors_event.T
+        print(f'Event-level error scores shape: {event_level_abnormal_scores.shape}')
+        print(f'Event-level error scores example: {event_level_abnormal_scores[0]}')
 
         # Split the errors according to the attribute dims
         split = np.cumsum(np.tile(dataset.attribute_dims, [dataset.max_len]), dtype=int)[:-1]
         errors_attr = np.split(errors, split, axis=1)
         errors_attr = np.array([np.mean(a, axis=1) if len(a) > 0 else 0.0 for a in errors_attr])
+        # print(f'Attribute-level errors shape: {errors_attr.shape}')
 
         # Init anomaly scores array
         attr_level_abnormal_scores = np.zeros(dataset.binary_targets.shape)
+        print(f'Attribute-level error scores shape: {attr_level_abnormal_scores.shape}')
+        print(f'Number of attributes: {len(dataset.attribute_dims)}')
 
+        # RCVDB: TODO Check if this actually generates the correct anomaly scores
         for i in range(len(dataset.attribute_dims)):
+            # print(f'Error attribute shape: {errors_attr.shape}')
             error = errors_attr[i::len(dataset.attribute_dims)]
-            attr_level_abnormal_scores[:, :, i] = error.T
+            print(f'Error shape: {error.T.shape}')
+            attr_level_abnormal_scores[:, :, i, :] = error.T
 
         return trace_level_abnormal_scores, event_level_abnormal_scores, attr_level_abnormal_scores

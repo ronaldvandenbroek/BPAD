@@ -150,11 +150,13 @@ class LateAnomaly(Anomaly):
     @staticmethod
     def targets(targets, event_index, label):
         # RCVDB: TODO Check if shift_from and shift_to is needed
-        s = label['attr']['shift_from'] + 1
-        e = label['attr']['shift_to'] + 1
-        size = label['attr']['size']
-        targets[s, 0, Perspective.ORDER] = 1 #Class.SHIFT
-        targets[e:e + size, 0, Perspective.ORDER] = 1 #Class.LATE
+        targets[event_index, 0, Perspective.ORDER]
+
+        # s = label['attr']['shift_from'] + 1
+        # e = label['attr']['shift_to'] + 1
+        # size = label['attr']['size']
+        # targets[s, 0, Perspective.ORDER] = 1 #Class.SHIFT
+        # targets[e:e + size, 0, Perspective.ORDER] = 1 #Class.LATE
         return targets, Perspective.ORDER
 
     @staticmethod
@@ -175,11 +177,13 @@ class EarlyAnomaly(Anomaly):
     @staticmethod
     def targets(targets, event_index, label):
         # RCVDB: TODO Check if shift_from and shift_to is needed
-        s = label['attr']['shift_from'] + 1
-        e = label['attr']['shift_to'] + 1
-        size = label['attr']['size']
-        targets[s, 0, Perspective.ORDER] = 1 #Class.SHIFT
-        targets[e:e + size, 0, Perspective.ORDER] = 1 #Class.LATE
+        targets[event_index, 0, Perspective.ORDER]
+
+        # s = label['attr']['shift_from'] + 1
+        # e = label['attr']['shift_to'] + 1
+        # size = label['attr']['size']
+        # targets[s, 0, Perspective.ORDER] = 1 #Class.SHIFT
+        # targets[e:e + size, 0, Perspective.ORDER] = 1 #Class.LATE
         return targets, Perspective.ORDER
 
     @staticmethod
@@ -200,8 +204,10 @@ class AttributeAnomaly(Anomaly):
     @staticmethod
     def targets(targets, event_index, label):
         # print(label['attr'])
-        # RCVDB: Check if these attribute indexes are correct
-        attribute_indices = label['attr']['index']
+        # RCVDB: TODO Check if these attribute indexes are correct
+        # RCVDB: TODO Attribute index does not seem to exist, current workaround is just to ignore the index
+        # attribute_indices = label['attr']['index']
+        attribute_indices = [0] * len(label['attr']['attribute'])
         for index in attribute_indices:
             # RCVDB: index + 1 goes out of bounds
             # RCVDB: TODO Problem seems to be on the data generation side, where the attributes are mixed in with other columns
@@ -276,11 +282,11 @@ class ArrivalTimeAnomaly(Anomaly):
         return f'{name} {", ".join([e["name"] for e in inserted])} at {start}'
 
 # RCVDB: Implementing global workload anomaly
-class GlobalWorkLoadAnomaly(Anomaly):
+class GlobalWorkloadAnomaly(Anomaly):
     """Change n event timestamps to be outside of the expected distribution"""
 
     def __init__(self):
-        super(GlobalWorkLoadAnomaly, self).__init__()
+        super(GlobalWorkloadAnomaly, self).__init__()
 
     @staticmethod
     def targets(targets, event_index, label):
@@ -295,16 +301,16 @@ class GlobalWorkLoadAnomaly(Anomaly):
         return f'{name} {", ".join([e["name"] for e in inserted])} at {start}'
     
 # RCVDB: Implementing local workload anomaly
-class LocalWorkLoadAnomaly(Anomaly):
+class LocalWorkloadAnomaly(Anomaly):
     """Change n event timestamps to be outside of the expected distribution"""
 
     def __init__(self):
-        super(LocalWorkLoadAnomaly, self).__init__()
+        super(LocalWorkloadAnomaly, self).__init__()
 
     @staticmethod
     def targets(targets, event_index, label):
         # RCVDB: Differs from the global workload in that it targets the resource
-        # RCVDBL TODO Ensure that the resource is always in the 1st attribute index
+        # RCVDB: TODO Ensure that the resource is always in the 1st attribute index
         targets[event_index, 1, Perspective.WORKLOAD] = 1
         return targets, Perspective.WORKLOAD
 
@@ -326,7 +332,8 @@ def label_to_targets(targets, event_index, label):
     else:
         # RCVDB: TODO Check if event_index + 1 is needed as this is done in every anomaly
         event_index = event_index + 1
-
+        # print(ANOMALIES)
+        # print(label['anomaly'])
         anomaly:Anomaly = ANOMALIES.get(label['anomaly'])
         return anomaly.targets(targets, event_index, label)
 

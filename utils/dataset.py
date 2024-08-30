@@ -53,7 +53,7 @@ class Dataset(object):
         self.beta=beta   #used by GAMA
         self.attribute_types = None
         self.attribute_keys = None
-        self.classes = None
+        self.classes = None # Targets
         self.labels = None
         self.encoders = None
         self.trace_graphs = []
@@ -254,11 +254,17 @@ class Dataset(object):
     @property
     def binary_targets(self):
         """Return targets for anomaly detection; 0 = normal, 1 = anomaly."""
-        if self.classes is not None and len(self.classes) > 0:
-            targets = np.copy(self.classes)
-            targets[targets > Class.ANOMALY] = Class.ANOMALY
-            return targets
-        return None
+        # RCVDB: With multi-class prediction, the targets are already binary
+        print(f'Binary target shape: {self.classes.shape}')
+        return self.classes
+
+        # if self.classes is not None and len(self.classes) > 0:
+        #     print(f'Classes/Targets shape: {self.classes.shape}')
+        #     print(f'Labels shape: {self.labels.shape}')
+        #     targets = np.copy(self.classes)
+        #     targets[targets > Class.ANOMALY] = Class.ANOMALY
+        #     return targets
+        # return None
 
 
     def __len__(self):
@@ -321,6 +327,7 @@ class Dataset(object):
         if self._attribute_dims is None:
             self._attribute_dims = np.asarray([f.max() if t == AttributeType.CATEGORICAL else 1 for f, t in
                                                zip(self._features, self.attribute_types)])
+        # print(f'Attribute Dimensions: {self._attribute_dims}')
         return self._attribute_dims
 
     @property
@@ -378,8 +385,17 @@ class Dataset(object):
 
         :return:
         """
-        return [to_categorical(f)[:, :, 1:] if t == AttributeType.CATEGORICAL else np.expand_dims(f, axis=2)
+        one_hot_features = [to_categorical(f)[:, :, 1:] if t == AttributeType.CATEGORICAL else np.expand_dims(f, axis=2)
                 for f, t in zip(self._features, self.attribute_types)]
+        
+        # RCVDB: Tensor seems to be of shape (attribute_dimension, number_of_cases, max_case_length)
+        print('One-hot features shape: ', len(one_hot_features), len(one_hot_features[0]), len(one_hot_features[0][0]))
+
+        # RCVDB: Debug to get an overview of how the features are encoded
+        # for i in range(len(one_hot_features)):
+        #     print(one_hot_features[i][0][0])
+
+        return one_hot_features
 
 
 
@@ -393,7 +409,10 @@ class Dataset(object):
 
         :return:
         """
-        return np.concatenate(self.onehot_features, axis=2)
+        flat_one_hot_features = np.concatenate(self.onehot_features, axis=2)
+        print('Flat-One-hot features shape: ', len(flat_one_hot_features), len(flat_one_hot_features[0]), len(flat_one_hot_features[0][0]))
+
+        return flat_one_hot_features
 
     @staticmethod
     def remove_time_dimension(x):
@@ -421,7 +440,10 @@ class Dataset(object):
 
         :return:
         """
-        return self.remove_time_dimension(self.flat_onehot_features)
+        flat_onehot_features_2d = self.remove_time_dimension(self.flat_onehot_features)
+        print('Flat-One-hot features 2d shape: ', len(flat_onehot_features_2d), len(flat_onehot_features_2d[0]))
+
+        return flat_onehot_features_2d
 
     @staticmethod
     def _get_classes_and_labels_from_event_log(event_log):
@@ -438,7 +460,15 @@ class Dataset(object):
         num_perspectives = len(Perspective.keys())
         num_cases = len(event_log.cases)
 
-        labels = np.full((num_cases, num_events, num_perspectives), fill_value=Perspective.NORMAL)
+        # Either labels one-hot-encoded per event, or only per case.
+        # Depends on prediction goals:
+        # Either predict exactly which event has which perspectives.
+        # CON: Far more complext prediction task, models might struggle
+        # Or
+        # On a case level, where prefixes should be supported which indirectly ensure event level detection
+        labels_event_level = np.full((num_cases, num_events, num_perspectives), fill_value=Perspective.NORMAL)
+        labels_case_level = np.zeros((num_cases, num_perspectives), dtype=int)
+
         targets = []
         for case_index, case in enumerate(event_log):
             case:Case
@@ -446,25 +476,43 @@ class Dataset(object):
             for event_index, event in enumerate(case.events):
                 event:Event
                 if event.attributes['label'] is not None and 'label' in event.attributes:
-                    event_labels = case.attributes['label']
+                    event_labels = event.attributes['label']
+                    # if case_index < 2:
+                    #     print(f'{case_index} {event_index} {event_labels}')
                     for label in event_labels:
                         # Encode the label into the targets:
                         case_targets, perspective = label_to_targets(case_targets, event_index, label)
 
+                        # Debug code to see if labels are set correctly TODO can remove if not nessesary anymore
+                        # if case_index < 2:
+                        #     print(f' Setting value at {case_index},{event_index},{perspective}')
+
                         # Encode the perspective into labels
-                        labels[case_index, event_index, perspective] = 1
+                        # RCVDB: TODO: Currently also the normal flag is set if case contains anomalies but also normal events, which might not be as intended.
+                        # Could be mitigated by either setting normal flag to 0 if any other perspectives are present or removing it from the enum
+                        labels_case_level[case_index, perspective] = 1
+                        labels_event_level[case_index, event_index, perspective] = 1
 
             # Create a list of labels per case
             targets.append(case_targets)
 
         # Should result in a 4d tensor of size (num_cases, num_events, num_attributes, num_perspectives)
         targets = np.asarray(targets)
-        print(targets.shape)
+        print(f'Target shape: {targets.shape}')
+
+        # print(f'Example target of event: \n {targets[0]}')
 
         # Should result in a 3d tensor of size (num_cases, num_events, num_perspectives)
+        # Or
+        # Should result in a 2d tensor of size (num_cases, num_perspectives)
         # Was initially a list of strings with one label per case, now it represents all perspectives present per event in each case
-        labels = np.asarray(labels)
-        print(labels.shape)
+        labels = np.asarray(labels_event_level)
+        # labels = np.asarray(labels_case_level)
+        print(f'Label shape: {labels.shape}')
+
+        print(f'Example labels of cases:')
+        for i in range(5):
+            print(f'Case {i}: {labels[i]}')
 
         return targets, labels
 
@@ -531,6 +579,7 @@ class Dataset(object):
             # Normalize numerical data
             elif attribute_type == AttributeType.NUMERICAL:
                 f = np.asarray(feature_columns[key])
+                # RCVDB: TODO look at normalisation as research has shown that a normal distribution cannot be assumed in most features
                 feature_columns[key] = (f - f.mean()) / f.std()  # 0 mean and 1 std normalization
 
         # Transform back into sequences
@@ -541,6 +590,22 @@ class Dataset(object):
             for k, key in enumerate(feature_columns):
                 x = feature_columns[key]
                 features[k][i, :case_len] = x[offset:offset + case_len]
+
+        # RCVDB: Debug prints to showcase the encoded labels
+        print(f'Feature Columns: {feature_columns.keys()}')
+        print(f'Feature Shape: {features[0].shape}')
+        print(f'Example feature over multiple cases:')
+        for i in range(5):
+            print(f'Case {i} Features, name: {features[0][i]}, arrival-time: {features[1][i]}, user: {features[-1][i]}')
+        
+        example_case = 0
+        print(f'All feature over a single case {example_case}:')
+        for index, key in enumerate(feature_columns.keys()):
+            print(f'{key} \t {features[index][example_case]}')    
+        print(f'Case Length: {case_lens}')
+        print(f'Attribute Types: {attr_types}')
+        print(f'Encoders: {encoders}')
+
 
         return features, case_lens, attr_types, encoders
 
@@ -553,6 +618,7 @@ class Dataset(object):
         """
         # Get features from event log
         self._features, self._case_lens, self.attribute_types, self.encoders = self._from_event_log(event_log)
+
 
         # Get targets and labels from event log
         self.classes, self.labels = self._get_classes_and_labels_from_event_log(event_log)
