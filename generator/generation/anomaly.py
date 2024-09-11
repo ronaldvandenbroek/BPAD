@@ -121,7 +121,7 @@ class NoneAnomaly(Anomaly):
         self.name = 'Normal'
 
     def apply_to_case(self, case):
-        case.attributes['label'] = 'normal'
+        case.attributes['_label'] = 'normal'
         return case
 
 
@@ -149,7 +149,7 @@ class ReworkAnomaly(Anomaly):
         anomalous_trace = t[:start + size + distance] + dupe_sequence + t[start + size + distance:]
         case.events = anomalous_trace
 
-        case.attributes['label'] = dict(
+        case.attributes['_label'] = dict(
             anomaly=str(self),
             attr=dict(
                 size=int(size),
@@ -195,7 +195,7 @@ class SkipSequenceAnomaly(Anomaly):
         skipped = [s.json for s in t[start:end]]
         case.events = t[:start] + t[end:]
 
-        case.attributes['label'] = dict(
+        case.attributes['_label'] = dict(
             anomaly=str(self),
             attr=dict(
                 size=int(size),
@@ -242,7 +242,7 @@ class LateAnomaly(Anomaly):
 
         case.events = t[:s] + t[s + size:i + size] + t[s:s + size] + t[i + size:]
 
-        case.attributes['label'] = dict(
+        case.attributes['_label'] = dict(
             anomaly=str(self),
             attr=dict(
                 shift_from=int(s),
@@ -293,7 +293,7 @@ class EarlyAnomaly(Anomaly):
 
         case.events = t[:i] + t[s:s + size] + t[i:s] + t[s + size:]
 
-        case.attributes['label'] = dict(
+        case.attributes['_label'] = dict(
             anomaly=str(self),
             attr=dict(
                 shift_from=int(s + size),
@@ -360,7 +360,7 @@ class AttributeAnomaly(Anomaly):
         attribute_names = sorted([a.name for a in self.attributes])
         attribute_indices = [attribute_names.index(a) for a in affected_attribute_names]
 
-        case.attributes['label'] = dict(
+        case.attributes['_label'] = dict(
             anomaly=str(self),
             attr=dict(
                 index=indices,
@@ -458,7 +458,7 @@ class ReplaceAnomaly(Anomaly):
             t = t[:place] + [self.generate_random_event()] + t[place + 1:]
         case.events = t
 
-        case.attributes['label'] = dict(
+        case.attributes['_label'] = dict(
             anomaly=str(self),
             attr=dict(
                 indices=[int(i) for i in places],
@@ -504,7 +504,7 @@ class InsertAnomaly(Anomaly):
             t = t[:place] + [self.generate_random_event()] + t[place:]
         case.events = t
 
-        case.attributes['label'] = dict(
+        case.attributes['_label'] = dict(
             anomaly=str(self),
             attr=dict(
                 indices=[int(i) for i in insert_places]
@@ -550,7 +550,7 @@ class SkipAnomaly(Anomaly):
         skip_places -= np.arange(len(skip_places))
         skip_places = list(set(skip_places))
 
-        case.attributes['label'] = dict(
+        case.attributes['_label'] = dict(
             anomaly=str(self),
             attr=dict(
                 indices=[int(i) for i in skip_places],
@@ -607,7 +607,7 @@ class SkipAndInsertAnomaly(Anomaly):
         skip_places = skip_places + np.array([np.sum(insert_places < s) for s in skip_places])
         skip_places = list(set(skip_places))
 
-        case.attributes['label'] = dict(
+        case.attributes['_label'] = dict(
             anomaly=str(self),
             attr=dict(
                 skips=[int(i) for i in skip_places],

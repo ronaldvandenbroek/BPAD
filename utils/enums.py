@@ -89,19 +89,21 @@ class Class(object):
 
 # RCVDB: Enum representing the possible anomaly perspectives
 class Perspective(object):
-    NORMAL = 0
-    ORDER = 1
-    ATTRIBUTE = 2
-    ARRIVAL_TIME = 3
-    WORKLOAD = 4
+    # RCVDB: Removing normal as that isn't a perspective that needs to be predicted,
+    # All values being none indicateds a normal trace.
+    # NORMAL = 0
+    ORDER = 0
+    ATTRIBUTE = 1
+    ARRIVAL_TIME = 2
+    WORKLOAD = 3
 
     @staticmethod
     def values():
-        return ['Normal', 'Order', 'Attribute', 'Arrival Time', 'Workload']
+        return ['Order', 'Attribute', 'Arrival Time', 'Workload'] #'Normal', 
 
     @staticmethod
     def colors():
-        return ['#F5F5F5', '#F44336', '#3F51B5', '#F57F17', '#388E3C']
+        return ['#F44336', '#3F51B5', '#F57F17', '#388E3C'] #'#F5F5F5', 
 
     @staticmethod
     def color(key):
@@ -109,7 +111,7 @@ class Perspective(object):
 
     @staticmethod
     def keys():
-        return [Perspective.NORMAL, Perspective.ORDER, Perspective.ATTRIBUTE, Perspective.ARRIVAL_TIME, Perspective.WORKLOAD]
+        return [Perspective.ORDER, Perspective.ATTRIBUTE, Perspective.ARRIVAL_TIME, Perspective.WORKLOAD] #Perspective.NORMAL,
 
     @staticmethod
     def items():

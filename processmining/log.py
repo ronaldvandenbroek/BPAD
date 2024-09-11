@@ -23,7 +23,7 @@ import numpy as np
 import pandas as pd
 from lxml import etree
 
-from utils.enums import AttributeType
+from utils.enums import AttributeType, Perspective
 from utils.fs import EVENTLOG_CACHE_DIR
 from utils.fs import EVENTLOG_DIR
 from processmining.case import Case
@@ -66,7 +66,7 @@ class EventLog(object):
             # RCVDB: Ignore event level label
             ignored = ['concept:name', 'time:timestamp', 'lifecycle:transition', 'EventID', 'activityNameEN',
                        'activityNameNL', 'dateFinished', 'question', 'product', 'EventOrigin', 'Action',
-                       'organization involved', 'impact','concept:instance', 'label']
+                       'organization involved', 'impact','concept:instance', '_label']
 
             attributes += sorted(
                 [key for key in self.attributes['global_attributes']['event'].keys() if key not in ignored])
@@ -74,8 +74,25 @@ class EventLog(object):
             # RCVDB: Ignore event level label
             # TODO: Change name of label to _label in generation to simplify code
             attributes += sorted(
-                [key for key in list(self.cases[0].events[0].attributes.keys()) if not(key.startswith('_') or key == 'label')])
+                [key for key in list(self.cases[0].events[0].attributes.keys()) if not(key.startswith('_'))])
         return attributes
+    
+    # RCVDB: Determine the perspectives a certain attribute belongs to
+    @property
+    def event_attribute_perspectives(self):
+        perspectives = []
+        attributes = self.event_attribute_keys
+        for attribute in attributes:
+            if 'name' in attribute:
+                perspectives.append(Perspective.ORDER)
+            elif 'arrival_time' in attribute:
+                perspectives.append(Perspective.ARRIVAL_TIME)
+            elif 'workload' in attribute:
+                perspectives.append(Perspective.WORKLOAD)
+            else:
+                perspectives.append(Perspective.ATTRIBUTE)
+
+        return perspectives
 
     @property
     def num_event_attributes(self):

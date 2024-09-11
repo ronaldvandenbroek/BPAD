@@ -98,7 +98,7 @@ class NoneAnomaly(Anomaly):
         self.name = 'Normal'
 
     def apply_to_case(self, case):
-        case.attributes['label'] = 'normal'
+        case.attributes['_label'] = 'normal'
         return case
 
 
@@ -328,7 +328,7 @@ ANOMALIES = dict((s[:-7], anomaly) for s, anomaly in inspect.getmembers(sys.modu
 def label_to_targets(targets, event_index, label):
     # If label is normal, then can skip
     if label == 'normal':
-        return targets, Perspective.NORMAL
+        return targets, None
     else:
         # RCVDB: TODO Check if event_index + 1 is needed as this is done in every anomaly
         event_index = event_index + 1

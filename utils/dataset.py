@@ -102,9 +102,10 @@ class Dataset(object):
         if el_file.path.exists():
             self._event_log = EventLog.load(el_file.path)
             self.from_event_log(self._event_log)
-            self._cache_dataset(el_file.cache_file)
-            self._gen_trace_graphs()
-            self._gen_trace_graphs_GAE()
+            # RCVDB: Skipping caching and generating graphs TODO reimplement
+            # self._cache_dataset(el_file.cache_file)
+            # self._gen_trace_graphs()
+            # self._gen_trace_graphs_GAE()
         else:
             raise FileNotFoundError()
 
@@ -444,7 +445,10 @@ class Dataset(object):
         print('Flat-One-hot features 2d shape: ', len(flat_onehot_features_2d), len(flat_onehot_features_2d[0]))
 
         return flat_onehot_features_2d
-
+    
+    # RCVDB: This version of the function aims for the models to predict the anomaly perspective themselves, 
+    # however this can also be accieved by generating an error score for each attribute 
+    # and depending on where the error is the anomaly perspectives can be determined
     @staticmethod
     def _get_classes_and_labels_from_event_log(event_log):
         """
@@ -463,20 +467,20 @@ class Dataset(object):
         # Either labels one-hot-encoded per event, or only per case.
         # Depends on prediction goals:
         # Either predict exactly which event has which perspectives.
-        # CON: Far more complext prediction task, models might struggle
+        # CON: Far more complex prediction task, models might struggle
         # Or
         # On a case level, where prefixes should be supported which indirectly ensure event level detection
-        labels_event_level = np.full((num_cases, num_events, num_perspectives), fill_value=Perspective.NORMAL)
+        labels_event_level = np.zeros((num_cases, num_events, num_perspectives), dtype=int)
         labels_case_level = np.zeros((num_cases, num_perspectives), dtype=int)
 
         targets = []
         for case_index, case in enumerate(event_log):
             case:Case
-            case_targets = np.full((num_events, num_attributes, num_perspectives), fill_value=Perspective.NORMAL) 
+            case_targets = np.zeros((num_events, num_attributes, num_perspectives), dtype=int) 
             for event_index, event in enumerate(case.events):
                 event:Event
-                if event.attributes['label'] is not None and 'label' in event.attributes:
-                    event_labels = event.attributes['label']
+                if event.attributes['_label'] is not None and '_label' in event.attributes:
+                    event_labels = event.attributes['_label']
                     # if case_index < 2:
                     #     print(f'{case_index} {event_index} {event_labels}')
                     for label in event_labels:
@@ -488,10 +492,9 @@ class Dataset(object):
                         #     print(f' Setting value at {case_index},{event_index},{perspective}')
 
                         # Encode the perspective into labels
-                        # RCVDB: TODO: Currently also the normal flag is set if case contains anomalies but also normal events, which might not be as intended.
-                        # Could be mitigated by either setting normal flag to 0 if any other perspectives are present or removing it from the enum
-                        labels_case_level[case_index, perspective] = 1
-                        labels_event_level[case_index, event_index, perspective] = 1
+                        if perspective is not None: # If perspective is none then no anomalies need to be registered
+                            labels_case_level[case_index, perspective] = 1
+                            labels_event_level[case_index, event_index, perspective] = 1
 
             # Create a list of labels per case
             targets.append(case_targets)
@@ -519,7 +522,7 @@ class Dataset(object):
 
 
     @staticmethod
-    def _from_event_log(event_log, include_attributes=None):
+    def _from_event_log(event_log:EventLog, include_attributes=None):
         """
         Transform event log as feature columns.
 
@@ -579,7 +582,7 @@ class Dataset(object):
             # Normalize numerical data
             elif attribute_type == AttributeType.NUMERICAL:
                 f = np.asarray(feature_columns[key])
-                # RCVDB: TODO look at normalisation as research has shown that a normal distribution cannot be assumed in most features
+                # RCVDB: TODO look at normalisation as experiments have shown that a normal distribution cannot be assumed in most features
                 feature_columns[key] = (f - f.mean()) / f.std()  # 0 mean and 1 std normalization
 
         # Transform back into sequences

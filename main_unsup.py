@@ -46,6 +46,7 @@ def fit_and_eva(dataset_name, ad, fit_kwargs=None , ad_kwargs=None):
     print(ad.name)
     resPath=os.path.join(ROOT_DIR, f'result_{ad.name}.csv')
     try:
+        # RCVDB: TODO Seems to first train on the dataset and then predict?
         # Train and save
         ad.fit(dataset, **fit_kwargs)
 
@@ -132,7 +133,7 @@ if __name__ == '__main__':
 
     # RCVDB: Configuration to test multi-label anomalies
     ads = [
-        dict(ad=DAE, fit_kwargs=dict(epochs=100, batch_size=64)),  ## Multi-perspective, attr-level    ---Analyzing business process anomalies using autoencoders
+        dict(ad=DAE, fit_kwargs=dict(epochs=30, batch_size=64)),  ## Multi-perspective, attr-level    ---Analyzing business process anomalies using autoencoders
     ]
 
     # RCVDB: Full Configuration
