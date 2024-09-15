@@ -133,19 +133,16 @@ class DAE(NNAnomalyDetector):
 
         predictions= np.concatenate(predictions, 0)
 
-        # RCVDB: TODO Probably need to redesign the below part from scratch to allow for multi-class classification
-
-        # Calculate error
-        # RCVDB: This generates the correct errors for each attribute in each case
-        # But instead of a total error it should be split based on each attribute
-        # dataset.attribute_dims gives the splits nessesary to do this
-        # Then error for each attribute can be calculated and in extension the error for each perspective can be determined
-
         # (cases, events * flattened_attributes)
-        errors = np.power(dataset.flat_onehot_features_2d - predictions, 2)
+        errors_unmasked = np.power(dataset.flat_onehot_features_2d - predictions, 2)
 
-        # RCVDB: TODO ?? Applies a mask to remove the events not present in the trace??   
-        errors = errors * np.expand_dims(~dataset.mask, 2).repeat(dataset.attribute_dims.sum(), 2).reshape(
+        # Applies a mask to remove the events not present in the trace   
+        # (cases, flattened_errors) --> errors_unmasked
+        # (cases, num_events) --> dataset.mask (~ inverts mask)
+        # (cases, num_events, 1) --> expand dimension for broadcasting
+        # (cases, num_events, attributes_dim) --> expand 2nd axis to size of the attributes
+        # (cases, num_events * attributes_dim) = (cases, flattened_mask) --> reshape to match flattened error shape
+        errors = errors_unmasked * np.expand_dims(~dataset.mask, 2).repeat(dataset.attribute_dims.sum(), 2).reshape(
             dataset.mask.shape[0], -1)
         
         # Get the split index of each attribute in each flattened trace
@@ -156,8 +153,9 @@ class DAE(NNAnomalyDetector):
         errors_attr_split = np.split(errors, split_attribute, axis=1)
 
         # Mean the attribute_dimension
-        # TODO: Perhaps categorical attributes should be flattened differently?
         # Scalar attributes are left as is as they have a size of 1
+        # np.mean for the proportion of the one-hot encoded predictions being wrong
+        # np.sum for the total one-hot predictions being wrong
         # (attributes * events, cases)
         errors_attr_split_summed = [np.mean(attribute, axis=1) for attribute in errors_attr_split]
         
@@ -177,51 +175,24 @@ class DAE(NNAnomalyDetector):
         for event, anomaly_perspectives in zip(errors_event_split, anomaly_perspectives):
             grouped_error_scores_per_perspective[anomaly_perspectives].append(event)
 
-        # Transpose the axis to make it easier to work with 
-        # (perspective, cases, events, attributes) 
-        grouped_error_scores_per_perspective_T = defaultdict(list)
+        # Calculate the error proportions per the perspective per: attribute, event, trace
+        trace_level_abnormal_scores = defaultdict(list)
+        event_level_abnormal_scores = defaultdict(list) 
+        attr_level_abnormal_scores = defaultdict(list)
         for anomaly_perspective in grouped_error_scores_per_perspective.keys():
+            # Transpose the axis to make it easier to work with 
+            # (perspective, cases, events, attributes) 
             t = np.transpose(grouped_error_scores_per_perspective[anomaly_perspective], (2, 1, 0))
-            grouped_error_scores_per_perspective_T[anomaly_perspective] = t
+            event_dimension = dataset.case_lens
+            attribute_dimension = t.shape[-1]
 
-        # TODO: Calculate the error in the perspective per: attribute, event, trace
-        # Should be no more than summing up the axis
+            error_per_trace = np.sum(t, axis=(1,2)) / (event_dimension * attribute_dimension)
+            trace_level_abnormal_scores[anomaly_perspective] = error_per_trace
 
+            error_per_event = np.sum(t, axis=2) / attribute_dimension
+            event_level_abnormal_scores[anomaly_perspective] = error_per_event
 
-
-        # Old code:
-        # errors_event = np.array([np.mean(a, axis=1) if len(a) > 0 else 0.0 for a in errors_event_split])
-        # errors_attr = np.array([np.mean(a, axis=1) if len(a) > 0 else 0.0 for a in errors_attr])
-
-        # # errors_event_split = np.split(errors, split_event, axis=1)
-        # # split_event = np.cumsum(np.tile(dataset.attribute_dims.sum(), [dataset.max_len]), dtype=int)[:-1]
-
-
-        # trace_level_abnormal_scores = errors.sum(1) / (dataset.case_lens * dataset.attribute_dims.sum())
-        # print(f'Trace-level error scores shape: {trace_level_abnormal_scores.shape}')
-        # print(f'Trace-level error scores example: {trace_level_abnormal_scores[0]}')
-
-        # # Split the errors according to the events
-        # event_level_abnormal_scores = errors_event.T
-        # print(f'Event-level error scores shape: {event_level_abnormal_scores.shape}')
-        # print(f'Event-level error scores example: {event_level_abnormal_scores[0]}')
-
-        # # Split the errors according to the attribute dims
-        # split = np.cumsum(np.tile(dataset.attribute_dims, [dataset.max_len]), dtype=int)[:-1]
-        # errors_attr = np.split(errors, split, axis=1)
-        # errors_attr = np.array([np.mean(a, axis=1) if len(a) > 0 else 0.0 for a in errors_attr])
-        # # print(f'Attribute-level errors shape: {errors_attr.shape}')
-
-        # # Init anomaly scores array
-        # attr_level_abnormal_scores = np.zeros(dataset.binary_targets.shape)
-        # print(f'Attribute-level error scores shape: {attr_level_abnormal_scores.shape}')
-        # print(f'Number of attributes: {len(dataset.attribute_dims)}')
-
-        # # RCVDB: TODO Check if this actually generates the correct anomaly scores
-        # for i in range(len(dataset.attribute_dims)):
-        #     # print(f'Error attribute shape: {errors_attr.shape}')
-        #     error = errors_attr[i::len(dataset.attribute_dims)]
-        #     print(f'Error shape: {error.T.shape}')
-        #     attr_level_abnormal_scores[:, :, i, :] = error.T
+            error_per_attribute = t
+            attr_level_abnormal_scores[anomaly_perspective] = error_per_attribute
 
         return trace_level_abnormal_scores, event_level_abnormal_scores, attr_level_abnormal_scores

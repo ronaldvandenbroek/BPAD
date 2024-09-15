@@ -582,8 +582,15 @@ class Dataset(object):
             # Normalize numerical data
             elif attribute_type == AttributeType.NUMERICAL:
                 f = np.asarray(feature_columns[key])
-                # RCVDB: TODO look at normalisation as experiments have shown that a normal distribution cannot be assumed in most features
-                feature_columns[key] = (f - f.mean()) / f.std()  # 0 mean and 1 std normalization
+
+                # RCVDB: Implementing min-max scaling to avoid relying on a normality assumption as experiments have shown that a normal distribution cannot be assumed in most features
+                # feature_columns[key] = (f - f.mean()) / f.std()  # 0 mean and 1 std normalization
+                f_min = np.min(f)
+                f_max = np.max(f)
+                if f_max != f_min:
+                    feature_columns[key] = (f - f_min) / (f_max - f_min)
+                else:
+                    feature_columns[key] = np.zeros_like(f)
 
         # Transform back into sequences
         case_lens = np.array(case_lens)
