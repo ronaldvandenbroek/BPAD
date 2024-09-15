@@ -16,6 +16,10 @@
 import os.path
 from pathlib import Path
 
+import numpy as np
+
+from utils.enums import Perspective
+
 
 
 # Base
@@ -23,14 +27,21 @@ ROOT_DIR = Path(__file__).parent.parent
 
 # Output
 EVENTLOG_DIR = os.path.join(ROOT_DIR,'eventlogs')  # For generated event logs
+RESULTS_DIR = os.path.join(ROOT_DIR,'results')  # For the model scores
+RESULTS_RAW_DIR = os.path.join(ROOT_DIR,'results','raw') # For the model raw error scores
 
 
 # Cache
 EVENTLOG_CACHE_DIR = os.path.join(ROOT_DIR,'eventlogs', 'cache')  # For caching datasets so the event log does not always have to be loaded
 
 
+def save_raw_results(start_time, model_name, level, perspective, results):
+    if not os.path.exists(RESULTS_RAW_DIR):
+        os.makedirs(RESULTS_RAW_DIR)
 
-
+    perspective_name = Perspective.values()[perspective]
+    raw_results_path = os.path.join(RESULTS_RAW_DIR, f'result_{round(start_time)}_{model_name}_{perspective_name}_{level}')
+    np.save(raw_results_path, results)    
 
 def split_eventlog_name(name):
     try:

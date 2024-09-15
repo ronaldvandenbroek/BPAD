@@ -180,3 +180,4 @@ result_*.csv
 environment backup v1.yml
 environment backup v2.yml
 .vscode/launch.json
+/results

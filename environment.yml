@@ -10,6 +10,7 @@ dependencies:
   - pyg=2.3.0
   - pandas=2.0.3
   - gensim=4.3.0
+  - ipykernel
   - pip
   - pip:
           - torch==1.13.0
