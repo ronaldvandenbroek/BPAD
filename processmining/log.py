@@ -171,7 +171,7 @@ class EventLog(object):
         return counts
 
     @staticmethod
-    def load(eventlog_name):
+    def load(eventlog_name, prefix):
         """
         Load event log from file system.
 
@@ -185,23 +185,12 @@ class EventLog(object):
         if eventlog_name.name.endswith('.xes') or eventlog_name.name.endswith('.xes.gz'):
             return EventLog.from_xes(eventlog_name)
         elif eventlog_name.name.endswith('.json') or eventlog_name.name.endswith('.json.gz'):
-            return EventLog.from_json(eventlog_name)
+            return EventLog.from_json(eventlog_name, prefix)
         else:
-            return EventLog.from_json(str(eventlog_name) + '.json.gz')
+            return EventLog.from_json(str(eventlog_name) + '.json.gz', prefix)
 
     @staticmethod
-    def from_dict(log):
-        event_log = EventLog(**log['attributes'])
-        for case in log['cases']:
-            _case = Case(id=case['id'], **case['attributes'])
-            for e in case['events']:
-                event = Event(name=e['name'], timestamp=e['timestamp'], **e['attributes'])
-                _case.add_event(event)
-            event_log.add_case(_case)
-        return event_log
-
-    @staticmethod
-    def from_json(file_path):
+    def from_json(file_path, prefix):
         """
         Parse event log from JSON.
 
@@ -229,7 +218,33 @@ class EventLog(object):
         else:
             case_key = 'cases'
 
+        prefix = True
         for case in log[case_key]:
+            _case = Case(id=case['id'], **case['attributes'])
+            for e in case['events']:
+                event = Event(name=e['name'], timestamp=e['timestamp'], **e['attributes'])
+                _case.add_event(event)
+                # RCVDB: If the event_log is prefix based add a clone of each case to the log after every added event
+                # This simulates that each 'new' event loads the corresponding prefix of the case.
+                if prefix:
+                    event_log.add_case(Case.clone(_case))
+            # RCVDB: If the event_log is not prefix based add only the complete traces to the log
+            if not prefix:
+                event_log.add_case(_case)
+
+        # RCVDB: Sort the event_log so the prefixes are ordered by the order the last event arrived
+        if prefix:
+            event_log.cases = sorted(event_log.cases, key=Case.get_last_event_time, reverse=False)    
+
+        return event_log
+    
+    @staticmethod
+    def from_dict(log):
+        # RCVDB: Need to implement prefix-based loading to support loading from dict.
+        raise NotImplementedError("Loading from dict is currently not supported.")
+    
+        event_log = EventLog(**log['attributes'])
+        for case in log['cases']:
             _case = Case(id=case['id'], **case['attributes'])
             for e in case['events']:
                 event = Event(name=e['name'], timestamp=e['timestamp'], **e['attributes'])
@@ -245,6 +260,8 @@ class EventLog(object):
         :param file_path: path to xes file
         :return: EventLog object
         """
+        # RCVDB: Need to implement prefix-based loading to support loading from xes.
+        raise NotImplementedError("Loading from XES is currently not supported.")
 
         # parse the log with lxml
         log = etree.parse(file_path).getroot()
@@ -347,6 +364,9 @@ class EventLog(object):
         :param file_path: path to CSV file
         :return: EventLog object
         """
+        # RCVDB: Need to implement prefix-based loading to support loading from csv.
+        raise NotImplementedError("Loading from CSV is currently not supported.")
+
         # parse file as pandas dataframe
         df = pd.read_csv(file_path)
 
@@ -370,6 +390,9 @@ class EventLog(object):
 
     @staticmethod
     def from_sql(server, database, resource, password, schema='pm'):
+        # RCVDB: Need to implement prefix-based loading to support loading from sql.
+        raise NotImplementedError("Loading from SQL is currently not supported.")
+    
         import pyodbc
         conn = pyodbc.connect(
             f'DRIVER={{ODBC Driver 17 for SQL Server}};'

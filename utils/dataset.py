@@ -30,24 +30,8 @@ from processmining.case import Case
 from processmining.log import EventLog
 
 
-
-def to_categorical(y, num_classes=None, dtype='float32'):
-    y = np.array(y, dtype='int')
-    input_shape = y.shape
-    if input_shape and input_shape[-1] == 1 and len(input_shape) > 1:
-        input_shape = tuple(input_shape[:-1])
-    y = y.ravel()
-    if not num_classes:
-        num_classes = np.max(y) + 1
-    n = y.shape[0]
-    categorical = np.zeros((n, num_classes), dtype=dtype)
-    categorical[np.arange(n), y] = 1
-    output_shape = input_shape + (num_classes,)
-    categorical = np.reshape(categorical, output_shape)
-    return categorical
-
 class Dataset(object):
-    def __init__(self, dataset_name=None, beta=0, label_percent = 0):
+    def __init__(self, dataset_name=None, beta=0, label_percent = 0, prefix=True):
         # Public properties
         self.dataset_name = dataset_name
         self.beta=beta   #used by GAMA
@@ -73,13 +57,13 @@ class Dataset(object):
 
         # Load dataset
         if self.dataset_name is not None:
-            self.load(self.dataset_name)
+            self.load(self.dataset_name, prefix)
 
         # RCVDB: TODO Support the weakly supervised methods
         # self.labeled_indices = np.random.choice(self.anomaly_indices, size=max(int(
         #     len(self.anomaly_indices) * self.label_percent),1), replace=False)  ### Used by weakly supervised methods to indicate indices of labeled anomalies during training
 
-    def load(self, dataset_name):
+    def load(self, dataset_name, prefix):
         """
         Load dataset from disk. If there exists a cached file, load from cache. If no cache file exists, load from
         Event Log and cache it.
@@ -100,7 +84,7 @@ class Dataset(object):
 
         # Else generator from event log
         if el_file.path.exists():
-            self._event_log = EventLog.load(el_file.path)
+            self._event_log = EventLog.load(el_file.path, prefix)
             self.from_event_log(self._event_log)
             # RCVDB: Skipping caching and generating graphs TODO reimplement
             # self._cache_dataset(el_file.cache_file)
@@ -108,7 +92,6 @@ class Dataset(object):
             # self._gen_trace_graphs_GAE()
         else:
             raise FileNotFoundError()
-
 
     def _gen_trace_graphs(self):
 
@@ -267,7 +250,6 @@ class Dataset(object):
         #     return targets
         # return None
 
-
     def __len__(self):
         return self.num_cases
 
@@ -386,7 +368,7 @@ class Dataset(object):
 
         :return:
         """
-        one_hot_features = [to_categorical(f)[:, :, 1:] if t == AttributeType.CATEGORICAL else np.expand_dims(f, axis=2)
+        one_hot_features = [self._to_categorical(f)[:, :, 1:] if t == AttributeType.CATEGORICAL else np.expand_dims(f, axis=2)
                 for f, t in zip(self._features, self.attribute_types)]
         
         # RCVDB: Tensor seems to be of shape (attribute_dimension, number_of_cases, max_case_length)
@@ -397,8 +379,6 @@ class Dataset(object):
         #     print(one_hot_features[i][0][0])
 
         return one_hot_features
-
-
 
     @property
     def flat_onehot_features(self):
@@ -447,7 +427,7 @@ class Dataset(object):
         return flat_onehot_features_2d
     
     # RCVDB: This version of the function aims for the models to predict the anomaly perspective themselves, 
-    # however this can also be accieved by generating an error score for each attribute 
+    # however this can also be achieved by generating an error score for each attribute 
     # and depending on where the error is the anomaly perspectives can be determined
     @staticmethod
     def _get_classes_and_labels_from_event_log(event_log):
@@ -513,13 +493,11 @@ class Dataset(object):
         # labels = np.asarray(labels_case_level)
         print(f'Label shape: {labels.shape}')
 
-        print(f'Example labels of cases:')
-        for i in range(5):
-            print(f'Case {i}: {labels[i]}')
+        # print(f'Example labels of cases:')
+        # for i in range(5):
+        #     print(f'Case {i}: {labels[i]}')
 
         return targets, labels
-
-
 
     @staticmethod
     def _from_event_log(event_log:EventLog, include_attributes=None):
@@ -635,3 +613,34 @@ class Dataset(object):
 
         # Attribute keys (names)
         self.attribute_keys = [a.replace(':', '_').replace(' ', '_') for a in self.event_log.event_attribute_keys]
+
+    def _to_categorical(self, y, num_classes=None, dtype='float32'):
+        y = np.array(y, dtype='int')
+        input_shape = y.shape
+        if input_shape and input_shape[-1] == 1 and len(input_shape) > 1:
+            input_shape = tuple(input_shape[:-1])
+        y = y.ravel()
+        if not num_classes:
+            num_classes = np.max(y) + 1
+        n = y.shape[0]
+        categorical = np.zeros((n, num_classes), dtype=dtype)
+        categorical[np.arange(n), y] = 1
+        output_shape = input_shape + (num_classes,)
+        categorical = np.reshape(categorical, output_shape)
+        return categorical
+    
+    def stream_simple(self, batch_size):
+        data = self.flat_onehot_features_2d
+        for i in range(len(self.event_log)):
+            yield np.expand_dims(data[i], axis=0)    
+
+    # RCVDB: Stream the dataset to the model given the batch size
+    def stream(self, batch_size):
+        step_indexes = np.cumsum(np.tile(len(self.event_log), [batch_size]), dtype=int)[:-1]
+        for i in range(len(step_indexes)):
+            lower_index = step_indexes[i]
+            upper_index = step_indexes[i + 1]
+            batch = self.flat_onehot_features_2d[lower_index, upper_index]
+            if len(batch) != batch_size:
+                raise ValueError(f"Size of the batch {len(batch)} is not the same length as {batch_size})")
+            yield batch

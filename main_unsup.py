@@ -25,11 +25,13 @@ from utils.dataset import Dataset
 
 from utils.enums import Perspective
 from utils.eval import cal_best_PRF
-from utils.fs import EVENTLOG_DIR, RESULTS_RAW_DIR, ROOT_DIR, save_raw_results
+from utils.fs import EVENTLOG_DIR, RESULTS_RAW_DIR, ROOT_DIR, save_raw_losses, save_raw_results
 
 # RCVDB: Supressing Sklearn LabelEncoder InconsistentVersionWarning as this seems an internal package issue
 from sklearn.exceptions import InconsistentVersionWarning
 warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 def fit_and_eva(dataset_name, ad, fit_kwargs=None , ad_kwargs=None):
     if ad_kwargs is None:
@@ -41,44 +43,46 @@ def fit_and_eva(dataset_name, ad, fit_kwargs=None , ad_kwargs=None):
 
     print(dataset_name)
     # Dataset
-    dataset = Dataset(dataset_name, beta=0.005)
+    dataset = Dataset(dataset_name, beta=0.005, prefix=True)
 
     # AD
     ad = ad(**ad_kwargs)
     print(ad.name)
+    
+    trace_level_abnormal_scores, event_level_abnormal_scores, attr_level_abnormal_scores, losses = ad.train_and_predict(dataset, batch_size=8)
+
+    end_time = time.time()
+    run_time=end_time-start_time
+    print(f'Runtime: {run_time}')
+
+    # RCVDB: Loop through each perspective and handle each results seperately
+    for anomaly_perspective in trace_level_abnormal_scores.keys():
+        save_raw_results(
+            start_time=start_time, 
+            model_name=ad.name, 
+            level='trace', 
+            perspective=anomaly_perspective, 
+            results=trace_level_abnormal_scores[anomaly_perspective])
+        save_raw_results(
+            start_time=start_time, 
+            model_name=ad.name, 
+            level='event', 
+            perspective=anomaly_perspective, 
+            results=event_level_abnormal_scores[anomaly_perspective])
+        save_raw_results(
+            start_time=start_time, 
+            model_name=ad.name, 
+            level='attribute', 
+            perspective=anomaly_perspective, 
+            results=attr_level_abnormal_scores[anomaly_perspective])
+        save_raw_losses(
+            start_time=start_time, 
+            model_name=ad.name, 
+            losses=losses)
+
+
+
     try:
-        # RCVDB: TODO Seems to first train on the dataset and then predict?
-        # Train and save
-        ad.fit(dataset, **fit_kwargs)
-
-        trace_level_abnormal_scores,event_level_abnormal_scores,attr_level_abnormal_scores = ad.detect(dataset)
-
-        end_time = time.time()
-
-        run_time=end_time-start_time
-        print(f'Runtime: {run_time}')
-
-        # RCVDB: Loop through each perspective and handle each results seperately
-        for anomaly_perspective in trace_level_abnormal_scores.keys():
-            save_raw_results(
-                start_time=start_time, 
-                model_name=ad.name, 
-                level='trace', 
-                perspective=anomaly_perspective, 
-                results=trace_level_abnormal_scores[anomaly_perspective])
-            save_raw_results(
-                start_time=start_time, 
-                model_name=ad.name, 
-                level='event', 
-                perspective=anomaly_perspective, 
-                results=event_level_abnormal_scores[anomaly_perspective])
-            save_raw_results(
-                start_time=start_time, 
-                model_name=ad.name, 
-                level='attribute', 
-                perspective=anomaly_perspective, 
-                results=attr_level_abnormal_scores[anomaly_perspective])
-
         skip = True
         if not skip:
             ##trace level
@@ -156,8 +160,9 @@ if __name__ == '__main__':
     dataset_names_real.sort()
 
     # RCVDB: Configuration to test multi-label anomalies
+    # In practice probably more accurrate to have one epoch and a batch size of one to simulate each event arriving seperately
     ads = [
-        dict(ad=DAE, fit_kwargs=dict(epochs=30, batch_size=64)),  ## Multi-perspective, attr-level    ---Analyzing business process anomalies using autoencoders
+        dict(ad=DAE, fit_kwargs=dict(epochs=1, batch_size=1)),  ## Multi-perspective, attr-level    ---Analyzing business process anomalies using autoencoders
     ]
 
     # RCVDB: Full Configuration

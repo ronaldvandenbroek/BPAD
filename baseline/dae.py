@@ -15,6 +15,8 @@
 # ==============================================================================
 
 import numpy as np
+import tensorflow as tf
+from tqdm import tqdm
 
 from baseline.binet.core import NNAnomalyDetector
 from utils.dataset import Dataset
@@ -70,6 +72,7 @@ class DAE(NNAnomalyDetector):
 
         # Parameters
         input_size = features.shape[1]
+        print(f"Input Size: {input_size}")
 
         # Input layer
         input = Input(shape=(input_size,), name='input')
@@ -97,10 +100,105 @@ class DAE(NNAnomalyDetector):
         # Compile model
         model.compile(
             optimizer=adam_v2.Adam(learning_rate=0.0001, beta_2=0.99),
-            loss='mean_squared_error',
+            loss='mean_squared_error'
+            # metrics=['accuracy']
         )
 
         return model, features, features  # Features are also targets
+    
+  
+    def train_and_predict(self, dataset:Dataset, batch_size=2):
+        model, features, _ = self.model_fn(dataset, **self.config)
+        
+        dataset_tf = tf.data.Dataset.from_tensor_slices((features, features))
+        dataset_tf = dataset_tf.batch(batch_size)
+        total_steps = len(dataset.event_log) // batch_size
+
+        losses=[]
+        predictions=[]
+        pbar = tqdm(enumerate(dataset_tf), total=total_steps)
+        for i, (x_batch, y_batch) in pbar:
+            # RCVDB: Train the model on the current batch and return the prediction
+            # RCVDB: TODO: Tensorflow seems to throw optimisation warnings, suggesting that the code can be optimized. 
+            loss = model.train_on_batch(x_batch, y_batch)
+            prediction_batch = model.predict_on_batch(x_batch)
+
+            losses.append(loss)
+            for prediction in prediction_batch:
+                predictions.append(prediction)
+            # loss = self.train_step(model, x_batch, y_batch)
+
+            # RCVDB: Goal is reconstruction, thus x and y are the same
+            # loss = model.train_on_batch(x=x_batch, y=y_batch)
+            if (i+1) % 100 == 0 or i == 0:
+                pbar.set_postfix({'loss': loss})
+                # print(f"Step [{(i+1)*batch_size}/{len(dataset.event_log.cases)}], Loss: {loss:.4f}")
+
+        # (cases, events * flattened_attributes)
+        errors_unmasked = np.power(dataset.flat_onehot_features_2d - predictions, 2)
+
+        # Applies a mask to remove the events not present in the trace   
+        # (cases, flattened_errors) --> errors_unmasked
+        # (cases, num_events) --> dataset.mask (~ inverts mask)
+        # (cases, num_events, 1) --> expand dimension for broadcasting
+        # (cases, num_events, attributes_dim) --> expand 2nd axis to size of the attributes
+        # (cases, num_events * attributes_dim) = (cases, flattened_mask) --> reshape to match flattened error shape
+        errors = errors_unmasked * np.expand_dims(~dataset.mask, 2).repeat(dataset.attribute_dims.sum(), 2).reshape(
+            dataset.mask.shape[0], -1)
+        
+        # Get the split index of each attribute in each flattened trace
+        split_attribute = np.cumsum(np.tile(dataset.attribute_dims, [dataset.max_len]), dtype=int)[:-1]
+
+        # Get the errors per attribute by splitting said trace
+        # (attributes * events, cases, attribute_dimension)
+        errors_attr_split = np.split(errors, split_attribute, axis=1)
+
+        # Mean the attribute_dimension
+        # Scalar attributes are left as is as they have a size of 1
+        # np.mean for the proportion of the one-hot encoded predictions being wrong
+        # np.sum for the total one-hot predictions being wrong
+        # (attributes * events, cases)
+        errors_attr_split_summed = [np.mean(attribute, axis=1) for attribute in errors_attr_split]
+        
+        # Split the attributes based on which event it belongs to
+        split_event = np.arange(
+            start=dataset.max_len, 
+            stop=len(errors_attr_split_summed), 
+            step=dataset.max_len)
+        
+        # (attributes, events, cases)
+        errors_event_split = np.split(errors_attr_split_summed, split_event, axis=0)
+
+        # Split the attributes based on which perspective they belong to
+        # (perspective, attributes, events, cases)
+        anomaly_perspectives = dataset.event_log.event_attribute_perspectives
+        grouped_error_scores_per_perspective = defaultdict(list)
+        for event, anomaly_perspectives in zip(errors_event_split, anomaly_perspectives):
+            grouped_error_scores_per_perspective[anomaly_perspectives].append(event)
+
+        # Calculate the error proportions per the perspective per: attribute, event, trace
+        trace_level_abnormal_scores = defaultdict(list)
+        event_level_abnormal_scores = defaultdict(list) 
+        attr_level_abnormal_scores = defaultdict(list)
+        for anomaly_perspective in grouped_error_scores_per_perspective.keys():
+            # Transpose the axis to make it easier to work with 
+            # (perspective, cases, events, attributes) 
+            t = np.transpose(grouped_error_scores_per_perspective[anomaly_perspective], (2, 1, 0))
+            event_dimension = dataset.case_lens
+            attribute_dimension = t.shape[-1]
+
+            error_per_trace = np.sum(t, axis=(1,2)) / (event_dimension * attribute_dimension)
+            trace_level_abnormal_scores[anomaly_perspective] = error_per_trace
+
+            error_per_event = np.sum(t, axis=2) / attribute_dimension
+            event_level_abnormal_scores[anomaly_perspective] = error_per_event
+
+            error_per_attribute = t
+            attr_level_abnormal_scores[anomaly_perspective] = error_per_attribute
+
+        return trace_level_abnormal_scores, event_level_abnormal_scores, attr_level_abnormal_scores, losses
+
+
 
     def detect(self, dataset:Dataset):
         """

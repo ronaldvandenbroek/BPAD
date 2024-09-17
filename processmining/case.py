@@ -73,6 +73,11 @@ class Case(object):
     def add_event(self, event):
         self.events.append(event)
 
+    # RCVDB: For sorting the prefixes on the last event arrival, which is the timestamp of the last event in events
+    @property
+    def last_event_arrival(self):
+        return self.events[-1].timestamp
+
     @property
     def num_events(self):
         return len(self.events)
@@ -94,3 +99,7 @@ class Case(object):
     def clone(trace):
         events = [Event.clone(event) for event in trace.events]
         return Case(id=trace.id, events=events, **dict(trace.attributes))
+    
+    @staticmethod
+    def get_last_event_time(case):
+        return case.last_event_arrival

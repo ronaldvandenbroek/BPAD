@@ -34,6 +34,12 @@ RESULTS_RAW_DIR = os.path.join(ROOT_DIR,'results','raw') # For the model raw err
 # Cache
 EVENTLOG_CACHE_DIR = os.path.join(ROOT_DIR,'eventlogs', 'cache')  # For caching datasets so the event log does not always have to be loaded
 
+def save_raw_losses(start_time, model_name, losses):
+    if not os.path.exists(RESULTS_RAW_DIR):
+        os.makedirs(RESULTS_RAW_DIR)
+
+    raw_results_path = os.path.join(RESULTS_RAW_DIR, f'result_{round(start_time)}_{model_name}_losses')
+    np.save(raw_results_path, losses)  
 
 def save_raw_results(start_time, model_name, level, perspective, results):
     if not os.path.exists(RESULTS_RAW_DIR):
