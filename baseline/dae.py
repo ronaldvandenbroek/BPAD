@@ -40,7 +40,7 @@ class DAE(NNAnomalyDetector):
 
     config = dict(hidden_layers=2,
                   hidden_size_factor=.01,
-                  noise=None)
+                  noise=1) # None
 
     def __init__(self, model=None):
         """Initialize DAE model.
@@ -72,7 +72,7 @@ class DAE(NNAnomalyDetector):
 
         # Parameters
         input_size = features.shape[1]
-        print(f"Input Size: {input_size}")
+        # print(f"Input Size: {input_size}")
 
         # Input layer
         input = Input(shape=(input_size,), name='input')
@@ -120,19 +120,17 @@ class DAE(NNAnomalyDetector):
         for i, (x_batch, y_batch) in pbar:
             # RCVDB: Train the model on the current batch and return the prediction
             # RCVDB: TODO: Tensorflow seems to throw optimisation warnings, suggesting that the code can be optimized. 
+
+            # RCVDB: Goal is reconstruction, thus x and y are the same
             loss = model.train_on_batch(x_batch, y_batch)
             prediction_batch = model.predict_on_batch(x_batch)
 
             losses.append(loss)
             for prediction in prediction_batch:
                 predictions.append(prediction)
-            # loss = self.train_step(model, x_batch, y_batch)
 
-            # RCVDB: Goal is reconstruction, thus x and y are the same
-            # loss = model.train_on_batch(x=x_batch, y=y_batch)
             if (i+1) % 100 == 0 or i == 0:
                 pbar.set_postfix({'loss': loss})
-                # print(f"Step [{(i+1)*batch_size}/{len(dataset.event_log.cases)}], Loss: {loss:.4f}")
 
         # (cases, events * flattened_attributes)
         errors_unmasked = np.power(dataset.flat_onehot_features_2d - predictions, 2)

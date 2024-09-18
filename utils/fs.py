@@ -30,24 +30,26 @@ EVENTLOG_DIR = os.path.join(ROOT_DIR,'eventlogs')  # For generated event logs
 RESULTS_DIR = os.path.join(ROOT_DIR,'results')  # For the model scores
 RESULTS_RAW_DIR = os.path.join(ROOT_DIR,'results','raw') # For the model raw error scores
 
-
 # Cache
 EVENTLOG_CACHE_DIR = os.path.join(ROOT_DIR,'eventlogs', 'cache')  # For caching datasets so the event log does not always have to be loaded
 
-def save_raw_losses(start_time, model_name, losses):
-    if not os.path.exists(RESULTS_RAW_DIR):
-        os.makedirs(RESULTS_RAW_DIR)
+def _create_raw_results_save_file(start_time, file_name, data):
+    path = os.path.join(RESULTS_RAW_DIR, str(start_time))
+    if not os.path.exists(path):
+        os.makedirs(path)
 
-    raw_results_path = os.path.join(RESULTS_RAW_DIR, f'result_{round(start_time)}_{model_name}_losses')
-    np.save(raw_results_path, losses)  
+    np.save(file=os.path.join(path, file_name), arr=data)
+
+def save_raw_losses(start_time, model_name, losses):
+    _create_raw_results_save_file(start_time, f'losses_{model_name}', losses)
+
+def save_raw_labels(start_time, model_name, level, labels):
+    _create_raw_results_save_file(start_time,  f'labels_{model_name}_{level}', labels)
 
 def save_raw_results(start_time, model_name, level, perspective, results):
-    if not os.path.exists(RESULTS_RAW_DIR):
-        os.makedirs(RESULTS_RAW_DIR)
-
     perspective_name = Perspective.values()[perspective]
-    raw_results_path = os.path.join(RESULTS_RAW_DIR, f'result_{round(start_time)}_{model_name}_{perspective_name}_{level}')
-    np.save(raw_results_path, results)    
+    _create_raw_results_save_file(start_time, f'result_{model_name}_{level}_{perspective_name}', results)
+
 
 def split_eventlog_name(name):
     try:

@@ -25,7 +25,7 @@ from utils.dataset import Dataset
 
 from utils.enums import Perspective
 from utils.eval import cal_best_PRF
-from utils.fs import EVENTLOG_DIR, RESULTS_RAW_DIR, ROOT_DIR, save_raw_losses, save_raw_results
+from utils.fs import EVENTLOG_DIR, RESULTS_RAW_DIR, ROOT_DIR, save_raw_labels, save_raw_losses, save_raw_results
 
 # RCVDB: Supressing Sklearn LabelEncoder InconsistentVersionWarning as this seems an internal package issue
 from sklearn.exceptions import InconsistentVersionWarning
@@ -50,6 +50,9 @@ def fit_and_eva(dataset_name, ad, fit_kwargs=None , ad_kwargs=None):
     print(ad.name)
     
     trace_level_abnormal_scores, event_level_abnormal_scores, attr_level_abnormal_scores, losses = ad.train_and_predict(dataset, batch_size=8)
+    case_labels = dataset.case_labels
+    event_labels = dataset.event_labels
+    attr_labels = dataset.attr_labels
 
     end_time = time.time()
     run_time=end_time-start_time
@@ -79,59 +82,74 @@ def fit_and_eva(dataset_name, ad, fit_kwargs=None , ad_kwargs=None):
             start_time=start_time, 
             model_name=ad.name, 
             losses=losses)
+        save_raw_labels(            
+            start_time=start_time, 
+            model_name=ad.name,
+            level='trace', 
+            labels=case_labels)
+        save_raw_labels(            
+            start_time=start_time, 
+            model_name=ad.name,
+            level='event', 
+            labels=event_labels)
+        save_raw_labels(            
+            start_time=start_time, 
+            model_name=ad.name,
+            level='attribute', 
+            labels=attr_labels)
 
 
+    # RCVBD: TODO Determine if the high error scores compare to the anomalous traces
+    # try:
+    #     skip = True
+    #     if not skip:
+    #         ##trace level
+    #         trace_p, trace_r, trace_f1, trace_aupr = cal_best_PRF(dataset.case_target, trace_level_abnormal_scores)
+    #         print("Trace-level anomaly detection")
+    #         print(f'precision: {trace_p}, recall: {trace_r}, F1-score: {trace_f1}, AP: {trace_aupr}')
 
-    try:
-        skip = True
-        if not skip:
-            ##trace level
-            trace_p, trace_r, trace_f1, trace_aupr = cal_best_PRF(dataset.case_target, trace_level_abnormal_scores)
-            print("Trace-level anomaly detection")
-            print(f'precision: {trace_p}, recall: {trace_r}, F1-score: {trace_f1}, AP: {trace_aupr}')
+    #         if event_level_abnormal_scores is not None:
+    #             ##event level
+    #             eventTemp = dataset.binary_targets.sum(2).flatten()
+    #             eventTemp[eventTemp > 1] = 1
+    #             event_p, event_r, event_f1, event_aupr = cal_best_PRF(eventTemp, event_level_abnormal_scores.flatten())
+    #             print("Event-level anomaly detection")
+    #             print(f'precision: {event_p}, recall: {event_r}, F1-score: {event_f1}, AP: {event_aupr}')
+    #         else:
+    #             event_p, event_r, event_f1, event_aupr = 0,0,0,0
 
-            if event_level_abnormal_scores is not None:
-                ##event level
-                eventTemp = dataset.binary_targets.sum(2).flatten()
-                eventTemp[eventTemp > 1] = 1
-                event_p, event_r, event_f1, event_aupr = cal_best_PRF(eventTemp, event_level_abnormal_scores.flatten())
-                print("Event-level anomaly detection")
-                print(f'precision: {event_p}, recall: {event_r}, F1-score: {event_f1}, AP: {event_aupr}')
-            else:
-                event_p, event_r, event_f1, event_aupr = 0,0,0,0
+    #         ##attr level
+    #         if attr_level_abnormal_scores is not None:
+    #             attr_p, attr_r, attr_f1, attr_aupr = cal_best_PRF(dataset.binary_targets.flatten(),
+    #                                                             attr_level_abnormal_scores.flatten())
+    #             print("Attribute-level anomaly detection")
+    #             print(f'precision: {attr_p}, recall: {attr_r}, F1-score: {attr_f1}, AP: {attr_aupr}')
+    #         else:
+    #             attr_p, attr_r, attr_f1, attr_aupr = 0, 0, 0, 0
 
-            ##attr level
-            if attr_level_abnormal_scores is not None:
-                attr_p, attr_r, attr_f1, attr_aupr = cal_best_PRF(dataset.binary_targets.flatten(),
-                                                                attr_level_abnormal_scores.flatten())
-                print("Attribute-level anomaly detection")
-                print(f'precision: {attr_p}, recall: {attr_r}, F1-score: {attr_f1}, AP: {attr_aupr}')
-            else:
-                attr_p, attr_r, attr_f1, attr_aupr = 0, 0, 0, 0
-
-            datanew = pd.DataFrame([{'index':dataset_name,'trace_p': trace_p, "trace_r": trace_r,'trace_f1':trace_f1,'trace_aupr':trace_aupr,
-                                    'event_p': event_p, "event_r": event_r, 'event_f1': event_f1, 'event_aupr': event_aupr,
-                                    'attr_p': attr_p, "attr_r": attr_r, 'attr_f1': attr_f1, 'attr_aupr': attr_aupr,'time':run_time
-                                    }])
+    #         datanew = pd.DataFrame([{'index':dataset_name,'trace_p': trace_p, "trace_r": trace_r,'trace_f1':trace_f1,'trace_aupr':trace_aupr,
+    #                                 'event_p': event_p, "event_r": event_r, 'event_f1': event_f1, 'event_aupr': event_aupr,
+    #                                 'attr_p': attr_p, "attr_r": attr_r, 'attr_f1': attr_f1, 'attr_aupr': attr_aupr,'time':run_time
+    #                                 }])
             
-            resPath=os.path.join(ROOT_DIR, f'result_{ad.name}.csv')
-            if os.path.exists(resPath):
-                data = pd.read_csv(resPath)
-                # RCVDB: Updating outdated code:
-                # data = data.append(datanew,ignore_index=True)
-                data = pd.concat([data, datanew], ignore_index=True)
-            else:
-                data = datanew
-            data.to_csv(resPath ,index=False)
-    except Exception as e:
-        traceback.print_exc()
-        datanew = pd.DataFrame([{'index': dataset_name}])
-        if os.path.exists(resPath):
-            data = pd.read_csv(resPath)
-            data = data.append(datanew, ignore_index=True)
-        else:
-            data = datanew
-        data.to_csv(resPath, index=False)
+    #         resPath=os.path.join(ROOT_DIR, f'result_{ad.name}.csv')
+    #         if os.path.exists(resPath):
+    #             data = pd.read_csv(resPath)
+    #             # RCVDB: Updating outdated code:
+    #             # data = data.append(datanew,ignore_index=True)
+    #             data = pd.concat([data, datanew], ignore_index=True)
+    #         else:
+    #             data = datanew
+    #         data.to_csv(resPath ,index=False)
+    # except Exception as e:
+    #     traceback.print_exc()
+    #     datanew = pd.DataFrame([{'index': dataset_name}])
+    #     if os.path.exists(resPath):
+    #         data = pd.read_csv(resPath)
+    #         data = data.append(datanew, ignore_index=True)
+    #     else:
+    #         data = datanew
+    #     data.to_csv(resPath, index=False)
 
 
 

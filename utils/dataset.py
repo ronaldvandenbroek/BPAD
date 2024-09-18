@@ -37,8 +37,12 @@ class Dataset(object):
         self.beta=beta   #used by GAMA
         self.attribute_types = None
         self.attribute_keys = None
-        self.classes = None # Targets
-        self.labels = None
+
+        # RCVDB: Renaming classes/labels to labels per abstraction level
+        self.attr_labels = None
+        self.event_labels = None
+        self.case_labels = None
+
         self.encoders = None
         self.trace_graphs = []
         self.trace_graphs_GAE = []
@@ -372,7 +376,7 @@ class Dataset(object):
                 for f, t in zip(self._features, self.attribute_types)]
         
         # RCVDB: Tensor seems to be of shape (attribute_dimension, number_of_cases, max_case_length)
-        print('One-hot features shape: ', len(one_hot_features), len(one_hot_features[0]), len(one_hot_features[0][0]))
+        # print('One-hot features shape: ', len(one_hot_features), len(one_hot_features[0]), len(one_hot_features[0][0]))
 
         # RCVDB: Debug to get an overview of how the features are encoded
         # for i in range(len(one_hot_features)):
@@ -391,7 +395,7 @@ class Dataset(object):
         :return:
         """
         flat_one_hot_features = np.concatenate(self.onehot_features, axis=2)
-        print('Flat-One-hot features shape: ', len(flat_one_hot_features), len(flat_one_hot_features[0]), len(flat_one_hot_features[0][0]))
+        # print('Flat-One-hot features shape: ', len(flat_one_hot_features), len(flat_one_hot_features[0]), len(flat_one_hot_features[0][0]))
 
         return flat_one_hot_features
 
@@ -444,16 +448,11 @@ class Dataset(object):
         num_perspectives = len(Perspective.keys())
         num_cases = len(event_log.cases)
 
-        # Either labels one-hot-encoded per event, or only per case.
-        # Depends on prediction goals:
-        # Either predict exactly which event has which perspectives.
-        # CON: Far more complex prediction task, models might struggle
-        # Or
-        # On a case level, where prefixes should be supported which indirectly ensure event level detection
+        # Labels One-hot encoded per case, event and attribute
         labels_event_level = np.zeros((num_cases, num_events, num_perspectives), dtype=int)
         labels_case_level = np.zeros((num_cases, num_perspectives), dtype=int)
+        labels_attr_level = []
 
-        targets = []
         for case_index, case in enumerate(event_log):
             case:Case
             case_targets = np.zeros((num_events, num_attributes, num_perspectives), dtype=int) 
@@ -477,27 +476,28 @@ class Dataset(object):
                             labels_event_level[case_index, event_index, perspective] = 1
 
             # Create a list of labels per case
-            targets.append(case_targets)
+            labels_attr_level.append(case_targets)
 
         # Should result in a 4d tensor of size (num_cases, num_events, num_attributes, num_perspectives)
-        targets = np.asarray(targets)
-        print(f'Target shape: {targets.shape}')
-
-        # print(f'Example target of event: \n {targets[0]}')
+        attr_labels = np.asarray(labels_attr_level)
+        print(f'Attribute Labels shape: {attr_labels.shape}')
 
         # Should result in a 3d tensor of size (num_cases, num_events, num_perspectives)
-        # Or
+        event_labels = np.asarray(labels_event_level)
+        print(f'Event Labels shape: {event_labels.shape}')
+
         # Should result in a 2d tensor of size (num_cases, num_perspectives)
         # Was initially a list of strings with one label per case, now it represents all perspectives present per event in each case
-        labels = np.asarray(labels_event_level)
-        # labels = np.asarray(labels_case_level)
-        print(f'Label shape: {labels.shape}')
+        case_labels = np.asarray(labels_case_level)
+        print(f'Case Labels shape: {case_labels.shape}')
 
+        # RCVDB: TODO remove debug prints after label setting has be confirmed to be correct
+        # print(f'Example target of event: \n {targets[0]}')
         # print(f'Example labels of cases:')
         # for i in range(5):
         #     print(f'Case {i}: {labels[i]}')
 
-        return targets, labels
+        return attr_labels, event_labels, case_labels
 
     @staticmethod
     def _from_event_log(event_log:EventLog, include_attributes=None):
@@ -582,14 +582,14 @@ class Dataset(object):
         # RCVDB: Debug prints to showcase the encoded labels
         print(f'Feature Columns: {feature_columns.keys()}')
         print(f'Feature Shape: {features[0].shape}')
-        print(f'Example feature over multiple cases:')
-        for i in range(5):
-            print(f'Case {i} Features, name: {features[0][i]}, arrival-time: {features[1][i]}, user: {features[-1][i]}')
+        # print(f'Example feature over multiple cases:')
+        # for i in range(5):
+        #     print(f'Case {i} Features, name: {features[0][i]}, arrival-time: {features[1][i]}, user: {features[-1][i]}')
         
-        example_case = 0
-        print(f'All feature over a single case {example_case}:')
-        for index, key in enumerate(feature_columns.keys()):
-            print(f'{key} \t {features[index][example_case]}')    
+        # example_case = 0
+        # print(f'All feature over a single case {example_case}:')
+        # for index, key in enumerate(feature_columns.keys()):
+        #     print(f'{key} \t {features[index][example_case]}')    
         print(f'Case Length: {case_lens}')
         print(f'Attribute Types: {attr_types}')
         print(f'Encoders: {encoders}')
@@ -607,12 +607,12 @@ class Dataset(object):
         # Get features from event log
         self._features, self._case_lens, self.attribute_types, self.encoders = self._from_event_log(event_log)
 
-
         # Get targets and labels from event log
-        self.classes, self.labels = self._get_classes_and_labels_from_event_log(event_log)
+        self.attr_labels, self.event_labels, self.case_labels = self._get_classes_and_labels_from_event_log(event_log)
 
         # Attribute keys (names)
         self.attribute_keys = [a.replace(':', '_').replace(' ', '_') for a in self.event_log.event_attribute_keys]
+
 
     def _to_categorical(self, y, num_classes=None, dtype='float32'):
         y = np.array(y, dtype='int')
@@ -628,19 +628,3 @@ class Dataset(object):
         output_shape = input_shape + (num_classes,)
         categorical = np.reshape(categorical, output_shape)
         return categorical
-    
-    def stream_simple(self, batch_size):
-        data = self.flat_onehot_features_2d
-        for i in range(len(self.event_log)):
-            yield np.expand_dims(data[i], axis=0)    
-
-    # RCVDB: Stream the dataset to the model given the batch size
-    def stream(self, batch_size):
-        step_indexes = np.cumsum(np.tile(len(self.event_log), [batch_size]), dtype=int)[:-1]
-        for i in range(len(step_indexes)):
-            lower_index = step_indexes[i]
-            upper_index = step_indexes[i + 1]
-            batch = self.flat_onehot_features_2d[lower_index, upper_index]
-            if len(batch) != batch_size:
-                raise ValueError(f"Size of the batch {len(batch)} is not the same length as {batch_size})")
-            yield batch
