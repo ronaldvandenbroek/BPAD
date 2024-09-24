@@ -33,24 +33,47 @@ RESULTS_RAW_DIR = os.path.join(ROOT_DIR,'results','raw') # For the model raw err
 # Cache
 EVENTLOG_CACHE_DIR = os.path.join(ROOT_DIR,'eventlogs', 'cache')  # For caching datasets so the event log does not always have to be loaded
 
-def _create_raw_results_save_file(start_time, file_name, data):
-    path = os.path.join(RESULTS_RAW_DIR, str(start_time))
-    if not os.path.exists(path):
-        os.makedirs(path)
+class FSSave():
+    def __init__(self, start_time, model_name) -> None:
+        self.perspective = 'none'
+        self.bucket_size = None
+        self.model_name = model_name
+        self.path = os.path.join(RESULTS_RAW_DIR, str(start_time))
+        if not os.path.exists(self.path):
+            os.makedirs(self.path)
 
-    np.save(file=os.path.join(path, file_name), arr=data)
+    def set_bucket_size(self, bucket_size):
+        self.bucket_size = str(bucket_size)
 
-def save_raw_losses(start_time, model_name, losses):
-    _create_raw_results_save_file(start_time, f'losses_{model_name}', losses)
+    def set_perspective(self, perspective):
+        perspective_name = Perspective.values()[perspective]
+        self.perspective = perspective_name
 
-def save_raw_labels(start_time, model_name, level, labels):
-    _create_raw_results_save_file(start_time,  f'labels_{model_name}_{level}', labels)
+    def _save(self, file_name, data):
+        np.save(file=os.path.join(self.path, file_name), arr=data)
 
-def save_raw_results(start_time, model_name, level, perspective, results):
-    perspective_name = Perspective.values()[perspective]
-    _create_raw_results_save_file(start_time, f'result_{model_name}_{level}_{perspective_name}', results)
+    def save_raw_losses(self, losses):
+        file_name = self._generate_file_name(['losses', self.model_name, self.bucket_size])
+        self._save(file_name, losses)
 
+    def save_raw_labels(self, level, labels):
+        file_name = self._generate_file_name(['labels', self.model_name, level, self.bucket_size])
+        self._save(file_name, labels)
 
+    def save_raw_results(self, level, results):
+        file_name = self._generate_file_name(['result', self.model_name, level, self.perspective, self.bucket_size])
+        self._save(file_name, results)
+    
+    def _generate_file_name(self, name_parts):
+        name = None
+        for item in name_parts:
+            if item is not None:
+                if name is None:
+                    name = item
+                else:
+                    name = f'{name}_{item}'
+        return name
+        
 def split_eventlog_name(name):
     try:
         s = name.split('-')

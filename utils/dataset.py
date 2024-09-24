@@ -613,6 +613,21 @@ class Dataset(object):
         # Attribute keys (names)
         self.attribute_keys = [a.replace(':', '_').replace(' ', '_') for a in self.event_log.event_attribute_keys]
 
+    def assign_to_buckets(self, bucket_boundaries):
+        max_bucket_size = len(bucket_boundaries)
+        bucket_ids = []
+        for length in self.case_lens:
+            # If the case is larger than the boundaries add it to the overflow bucket
+            if length > bucket_boundaries[-1]:
+                bucket_ids.append(max_bucket_size)
+
+            # Determine the bucket the case fits in based on the bucket boundaries
+            for i, boundary in enumerate(bucket_boundaries):
+                if length <= boundary:
+                    bucket_ids.append(i)
+                    break
+
+        return bucket_ids        
 
     def _to_categorical(self, y, num_classes=None, dtype='float32'):
         y = np.array(y, dtype='int')

@@ -25,7 +25,7 @@ from utils.dataset import Dataset
 
 from utils.enums import Perspective
 from utils.eval import cal_best_PRF
-from utils.fs import EVENTLOG_DIR, RESULTS_RAW_DIR, ROOT_DIR, save_raw_labels, save_raw_losses, save_raw_results
+from utils.fs import EVENTLOG_DIR, RESULTS_RAW_DIR, ROOT_DIR, FSSave
 
 # RCVDB: Supressing Sklearn LabelEncoder InconsistentVersionWarning as this seems an internal package issue
 from sklearn.exceptions import InconsistentVersionWarning
@@ -45,58 +45,58 @@ def fit_and_eva(dataset_name, ad, fit_kwargs=None , ad_kwargs=None):
     # Dataset
     dataset = Dataset(dataset_name, beta=0.005, prefix=True)
 
+    # Bucketing
+    bucket_boundaries = [3,5,8, dataset.max_len]
+    # bucket_boundaries = None
+
     # AD
     ad = ad(**ad_kwargs)
     print(ad.name)
-    
-    trace_level_abnormal_scores, event_level_abnormal_scores, attr_level_abnormal_scores, losses = ad.train_and_predict(dataset, batch_size=8)
-    case_labels = dataset.case_labels
-    event_labels = dataset.event_labels
-    attr_labels = dataset.attr_labels
+
+    fs_save = FSSave(start_time=start_time, model_name=ad.name)
+
+    bucket_trace_level_abnormal_scores, bucket_event_level_abnormal_scores, bucket_attr_level_abnormal_scores, bucket_losses, bucket_case_labels, bucket_event_labels, bucket_attr_labels = ad.train_and_predict(dataset, batch_size=8, bucket_boundaries=bucket_boundaries)
 
     end_time = time.time()
     run_time=end_time-start_time
     print(f'Runtime: {run_time}')
 
-    # RCVDB: Loop through each perspective and handle each results seperately
-    for anomaly_perspective in trace_level_abnormal_scores.keys():
-        save_raw_results(
-            start_time=start_time, 
-            model_name=ad.name, 
-            level='trace', 
-            perspective=anomaly_perspective, 
-            results=trace_level_abnormal_scores[anomaly_perspective])
-        save_raw_results(
-            start_time=start_time, 
-            model_name=ad.name, 
-            level='event', 
-            perspective=anomaly_perspective, 
-            results=event_level_abnormal_scores[anomaly_perspective])
-        save_raw_results(
-            start_time=start_time, 
-            model_name=ad.name, 
-            level='attribute', 
-            perspective=anomaly_perspective, 
-            results=attr_level_abnormal_scores[anomaly_perspective])
-        save_raw_losses(
-            start_time=start_time, 
-            model_name=ad.name, 
-            losses=losses)
-        save_raw_labels(            
-            start_time=start_time, 
-            model_name=ad.name,
-            level='trace', 
-            labels=case_labels)
-        save_raw_labels(            
-            start_time=start_time, 
-            model_name=ad.name,
-            level='event', 
-            labels=event_labels)
-        save_raw_labels(            
-            start_time=start_time, 
-            model_name=ad.name,
-            level='attribute', 
-            labels=attr_labels)
+    for i in range(len(bucket_losses)):
+        if bucket_boundaries is not None:
+            fs_save.set_bucket_size(bucket_boundaries[i])
+
+        trace_level_abnormal_scores = bucket_trace_level_abnormal_scores[i]
+        event_level_abnormal_scores = bucket_event_level_abnormal_scores[i]
+        attr_level_abnormal_scores = bucket_attr_level_abnormal_scores[i]
+        case_labels = bucket_case_labels[i]
+        event_labels = bucket_event_labels[i]
+        attr_labels = bucket_attr_labels[i]
+        losses = bucket_losses[i]
+
+        # RCVDB: Loop through each perspective and handle each results seperately
+        for anomaly_perspective in trace_level_abnormal_scores.keys():
+            fs_save.set_perspective(anomaly_perspective)
+
+            fs_save.save_raw_results( 
+                level='trace',
+                results=trace_level_abnormal_scores[anomaly_perspective])
+            fs_save.save_raw_results(
+                level='event',
+                results=event_level_abnormal_scores[anomaly_perspective])
+            fs_save.save_raw_results(
+                level='attribute',
+                results=attr_level_abnormal_scores[anomaly_perspective])
+            fs_save.save_raw_labels(
+                level='trace', 
+                labels=case_labels)
+            fs_save.save_raw_labels(
+                level='event', 
+                labels=event_labels)
+            fs_save.save_raw_labels(
+                level='attribute', 
+                labels=attr_labels)
+            fs_save.save_raw_losses(
+                losses=losses)
 
 
     # RCVBD: TODO Determine if the high error scores compare to the anomalous traces
