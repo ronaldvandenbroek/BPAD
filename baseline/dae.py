@@ -20,7 +20,7 @@ from tqdm import tqdm
 
 from baseline.binet.core import NNAnomalyDetector
 from utils.dataset import Dataset
-from utils.enums import Heuristic, Strategy, Mode, Base
+from utils.enums import AttributeType, Heuristic, Perspective, Strategy, Mode, Base
 from collections import defaultdict
 
 
@@ -97,15 +97,64 @@ class DAE(NNAnomalyDetector):
         # Build model
         model = Model(inputs=input, outputs=output)
 
+        multi_task = False
+        if multi_task == True:
+            # Multi-task Loss Function
+            attribute_perspectives = np.tile(dataset.event_log.event_attribute_perspectives, [dataset.max_len])
+            attribute_types = np.tile(dataset.attribute_types, [dataset.max_len])
+            attribute_splits = np.tile(dataset.attribute_dims, [dataset.max_len]) # np.cumsum(np.tile(dataset.attribute_dims, [dataset.max_len]), dtype=int)[:-1]
+            perspective_weights = [1,0,0,0] # Weights for each perspective, index based on Perspectives Enum
+            loss = DAE.multi_task_loss(attribute_perspectives, attribute_types, attribute_splits, perspective_weights)
+        else:
+            loss='mean_squared_error'
+
         # Compile model
         model.compile(
             optimizer=adam_v2.Adam(learning_rate=0.0001, beta_2=0.99),
-            loss='mean_squared_error'
+            loss=loss
             # metrics=['accuracy']
         )
 
         return model, features, features  # Features are also targets
-    
+
+    @staticmethod
+    def multi_task_loss(attribute_perspectives, attribute_types, attribute_splits, perspective_weights):
+        def loss(y_true, y_pred):
+            y_true_splits = tf.split(y_true, attribute_splits, axis=1)
+            y_pred_splits = tf.split(y_pred, attribute_splits, axis=1)
+            
+            perspective_losses = defaultdict(list)
+            for i in range(len(attribute_splits)):
+                attribute_perspective = attribute_perspectives[i]
+                attribute_type = attribute_types[i]
+
+                y_true_split = y_true_splits[i]
+                y_pred_split = y_pred_splits[i]
+
+                # Based on what type of attribute it is determine which loss function to use
+                if attribute_type == AttributeType.CATEGORICAL:
+                    # If categorical preform a softmax
+                    # RCVDB: TODO: Softmaxing does require the model to be able to predict if something is normal aka no anomalies
+                    # Otherwise it will just artificially raise the y_pred while it should correctly predict all 0s
+
+                    # y_pred_split = tf.nn.softmax(y_pred_split)
+                    attribute_loss = tf.keras.losses.CategoricalCrossentropy()(y_true_split, y_pred_split)
+                else: # attribute_type == AttributeType.NUMERICAL:
+                    attribute_loss = tf.keras.losses.MeanSquaredError()(y_true_split, y_pred_split)
+        
+                # Based on which perspective the attribute belongs to 
+                perspective_losses[attribute_perspective].append(attribute_loss)
+
+            total_loss = 0
+            for perspective_index, attribute_losses in perspective_losses.items():
+                # Normalize for the number of attributes
+                perspective_loss = tf.reduce_sum(attribute_losses) / len(attribute_losses)
+
+                # Add the weight for the perspective
+                total_loss += perspective_weights[perspective_index] * perspective_loss
+
+            return total_loss
+        return loss
   
     def train_and_predict(self, dataset:Dataset, batch_size=2):
         model, features, _ = self.model_fn(dataset, **self.config)
@@ -195,100 +244,3 @@ class DAE(NNAnomalyDetector):
             attr_level_abnormal_scores[anomaly_perspective] = error_per_attribute
 
         return trace_level_abnormal_scores, event_level_abnormal_scores, attr_level_abnormal_scores, losses
-
-
-
-    def detect(self, dataset:Dataset):
-        """
-        Calculate the anomaly score for each event attribute in each trace.
-        Anomaly score here is the mean squared error.
-
-        :param traces: traces to predict
-        :return:
-            scores: anomaly scores for each attribute;
-                            shape is (#traces, max_trace_length - 1, #attributes)
-
-        """
-        # Get features
-        _, features, _ = self.model_fn(dataset, **self.config)
-
-        # Parameters
-        input_size = int(self.model.input.shape[1])
-        features_size = int(features.shape[1])
-        if input_size > features_size:
-            features = np.pad(features, [(0, 0), (0, input_size - features_size), (0, 0)], mode='constant')
-        elif input_size < features_size:
-            features = features[:, :input_size]
-
-        predictions=[]
-        batch_size = 128
-        i=0
-        while features.shape[0]>=batch_size*i:
-            predictions.append( self.model.predict(features[batch_size*i:batch_size*(i+1)], verbose=True))
-            i += 1
-
-        predictions= np.concatenate(predictions, 0)
-
-        # (cases, events * flattened_attributes)
-        errors_unmasked = np.power(dataset.flat_onehot_features_2d - predictions, 2)
-
-        # Applies a mask to remove the events not present in the trace   
-        # (cases, flattened_errors) --> errors_unmasked
-        # (cases, num_events) --> dataset.mask (~ inverts mask)
-        # (cases, num_events, 1) --> expand dimension for broadcasting
-        # (cases, num_events, attributes_dim) --> expand 2nd axis to size of the attributes
-        # (cases, num_events * attributes_dim) = (cases, flattened_mask) --> reshape to match flattened error shape
-        errors = errors_unmasked * np.expand_dims(~dataset.mask, 2).repeat(dataset.attribute_dims.sum(), 2).reshape(
-            dataset.mask.shape[0], -1)
-        
-        # Get the split index of each attribute in each flattened trace
-        split_attribute = np.cumsum(np.tile(dataset.attribute_dims, [dataset.max_len]), dtype=int)[:-1]
-
-        # Get the errors per attribute by splitting said trace
-        # (attributes * events, cases, attribute_dimension)
-        errors_attr_split = np.split(errors, split_attribute, axis=1)
-
-        # Mean the attribute_dimension
-        # Scalar attributes are left as is as they have a size of 1
-        # np.mean for the proportion of the one-hot encoded predictions being wrong
-        # np.sum for the total one-hot predictions being wrong
-        # (attributes * events, cases)
-        errors_attr_split_summed = [np.mean(attribute, axis=1) for attribute in errors_attr_split]
-        
-        # Split the attributes based on which event it belongs to
-        split_event = np.arange(
-            start=dataset.max_len, 
-            stop=len(errors_attr_split_summed), 
-            step=dataset.max_len)
-        
-        # (attributes, events, cases)
-        errors_event_split = np.split(errors_attr_split_summed, split_event, axis=0)
-
-        # Split the attributes based on which perspective they belong to
-        # (perspective, attributes, events, cases)
-        anomaly_perspectives = dataset.event_log.event_attribute_perspectives
-        grouped_error_scores_per_perspective = defaultdict(list)
-        for event, anomaly_perspectives in zip(errors_event_split, anomaly_perspectives):
-            grouped_error_scores_per_perspective[anomaly_perspectives].append(event)
-
-        # Calculate the error proportions per the perspective per: attribute, event, trace
-        trace_level_abnormal_scores = defaultdict(list)
-        event_level_abnormal_scores = defaultdict(list) 
-        attr_level_abnormal_scores = defaultdict(list)
-        for anomaly_perspective in grouped_error_scores_per_perspective.keys():
-            # Transpose the axis to make it easier to work with 
-            # (perspective, cases, events, attributes) 
-            t = np.transpose(grouped_error_scores_per_perspective[anomaly_perspective], (2, 1, 0))
-            event_dimension = dataset.case_lens
-            attribute_dimension = t.shape[-1]
-
-            error_per_trace = np.sum(t, axis=(1,2)) / (event_dimension * attribute_dimension)
-            trace_level_abnormal_scores[anomaly_perspective] = error_per_trace
-
-            error_per_event = np.sum(t, axis=2) / attribute_dimension
-            event_level_abnormal_scores[anomaly_perspective] = error_per_event
-
-            error_per_attribute = t
-            attr_level_abnormal_scores[anomaly_perspective] = error_per_attribute
-
-        return trace_level_abnormal_scores, event_level_abnormal_scores, attr_level_abnormal_scores
