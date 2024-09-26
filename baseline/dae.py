@@ -20,7 +20,7 @@ from tqdm import tqdm
 
 from baseline.binet.core import NNAnomalyDetector
 from utils.dataset import Dataset
-from utils.enums import AttributeType, Heuristic, Perspective, Strategy, Mode, Base
+from utils.enums import AttributeType, EncodingCategorical, Heuristic, Perspective, Strategy, Mode, Base
 from collections import defaultdict
 
 from utils.settings.settings_multi_task import SettingsMultiTask
@@ -60,12 +60,16 @@ class DAE(NNAnomalyDetector):
         super(DAE, self).__init__(model=model)
 
     @staticmethod
-    def model_fn(dataset:Dataset, bucket_boundaries, **kwargs):
+    def model_fn(dataset:Dataset, bucket_boundaries, categorical_encoding, **kwargs):
         hidden_layers = kwargs.pop('hidden_layers')
         hidden_size_factor = kwargs.pop('hidden_size_factor')
         noise = kwargs.pop('noise')
 
-        features = dataset.flat_onehot_features_2d
+        if categorical_encoding == EncodingCategorical.ONE_HOT:
+            features = dataset.flat_onehot_features_2d
+        else:
+            features = dataset.flat_features_2d
+
         case_lengths = dataset.case_lens
         case_labels = dataset.case_labels
         event_labels = dataset.event_labels
@@ -224,8 +228,8 @@ class DAE(NNAnomalyDetector):
             return total_loss
         return loss
   
-    def train_and_predict(self, dataset:Dataset, batch_size=2, bucket_boundaries=None):
-        model_buckets, features_buckets, targets_buckets, case_lengths_buckets, bucket_case_labels, bucket_event_labels, bucket_attr_labels = self.model_fn(dataset, bucket_boundaries, **self.config)
+    def train_and_predict(self, dataset:Dataset, batch_size=2, bucket_boundaries=None, categorical_encoding=EncodingCategorical.ONE_HOT):
+        model_buckets, features_buckets, targets_buckets, case_lengths_buckets, bucket_case_labels, bucket_event_labels, bucket_attr_labels = self.model_fn(dataset, bucket_boundaries, categorical_encoding, **self.config)
 
         # Parameters
         attribute_dims = dataset.attribute_dims

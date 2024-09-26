@@ -21,7 +21,7 @@ import numpy as np
 import torch
 from torch_geometric.data import Data
 from utils.anomaly import label_to_targets
-from utils.enums import AttributeType, Perspective
+from utils.enums import AttributeType, EncodingCategorical, EncodingNumerical, Perspective
 from utils.enums import Class
 from utils.enums import PadMode
 from utils.fs import EventLogFile
@@ -31,12 +31,22 @@ from processmining.log import EventLog
 
 
 class Dataset(object):
-    def __init__(self, dataset_name=None, beta=0, label_percent = 0, prefix=True):
+    def __init__(self, 
+                 dataset_name=None, 
+                 beta=0, 
+                 label_percent = 0, 
+                 prefix=True, 
+                 categorical_encoding=EncodingCategorical.ONE_HOT,
+                 numerical_encoding=EncodingNumerical.MIN_MAX_SCALING):
         # Public properties
         self.dataset_name = dataset_name
         self.beta=beta   #used by GAMA
         self.attribute_types = None
         self.attribute_keys = None
+
+        # Encoding types
+        self.categorical_encoding = categorical_encoding
+        self.numerical_encoding = numerical_encoding
 
         # RCVDB: Renaming classes/labels to labels per abstraction level
         self.attr_labels = None
@@ -499,8 +509,7 @@ class Dataset(object):
 
         return attr_labels, event_labels, case_labels
 
-    @staticmethod
-    def _from_event_log(event_log:EventLog, include_attributes=None):
+    def _from_event_log(self, event_log:EventLog, include_attributes=None):
         """
         Transform event log as feature columns.
 
@@ -548,8 +557,11 @@ class Dataset(object):
                     feature_columns[attribute].append(attr)
 
         # Data preprocessing
+        final_attribute_types = []
         encoders = {}
-        for key, attribute_type in zip(feature_columns.keys(), attr_types):
+        for index, (key, attribute_type) in enumerate(zip(feature_columns.keys(), attr_types)):
+            replace_attribute_type = None
+
             # Integer encode categorical data
             if attribute_type == AttributeType.CATEGORICAL:
                 from sklearn.preprocessing import LabelEncoder
@@ -557,18 +569,21 @@ class Dataset(object):
                 feature_columns[key] = encoder.fit_transform(feature_columns[key]) + 1
                 encoders[key] = encoder
 
+                # If categorical encoding is none then categorical values are treated as numerical thus can scale
+                if self.categorical_encoding == EncodingCategorical.NONE:
+                    if self.numerical_encoding == EncodingNumerical.MIN_MAX_SCALING:
+                        feature_columns[key] = self._min_max_scaling(feature_columns[key])
+                    replace_attribute_type = AttributeType.NUMERICAL
+
             # Normalize numerical data
             elif attribute_type == AttributeType.NUMERICAL:
-                f = np.asarray(feature_columns[key])
+                if self.numerical_encoding == EncodingNumerical.MIN_MAX_SCALING:
+                    feature_columns[key] = self._min_max_scaling(feature_columns[key])
 
-                # RCVDB: Implementing min-max scaling to avoid relying on a normality assumption as experiments have shown that a normal distribution cannot be assumed in most features
-                # feature_columns[key] = (f - f.mean()) / f.std()  # 0 mean and 1 std normalization
-                f_min = np.min(f)
-                f_max = np.max(f)
-                if f_max != f_min:
-                    feature_columns[key] = (f - f_min) / (f_max - f_min)
-                else:
-                    feature_columns[key] = np.zeros_like(f)
+            if replace_attribute_type is None:
+                final_attribute_types.append(attribute_type)
+            else:
+                final_attribute_types.append(replace_attribute_type)
 
         # Transform back into sequences
         case_lens = np.array(case_lens)
@@ -591,11 +606,10 @@ class Dataset(object):
         # for index, key in enumerate(feature_columns.keys()):
         #     print(f'{key} \t {features[index][example_case]}')    
         print(f'Case Length: {case_lens}')
-        print(f'Attribute Types: {attr_types}')
+        print(f'Attribute Types: {final_attribute_types}')
         print(f'Encoders: {encoders}')
 
-
-        return features, case_lens, attr_types, encoders
+        return features, case_lens, final_attribute_types, encoders
 
     def from_event_log(self, event_log):
         """
@@ -643,3 +657,13 @@ class Dataset(object):
         output_shape = input_shape + (num_classes,)
         categorical = np.reshape(categorical, output_shape)
         return categorical
+    
+    def _min_max_scaling(self, feature_column):
+        # RCVDB: Implementing min-max scaling to avoid relying on a normality assumption as experiments have shown that a normal distribution cannot be assumed in most features
+        # feature_columns[key] = (f - f.mean()) / f.std()  # 0 mean and 1 std normalization
+        f_min = np.min(feature_column)
+        f_max = np.max(feature_column)
+        if f_max != f_min:
+            return (feature_column - f_min) / (f_max - f_min)
+        else:
+            return np.zeros_like(feature_column)

@@ -224,3 +224,37 @@ class Strategy(object):
     @staticmethod
     def items():
         return dict(zip(Strategy.keys(), Strategy.values()))
+
+
+class EncodingCategorical(Enum):
+    NONE = 'None'
+    ONE_HOT = 'One Hot'
+
+    @staticmethod
+    def values():
+        return ['None', 'One Hot']
+
+    @staticmethod
+    def keys():
+        return [EncodingCategorical.NONE, EncodingCategorical.ONE_HOT]
+
+    @staticmethod
+    def items():
+        return dict(zip(EncodingCategorical.keys(), EncodingCategorical.values()))
+    
+
+class EncodingNumerical(Enum):
+    NONE = 'None'
+    MIN_MAX_SCALING = 'Min Max Scaling'
+
+    @staticmethod
+    def values():
+        return ['None', 'Min Max Scaling']
+
+    @staticmethod
+    def keys():
+        return [EncodingNumerical.NONE, EncodingNumerical.MIN_MAX_SCALING]
+
+    @staticmethod
+    def items():
+        return dict(zip(EncodingNumerical.keys(), EncodingNumerical.values()))

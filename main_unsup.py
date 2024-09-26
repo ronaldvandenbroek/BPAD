@@ -23,7 +23,7 @@ from baseline.boehmer import LikelihoodPlusAnomalyDetector
 from baseline.leverage import Leverage
 from utils.dataset import Dataset
 
-from utils.enums import Perspective
+from utils.enums import Perspective, EncodingCategorical, EncodingNumerical
 from utils.eval import cal_best_PRF
 from utils.fs import EVENTLOG_DIR, RESULTS_RAW_DIR, ROOT_DIR, FSSave
 
@@ -33,7 +33,7 @@ warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-def fit_and_eva(dataset_name, ad, fit_kwargs=None , ad_kwargs=None):
+def fit_and_eva(dataset_name, ad, fit_kwargs=None, ad_kwargs=None):
     if ad_kwargs is None:
         ad_kwargs = {}
     if fit_kwargs is None:
@@ -42,12 +42,23 @@ def fit_and_eva(dataset_name, ad, fit_kwargs=None , ad_kwargs=None):
     start_time = time.time()
 
     print(dataset_name)
-    # Dataset
-    dataset = Dataset(dataset_name, beta=0.005, prefix=True)
 
-    # Bucketing
-    bucket_boundaries = [3,5,8, dataset.max_len]
+
+    # RCVDB: Parameters TODO create proper settings
+    bucket_boundaries = [3,5,8]
     # bucket_boundaries = None
+    batch_size = 2
+    categorical_encoding=EncodingCategorical.ONE_HOT
+    numerical_encoding=EncodingNumerical.MIN_MAX_SCALING
+
+    # Dataset
+    dataset = Dataset(dataset_name, 
+                      beta=0.005, 
+                      prefix=True, 
+                      categorical_encoding=categorical_encoding,
+                      numerical_encoding=numerical_encoding)
+    if bucket_boundaries is not None:
+        bucket_boundaries.append(dataset.max_len)
 
     # AD
     ad = ad(**ad_kwargs)
@@ -55,7 +66,10 @@ def fit_and_eva(dataset_name, ad, fit_kwargs=None , ad_kwargs=None):
 
     fs_save = FSSave(start_time=start_time, model_name=ad.name)
 
-    bucket_trace_level_abnormal_scores, bucket_event_level_abnormal_scores, bucket_attr_level_abnormal_scores, bucket_losses, bucket_case_labels, bucket_event_labels, bucket_attr_labels = ad.train_and_predict(dataset, batch_size=8, bucket_boundaries=bucket_boundaries)
+    bucket_trace_level_abnormal_scores, bucket_event_level_abnormal_scores, bucket_attr_level_abnormal_scores, bucket_losses, bucket_case_labels, bucket_event_labels, bucket_attr_labels = ad.train_and_predict(dataset, 
+                                                                                                                                                                                                                 batch_size=batch_size, 
+                                                                                                                                                                                                                 bucket_boundaries=bucket_boundaries, 
+                                                                                                                                                                                                                 categorical_encoding=categorical_encoding)
 
     end_time = time.time()
     run_time=end_time-start_time
