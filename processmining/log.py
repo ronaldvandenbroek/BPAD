@@ -232,6 +232,8 @@ class EventLog(object):
             if not prefix:
                 event_log.add_case(_case)
 
+        
+
         # RCVDB: Sort the event_log so the prefixes are ordered by the order the last event arrived
         if prefix:
             event_log.cases = sorted(event_log.cases, key=Case.get_last_event_time, reverse=False)    

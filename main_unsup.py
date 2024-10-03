@@ -47,8 +47,8 @@ def fit_and_eva(dataset_name, ad, fit_kwargs=None, ad_kwargs=None):
     # RCVDB: Parameters TODO create proper settings
     bucket_boundaries = [3,5,8]
     # bucket_boundaries = None
-    batch_size = 2
-    categorical_encoding=EncodingCategorical.ONE_HOT
+    batch_size = 8
+    categorical_encoding=EncodingCategorical.WORD_2_VEC
     numerical_encoding=EncodingNumerical.MIN_MAX_SCALING
 
     # Dataset

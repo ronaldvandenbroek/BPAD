@@ -229,14 +229,16 @@ class Strategy(object):
 class EncodingCategorical(Enum):
     NONE = 'None'
     ONE_HOT = 'One Hot'
+    EMBEDDING = 'Embedding'
+    WORD_2_VEC = 'Word2Vec'
 
     @staticmethod
     def values():
-        return ['None', 'One Hot']
+        return ['None', 'One Hot', 'Embedding', 'Word2Vec']
 
     @staticmethod
     def keys():
-        return [EncodingCategorical.NONE, EncodingCategorical.ONE_HOT]
+        return [EncodingCategorical.NONE, EncodingCategorical.ONE_HOT, EncodingCategorical.EMBEDDING, EncodingCategorical.WORD_2_VEC]
 
     @staticmethod
     def items():

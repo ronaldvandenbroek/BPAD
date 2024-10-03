@@ -15,12 +15,15 @@
 # ==============================================================================
 
 import gzip
+import math
 import pickle as pickle
 
 import numpy as np
 import torch
 from torch_geometric.data import Data
+from tqdm import tqdm
 from utils.anomaly import label_to_targets
+from utils.embedding import AttributeDictionary, ProcessWord2Vec
 from utils.enums import AttributeType, EncodingCategorical, EncodingNumerical, Perspective
 from utils.enums import Class
 from utils.enums import PadMode
@@ -372,6 +375,113 @@ class Dataset(object):
         return np.dstack(self.features)
 
     @property
+    def w2v_features(self):
+        def convert_to_sentences(input):
+            return [[str(i)] for i in input]
+
+        # W2V setup
+        training_sentences = []
+        for attribute_type, key in zip(self.attribute_types, self.event_log.event_attribute_keys):
+            if attribute_type == AttributeType.CATEGORICAL:
+                encoder:AttributeDictionary = self.encoders[key]
+                attributes = convert_to_sentences(encoder.encoded_attributes() + encoder.buffer_attributes())
+                training_sentences += attributes
+
+        w2v_encoder = ProcessWord2Vec(
+            training_sentences=training_sentences,
+            vector_size=20,
+            window=5,
+            min_count=1)
+        
+        w2v_features = []
+        numeric_features = []
+        for index, (feature, attribute_type) in enumerate(zip(self._features, self.attribute_types)):
+            if attribute_type == AttributeType.NUMERICAL:
+                numeric_features.append(np.array(feature,dtype=np.float32))
+            elif attribute_type == AttributeType.CATEGORICAL:
+                encoded_feature = []
+                for attr_trace in feature:
+                    trace_attributes = []
+                    for attr in attr_trace:
+                        if attr != 0: # Attributes with 0 are from events that do not exist
+                            w2v_attr_vector = w2v_encoder.encode_attribute(attr)
+                            trace_attributes.append(np.array(w2v_attr_vector, dtype=np.float32))
+                    # Average the attribute value over all events
+                    encoded_feature.append(np.mean(np.vstack(trace_attributes), axis=0))
+                w2v_features.append(np.array(encoded_feature, dtype=np.float32)) 
+            
+        return np.array(w2v_features, dtype=np.float32), np.array(numeric_features, dtype=np.float32)
+    
+    @property
+    def flat_w2v_features_2d(self):
+        w2v_features, numeric_features = self.w2v_features
+
+        # RCVDB: TODO This seems to be correct now regarding interleaving
+        dim0, dim1, dim2 = w2v_features.shape
+        transposed_w2v_features = np.transpose(w2v_features, (1, 0, 2))
+        flat_w2v_features = np.reshape(transposed_w2v_features, (dim1, dim0 * dim2), order='C')
+
+        # RCVDB: This reshape seems to have an incorrect interleaving
+        # flat_w2v_features = np.reshape(w2v_features, (dim1, dim0 * dim2))
+
+        if len(numeric_features) > 0:
+            dim0, dim1, dim2 = numeric_features.shape
+            transposed_numeric_features = np.transpose(numeric_features, (1, 0, 2))
+            flat_numeric_features = np.reshape(transposed_numeric_features, (dim1, dim0 * dim2), order='C')
+
+            # flat_numeric_features = np.reshape(numeric_features, (dim1, dim0 * dim2))
+
+            flat_w2v_numeric_features = np.concatenate((flat_w2v_features,flat_numeric_features), axis=1)
+        else:
+            flat_w2v_numeric_features = flat_w2v_features
+
+        # RCVDB: Sanity check to see if all values are encoded correctly.
+        assert not np.any(np.isnan(flat_w2v_numeric_features)), "Data contains NaNs!"
+        assert not np.any(np.isinf(flat_w2v_numeric_features)), "Data contains Infs!"
+
+        return flat_w2v_numeric_features
+
+    @property
+    def embedding_features(self):
+        import torch.nn as nn
+
+        embedded_features = []
+
+        for feature, attribute_type in zip(self._features, self.attribute_types):
+            embedding_dim = 5  # Fixed-size output vector
+
+            unique_features = np.unique(feature)
+            if attribute_type == AttributeType.CATEGORICAL:
+                num_categories = len(unique_features)
+            elif attribute_type == AttributeType.NUMERICAL:
+                num_categories = np.max(unique_features)
+
+            print(num_categories)
+            attribute_embedding_layer = nn.Embedding(num_categories, embedding_dim)
+
+            try:
+                feature_tensor = torch.tensor(feature).long()
+                feature_embedding = attribute_embedding_layer(feature_tensor).detach().numpy()
+                embedded_features.append(feature_embedding)
+            except:
+                print('test')
+
+        return embedded_features
+    
+    @property
+    def flat_embedding_features(self):
+        flat_embedding_features = np.concatenate(self.embedding_features, axis=2)
+
+        return flat_embedding_features
+    
+    @property
+    def flat_embedding_features_2d(self):
+        flat_embedding_features_2d = self.remove_time_dimension(self.flat_embedding_features)
+        print('Flat-Embedding features 2d shape: ', len(flat_embedding_features_2d), len(flat_embedding_features_2d[0]))
+
+        return flat_embedding_features_2d
+
+    @property
     def onehot_features(self):
         """
         Return one-hot encoding of integer encoded features, while numerical features are passed as they are.
@@ -559,15 +669,26 @@ class Dataset(object):
         # Data preprocessing
         final_attribute_types = []
         encoders = {}
+        dictionary_starting_index = 1
         for index, (key, attribute_type) in enumerate(zip(feature_columns.keys(), attr_types)):
             replace_attribute_type = None
 
             # Integer encode categorical data
             if attribute_type == AttributeType.CATEGORICAL:
-                from sklearn.preprocessing import LabelEncoder
-                encoder = LabelEncoder()
-                feature_columns[key] = encoder.fit_transform(feature_columns[key]) + 1
+                from utils.embedding import AttributeDictionary
+
+                # Dynamic max size
+                unknown_buffer_percentage = 1.25
+                unique_values_count = len(set(feature_columns[key]))
+                dictionary_size = math.ceil(unique_values_count * unknown_buffer_percentage)
+                encoder = AttributeDictionary(max_size=dictionary_size, start_index=dictionary_starting_index)
+
+                feature_columns[key] = encoder.encode_list(feature_columns[key])
                 encoders[key] = encoder
+                
+                # To ensure that every attribute value has an unique token ensure that the starting index starts outside of the buffer
+                # Otherwise with Word2Vec attribute integers will conflict
+                dictionary_starting_index += dictionary_size
 
                 # If categorical encoding is none then categorical values are treated as numerical thus can scale
                 if self.categorical_encoding == EncodingCategorical.NONE:
@@ -588,7 +709,7 @@ class Dataset(object):
         # Transform back into sequences
         case_lens = np.array(case_lens)
         offsets = np.concatenate(([0], np.cumsum(case_lens)[:-1]))
-        features = [np.zeros((case_lens.shape[0], case_lens.max()),dtype='int32') for _ in range(len(feature_columns))]
+        features = [np.zeros((case_lens.shape[0], case_lens.max()),dtype='float') for _ in range(len(feature_columns))]
         for i, (offset, case_len) in enumerate(zip(offsets, case_lens)):
             for k, key in enumerate(feature_columns):
                 x = feature_columns[key]
