@@ -42,7 +42,8 @@ class DAE(NNAnomalyDetector):
 
     config = dict(hidden_layers=2,
                   hidden_size_factor=.01,
-                  noise=0.5) # None
+                  noise=None # 0.5
+     ) 
 
     def __init__(self, model=None):
         """Initialize DAE model.
@@ -60,7 +61,7 @@ class DAE(NNAnomalyDetector):
         super(DAE, self).__init__(model=model)
 
     @staticmethod
-    def model_fn(dataset:Dataset, bucket_boundaries, categorical_encoding, **kwargs):
+    def model_fn(dataset:Dataset, bucket_boundaries:list, categorical_encoding, w2v_vector_size=None, **kwargs):
         hidden_layers = kwargs.pop('hidden_layers')
         hidden_size_factor = kwargs.pop('hidden_size_factor')
         noise = kwargs.pop('noise')
@@ -94,7 +95,9 @@ class DAE(NNAnomalyDetector):
             return {0:model}, {0:features}, {0:features}, {0:case_lengths}, {0:case_labels}, {0:event_labels}, {0:attr_labels}
         else:
             # Ensure that the longest length is also contained in the boundaries
-            bucket_boundaries = [3,5,8, dataset.max_len]
+            bucket_boundaries.append(dataset.max_len)
+            print(f'Bucket Boundaries: {bucket_boundaries}')
+            
             bucket_input_sizes = []
             bucket_ids = dataset.assign_to_buckets(bucket_boundaries)
 
@@ -104,7 +107,7 @@ class DAE(NNAnomalyDetector):
             for i, boundary in enumerate(bucket_boundaries):
                 if categorical_encoding == EncodingCategorical.WORD_2_VEC:
                     # If using w2v every categorical event length has the same shape as the events are aggregated
-                    input_size = features.shape[1]
+                    input_size = w2v_vector_size * dataset.attribute_type_count(AttributeType.CATEGORICAL) + boundary * dataset.attribute_type_count(AttributeType.NUMERICAL)
                 else:
                     input_size = int(boundary * event_length)
                 bucket_input_sizes.append(input_size)
@@ -169,7 +172,7 @@ class DAE(NNAnomalyDetector):
                 factor = hidden_size_factor[i]
             else:
                 factor = hidden_size_factor
-            x = Dense(max(int(input_size * factor),64), activation='relu', name=f'hid{i + 1}')(x)
+            x = Dense(max(int(input_size * factor),64), activation='leaky_relu', name=f'hid{i + 1}')(x)
             x = Dropout(0.5)(x)
 
         # Output layer
@@ -237,8 +240,8 @@ class DAE(NNAnomalyDetector):
             return total_loss
         return loss
   
-    def train_and_predict(self, dataset:Dataset, batch_size=2, bucket_boundaries=None, categorical_encoding=EncodingCategorical.ONE_HOT):
-        model_buckets, features_buckets, targets_buckets, case_lengths_buckets, bucket_case_labels, bucket_event_labels, bucket_attr_labels = self.model_fn(dataset, bucket_boundaries, categorical_encoding, **self.config)
+    def train_and_predict(self, dataset:Dataset, batch_size=2, bucket_boundaries=None, categorical_encoding=EncodingCategorical.ONE_HOT, w2v_vector_size=None):
+        model_buckets, features_buckets, targets_buckets, case_lengths_buckets, bucket_case_labels, bucket_event_labels, bucket_attr_labels = self.model_fn(dataset, bucket_boundaries, categorical_encoding, w2v_vector_size, **self.config)
 
         # Parameters
         attribute_dims = dataset.attribute_dims
@@ -303,24 +306,28 @@ class DAE(NNAnomalyDetector):
                     pbar.set_postfix({'loss': loss})
 
             # (cases, events * flattened_attributes)
-            errors = np.power(targets - predictions, 2)
+            errors_unmasked = np.power(targets - predictions, 2)
+            # errors = targets - predictions
 
-            # RCVDB: TODO Check if masking is still nessesary with bucketing
+            # RCVDB: Mask empty events if no buckets are used
+            if bucket_boundaries is None: 
             # Applies a mask to remove the events not present in the trace   
             # (cases, flattened_errors) --> errors_unmasked
             # (cases, num_events) --> dataset.mask (~ inverts mask)
             # (cases, num_events, 1) --> expand dimension for broadcasting
             # (cases, num_events, attributes_dim) --> expand 2nd axis to size of the attributes
             # (cases, num_events * attributes_dim) = (cases, flattened_mask) --> reshape to match flattened error shape
-            # errors = errors_unmasked * np.expand_dims(~dataset.mask, 2).repeat(attribute_dims.sum(), 2).reshape(
-            #     dataset.mask.shape[0], -1)
+                errors = errors_unmasked * np.expand_dims(~dataset.mask, 2).repeat(attribute_dims.sum(), 2).reshape(
+                    dataset.mask.shape[0], -1)
+            else:
+                errors = errors_unmasked
 
             # If W2V
             if categorical_encoding == EncodingCategorical.WORD_2_VEC:
                 counter = Counter(dataset.attribute_types)
 
                 # RCVDB: TODO Vector size should come from a main variable
-                vector_size = 20
+                vector_size = 10
                 categorical_tiles = np.tile(vector_size, [counter[AttributeType.CATEGORICAL]])
                 numerical_single_attribute = [1] * counter[AttributeType.NUMERICAL]
                 numerical_tiles = np.tile(numerical_single_attribute, [case_max_length])
@@ -355,7 +362,7 @@ class DAE(NNAnomalyDetector):
                 errors_event_split_categorical = np.tile(expanded_shared_indexes, (case_max_length, 1, 1)) # Shape: (13, 5, 1000)
 
                 # Split the rest of the numerical values
-                if counter[AttributeType.CATEGORICAL] > 0:
+                if counter[AttributeType.NUMERICAL] > 0:
                     split_event = np.arange(
                         start=shared_index, 
                         stop=len(errors_attr_split_summed), 
