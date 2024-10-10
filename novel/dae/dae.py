@@ -311,8 +311,8 @@ class DAE(NNAnomalyDetector):
             errors_unmasked = np.power(targets - predictions, 2)
             # errors = targets - predictions
 
-            # RCVDB: Mask empty events if no buckets are used
-            if bucket_boundaries is None: 
+            # RCVDB: Mask empty events if no buckets are used or encoding method is not W2V
+            if bucket_boundaries is None and categorical_encoding != EncodingCategorical.WORD_2_VEC: 
             # Applies a mask to remove the events not present in the trace   
             # (cases, flattened_errors) --> errors_unmasked
             # (cases, num_events) --> dataset.mask (~ inverts mask)
