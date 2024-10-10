@@ -16,7 +16,7 @@ from baseline.LAE.lae import LAE
 from baseline.Sylvio import W2VLOF
 from baseline.VAE.vae import VAE
 from baseline.VAEOCSVM.vaeOCSVM import VAEOCSVM
-from baseline.dae import DAE
+from novel.dae.dae import DAE
 from baseline.bezerra import SamplingAnomalyDetector, NaiveAnomalyDetector
 from baseline.binet.binet import BINetv3, BINetv2
 from baseline.boehmer import LikelihoodPlusAnomalyDetector
@@ -45,20 +45,27 @@ def fit_and_eva(dataset_name, ad, fit_kwargs=None, ad_kwargs=None):
 
 
     # RCVDB: Parameters TODO create proper settings
-    bucket_boundaries = [3,5,8]
+    prefix=True
+    bucket_boundaries = [5,8] # Upperbounds of the buckets
+    #bucket_boundaries = [3,4,5,6,7,8,9]
     # bucket_boundaries = None
-    batch_size = 8
+    batch_size = 1
     categorical_encoding=EncodingCategorical.WORD_2_VEC
     numerical_encoding=EncodingNumerical.MIN_MAX_SCALING
+
+    w2v_vector_size = 100
+    w2v_window_size = 10
 
     # Dataset
     dataset = Dataset(dataset_name, 
                       beta=0.005, 
-                      prefix=True, 
+                      prefix=prefix,
+                      w2v_vector_size=w2v_vector_size,
+                      w2v_window_size=w2v_window_size, 
                       categorical_encoding=categorical_encoding,
                       numerical_encoding=numerical_encoding)
-    if bucket_boundaries is not None:
-        bucket_boundaries.append(dataset.max_len)
+    # if bucket_boundaries is not None:
+    #     bucket_boundaries.append(dataset.max_len)
 
     # AD
     ad = ad(**ad_kwargs)
@@ -69,7 +76,8 @@ def fit_and_eva(dataset_name, ad, fit_kwargs=None, ad_kwargs=None):
     bucket_trace_level_abnormal_scores, bucket_event_level_abnormal_scores, bucket_attr_level_abnormal_scores, bucket_losses, bucket_case_labels, bucket_event_labels, bucket_attr_labels = ad.train_and_predict(dataset, 
                                                                                                                                                                                                                  batch_size=batch_size, 
                                                                                                                                                                                                                  bucket_boundaries=bucket_boundaries, 
-                                                                                                                                                                                                                 categorical_encoding=categorical_encoding)
+                                                                                                                                                                                                                 categorical_encoding=categorical_encoding,
+                                                                                                                                                                                                                 w2v_vector_size=w2v_vector_size)
 
     end_time = time.time()
     run_time=end_time-start_time

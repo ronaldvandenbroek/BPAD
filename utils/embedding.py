@@ -50,14 +50,30 @@ class AttributeDictionary():
         return self.__str__()
 
 class ProcessWord2Vec():
-    def __init__(self, training_sentences, vector_size=50, window=5, min_count=1, workers=4, attr_dicts=None, debug=False) -> None:
+    def __init__(self, 
+                 training_sentences, 
+                 vector_size=50, 
+                 window=5, 
+                 min_count=1, 
+                 workers=4, 
+                 attr_dicts=None, 
+                 debug=False) -> None:
         self.debug = debug
         self.attr_dicts = attr_dicts
 
         if self.attr_dicts is not None:
             training_sentences = self._encode_training_sentences(copy.deepcopy(training_sentences))
 
-        self.w2v_model = Word2Vec(sentences=training_sentences, vector_size=vector_size, window=window, min_count=min_count, workers=workers)
+        self.w2v_model = Word2Vec(
+            sentences=training_sentences, 
+            vector_size=vector_size, 
+            window=window, 
+            min_count=min_count, 
+            workers=workers,
+            sg=1, # Use Skipgram
+            hs=0, # Heirarchical Softmax
+            negative=0
+            ) 
 
     def encode_attribute(self, input):
         return np.array(self.w2v_model.wv[int(input)])

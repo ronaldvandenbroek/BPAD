@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ==============================================================================
 
+from collections import Counter
 import gzip
 import math
 import pickle as pickle
@@ -37,7 +38,9 @@ class Dataset(object):
     def __init__(self, 
                  dataset_name=None, 
                  beta=0, 
-                 label_percent = 0, 
+                 label_percent = 0,
+                 w2v_vector_size = 50,
+                 w2v_window_size = 10, 
                  prefix=True, 
                  categorical_encoding=EncodingCategorical.ONE_HOT,
                  numerical_encoding=EncodingNumerical.MIN_MAX_SCALING):
@@ -63,6 +66,8 @@ class Dataset(object):
         self.edge_indexs = []
         self.node_xs = []
         self.label_percent = label_percent   # Used by weakly supervised methods to control the percentage of anomalies labeled during training
+        self.w2v_vector_size = w2v_vector_size
+        self.w2v_window_size = w2v_window_size
 
         # Private properties
         self._mask = None
@@ -109,100 +114,6 @@ class Dataset(object):
             # self._gen_trace_graphs_GAE()
         else:
             raise FileNotFoundError()
-
-    def _gen_trace_graphs(self):
-
-        graph_relation = np.zeros((self.attribute_dims[0]+1,self.attribute_dims[0]+1),dtype='int32')
-        for case_index in range(self.num_cases):
-            if self.case_lens[case_index]>1:
-                for activity_index in range(1, self.case_lens[case_index]):
-                    graph_relation[ self.features[0][case_index][activity_index - 1] , self.features[0][case_index][activity_index] ] += 1
-        dims_temp = []
-        dims_temp.append(self.attribute_dims[0])
-        for j in range(1, len(self.attribute_dims)):
-            dims_temp.append(dims_temp[j - 1] + self.attribute_dims[j])
-        dims_temp.insert(0, 0)
-        dims_range = [(dims_temp[i - 1], dims_temp[i]) for i in range(1, len(dims_temp))]
-
-        graph_relation = np.array(graph_relation >= self.beta*self.num_cases, dtype='int32')
-
-        onehot_features = self.flat_onehot_features
-        eye = np.eye(self.max_len, dtype=int)
-        for case_index in range(self.num_cases):  #生成图
-            attr_graphs = []
-            edge = []
-            xs = []
-            ##构造顶点信息
-            for attr_index in range(self.num_attributes):
-                xs.append(
-                    torch.tensor(onehot_features[case_index, :, dims_range[attr_index][0]:dims_range[attr_index][1]]))
-
-            if self.case_lens[case_index]>1:
-                ##构造边信息
-                node = self.features[0][case_index,:self.case_lens[case_index]]
-                for activity_index in range(0, self.case_lens[case_index]):
-                    out = np.argwhere( graph_relation[self.features[0][case_index,activity_index]] == 1).flatten()
-                    a = set(node)
-                    b = set(out)
-                    if activity_index+1< self.case_lens[case_index]:
-                        edge.append([activity_index, activity_index+1])  #保证trace中相连的activity一定有边。
-                    for node_name in a.intersection(b):
-                        for node_index in np.argwhere(node == node_name).flatten():
-                            if  activity_index+1 != node_index:
-                                edge.append([activity_index, node_index])  # 添加有向边
-            edge_index = torch.tensor(edge, dtype=torch.long)
-            self.node_xs.append(xs)
-            self.edge_indexs.append(edge_index.T)
-
-        self.node_dims = self.attribute_dims.copy()
-
-    def _gen_trace_graphs_GAE(self):
-
-        dims_temp = []
-        dims_temp.append(self.attribute_dims[0])
-        for j in range(1, len(self.attribute_dims)):
-            dims_temp.append(dims_temp[j - 1] + self.attribute_dims[j])
-        dims_temp.insert(0, 0)
-        dims_range = [(dims_temp[i - 1], dims_temp[i]) for i in range(1, len(dims_temp))]
-
-        onehot_features = self.flat_onehot_features
-        for case_index in range(self.num_cases):  #生成图
-            edge = []
-            xs = []
-            edge_attr = None
-            for attr_index in range(self.num_attributes):
-                xs.append(onehot_features[case_index, :self.case_lens[case_index],
-                          dims_range[attr_index][0]:dims_range[attr_index][1]])
-            if self.case_lens[case_index]>1:
-                ##构造顶点,边信息
-                node=[]
-                activity_array=xs[0]
-                index_helper=[]
-                for activity_index in range(0, self.case_lens[case_index]):
-                    if list(activity_array[activity_index]) not in node:
-                        node.append(list(activity_array[activity_index] )) #节点加入
-                        index_helper.append(len(node)-1)
-                    else:
-                        index_helper.append(node.index(list(activity_array[activity_index])))
-
-                edge=[[index_helper[i],index_helper[i+1]] for i in range(len(index_helper)-1)]
-
-
-                for attr_index in range(1, self.num_attributes):
-                    if edge_attr is None:
-                        edge_attr = np.array(xs[attr_index])
-                    else:
-                        edge_attr = np.concatenate((edge_attr, xs[attr_index]), 1)
-                if edge_attr is not None:
-                    edge_attr = torch.tensor(edge_attr[:-1], dtype=torch.float )
-            else:
-                node=xs[0]
-            edge_index = torch.tensor(edge, dtype=torch.long)
-            if edge_attr is None:
-                self.trace_graphs_GAE.append(Data(torch.tensor(np.array(node), dtype=torch.float), edge_index=edge_index.T))
-            else:
-                self.trace_graphs_GAE.append(
-                    Data(torch.tensor(np.array(node), dtype=torch.float), edge_index=edge_index.T, edge_attr=edge_attr))
 
     @property
     def onehot_train_targets(self):
@@ -329,6 +240,10 @@ class Dataset(object):
                                                zip(self._features, self.attribute_types)])
         # print(f'Attribute Dimensions: {self._attribute_dims}')
         return self._attribute_dims
+    
+    def attribute_type_count(self, type=AttributeType):
+        counter = Counter(self.attribute_types)
+        return counter[type]
 
     @property
     def num_attributes(self):
@@ -389,15 +304,23 @@ class Dataset(object):
 
         w2v_encoder = ProcessWord2Vec(
             training_sentences=training_sentences,
-            vector_size=20,
-            window=5,
-            min_count=1)
+            vector_size=self.w2v_vector_size,
+            window=self.w2v_window_size)
         
         w2v_features = []
+        w2v_feature_names = []
         numeric_features = []
-        for index, (feature, attribute_type) in enumerate(zip(self._features, self.attribute_types)):
+        numeric_feature_names = []
+        for index, (feature, attribute_type, attribute_key) in enumerate(zip(self._features, self.attribute_types, self.event_log.event_attribute_keys)):
+            # RCVDB: TODO Experimental, not encoding start and end event
+            # feature_experimental = []
+            # for case in feature:
+            #     feature_experimental.append(case[1:-1])
+            # feature = feature_experimental  
+
             if attribute_type == AttributeType.NUMERICAL:
                 numeric_features.append(np.array(feature,dtype=np.float32))
+                numeric_feature_names.append(attribute_key)
             elif attribute_type == AttributeType.CATEGORICAL:
                 encoded_feature = []
                 for attr_trace in feature:
@@ -408,28 +331,33 @@ class Dataset(object):
                             trace_attributes.append(np.array(w2v_attr_vector, dtype=np.float32))
                     # Average the attribute value over all events
                     encoded_feature.append(np.mean(np.vstack(trace_attributes), axis=0))
-                w2v_features.append(np.array(encoded_feature, dtype=np.float32)) 
+                w2v_features.append(np.array(encoded_feature, dtype=np.float32))
+                w2v_feature_names.append(attribute_key) 
             
-        return np.array(w2v_features, dtype=np.float32), np.array(numeric_features, dtype=np.float32)
+        return np.array(w2v_features, dtype=np.float32), np.array(numeric_features, dtype=np.float32), np.array(numeric_feature_names), np.array(w2v_feature_names)
     
     @property
     def flat_w2v_features_2d(self):
-        w2v_features, numeric_features = self.w2v_features
+        w2v_features, numeric_features, numeric_feature_names, w2v_feature_names = self.w2v_features
 
-        # RCVDB: TODO This seems to be correct now regarding interleaving
-        dim0, dim1, dim2 = w2v_features.shape
+        # RCVDB: Interleaf the w2v features
+        # (num_attribute, num_cases, vector_size) 
+        # (num_cases, num_attribute, vector_size) 
+        # (num_cases, num_attribute * vector_size) 
         transposed_w2v_features = np.transpose(w2v_features, (1, 0, 2))
-        flat_w2v_features = np.reshape(transposed_w2v_features, (dim1, dim0 * dim2), order='C')
+        dim0, dim1, dim2 = transposed_w2v_features.shape
+        # Need order C so the whole w2v of each attribute is next to each other
+        flat_w2v_features = np.reshape(transposed_w2v_features, (dim0, dim1 * dim2), order='C')
 
-        # RCVDB: This reshape seems to have an incorrect interleaving
-        # flat_w2v_features = np.reshape(w2v_features, (dim1, dim0 * dim2))
-
+        # RCVDB: Interleaf the numeric features
+        # (num_attribute, num_cases, num_events) 
+        # (num_cases, num_attribute, num_events) 
+        # (num_cases, num_attribute * num_events)
         if len(numeric_features) > 0:
-            dim0, dim1, dim2 = numeric_features.shape
             transposed_numeric_features = np.transpose(numeric_features, (1, 0, 2))
-            flat_numeric_features = np.reshape(transposed_numeric_features, (dim1, dim0 * dim2), order='C')
-
-            # flat_numeric_features = np.reshape(numeric_features, (dim1, dim0 * dim2))
+            dim0, dim1, dim2 = transposed_numeric_features.shape
+            # Need order F so each event but not each attribute of the same type are next to eachother
+            flat_numeric_features = np.reshape(transposed_numeric_features, (dim0, dim1 * dim2), order='F')
 
             flat_w2v_numeric_features = np.concatenate((flat_w2v_features,flat_numeric_features), axis=1)
         else:
@@ -788,3 +716,97 @@ class Dataset(object):
             return (feature_column - f_min) / (f_max - f_min)
         else:
             return np.zeros_like(feature_column)
+        
+    # def _gen_trace_graphs(self):
+
+    #     graph_relation = np.zeros((self.attribute_dims[0]+1,self.attribute_dims[0]+1),dtype='int32')
+    #     for case_index in range(self.num_cases):
+    #         if self.case_lens[case_index]>1:
+    #             for activity_index in range(1, self.case_lens[case_index]):
+    #                 graph_relation[ self.features[0][case_index][activity_index - 1] , self.features[0][case_index][activity_index] ] += 1
+    #     dims_temp = []
+    #     dims_temp.append(self.attribute_dims[0])
+    #     for j in range(1, len(self.attribute_dims)):
+    #         dims_temp.append(dims_temp[j - 1] + self.attribute_dims[j])
+    #     dims_temp.insert(0, 0)
+    #     dims_range = [(dims_temp[i - 1], dims_temp[i]) for i in range(1, len(dims_temp))]
+
+    #     graph_relation = np.array(graph_relation >= self.beta*self.num_cases, dtype='int32')
+
+    #     onehot_features = self.flat_onehot_features
+    #     eye = np.eye(self.max_len, dtype=int)
+    #     for case_index in range(self.num_cases):  #生成图
+    #         attr_graphs = []
+    #         edge = []
+    #         xs = []
+    #         ##构造顶点信息
+    #         for attr_index in range(self.num_attributes):
+    #             xs.append(
+    #                 torch.tensor(onehot_features[case_index, :, dims_range[attr_index][0]:dims_range[attr_index][1]]))
+
+    #         if self.case_lens[case_index]>1:
+    #             ##构造边信息
+    #             node = self.features[0][case_index,:self.case_lens[case_index]]
+    #             for activity_index in range(0, self.case_lens[case_index]):
+    #                 out = np.argwhere( graph_relation[self.features[0][case_index,activity_index]] == 1).flatten()
+    #                 a = set(node)
+    #                 b = set(out)
+    #                 if activity_index+1< self.case_lens[case_index]:
+    #                     edge.append([activity_index, activity_index+1])  #保证trace中相连的activity一定有边。
+    #                 for node_name in a.intersection(b):
+    #                     for node_index in np.argwhere(node == node_name).flatten():
+    #                         if  activity_index+1 != node_index:
+    #                             edge.append([activity_index, node_index])  # 添加有向边
+    #         edge_index = torch.tensor(edge, dtype=torch.long)
+    #         self.node_xs.append(xs)
+    #         self.edge_indexs.append(edge_index.T)
+
+    #     self.node_dims = self.attribute_dims.copy()
+
+    # def _gen_trace_graphs_GAE(self):
+
+    #     dims_temp = []
+    #     dims_temp.append(self.attribute_dims[0])
+    #     for j in range(1, len(self.attribute_dims)):
+    #         dims_temp.append(dims_temp[j - 1] + self.attribute_dims[j])
+    #     dims_temp.insert(0, 0)
+    #     dims_range = [(dims_temp[i - 1], dims_temp[i]) for i in range(1, len(dims_temp))]
+
+    #     onehot_features = self.flat_onehot_features
+    #     for case_index in range(self.num_cases):  #生成图
+    #         edge = []
+    #         xs = []
+    #         edge_attr = None
+    #         for attr_index in range(self.num_attributes):
+    #             xs.append(onehot_features[case_index, :self.case_lens[case_index],
+    #                       dims_range[attr_index][0]:dims_range[attr_index][1]])
+    #         if self.case_lens[case_index]>1:
+    #             ##构造顶点,边信息
+    #             node=[]
+    #             activity_array=xs[0]
+    #             index_helper=[]
+    #             for activity_index in range(0, self.case_lens[case_index]):
+    #                 if list(activity_array[activity_index]) not in node:
+    #                     node.append(list(activity_array[activity_index] )) #节点加入
+    #                     index_helper.append(len(node)-1)
+    #                 else:
+    #                     index_helper.append(node.index(list(activity_array[activity_index])))
+
+    #             edge=[[index_helper[i],index_helper[i+1]] for i in range(len(index_helper)-1)]
+
+
+    #             for attr_index in range(1, self.num_attributes):
+    #                 if edge_attr is None:
+    #                     edge_attr = np.array(xs[attr_index])
+    #                 else:
+    #                     edge_attr = np.concatenate((edge_attr, xs[attr_index]), 1)
+    #             if edge_attr is not None:
+    #                 edge_attr = torch.tensor(edge_attr[:-1], dtype=torch.float )
+    #         else:
+    #             node=xs[0]
+    #         edge_index = torch.tensor(edge, dtype=torch.long)
+    #         if edge_attr is None:
+    #             self.trace_graphs_GAE.append(Data(torch.tensor(np.array(node), dtype=torch.float), edge_index=edge_index.T))
+    #         else:
+    #             self.trace_graphs_GAE.append(
+    #                 Data(torch.tensor(np.array(node), dtype=torch.float), edge_index=edge_index.T, edge_attr=edge_attr))

@@ -267,6 +267,8 @@ class DAE(NNAnomalyDetector):
             case_lengths = case_lengths_buckets[i]
 
             if bucket_boundaries is not None:
+                # RCVDB: TODO Experimental removing start and end event in the encoding
+                #case_max_length = bucket_boundaries[i] - 2
                 case_max_length = bucket_boundaries[i]
             else:
                 case_max_length = dataset.max_len
@@ -322,14 +324,12 @@ class DAE(NNAnomalyDetector):
             else:
                 errors = errors_unmasked
 
-            # If W2V
+            # If W2V all categorical events are embedded into a single vector
             if categorical_encoding == EncodingCategorical.WORD_2_VEC:
-                counter = Counter(dataset.attribute_types)
+                attribute_type_counter = Counter(dataset.attribute_types)
 
-                # RCVDB: TODO Vector size should come from a main variable
-                vector_size = 10
-                categorical_tiles = np.tile(vector_size, [counter[AttributeType.CATEGORICAL]])
-                numerical_single_attribute = [1] * counter[AttributeType.NUMERICAL]
+                categorical_tiles = np.tile(w2v_vector_size, [attribute_type_counter[AttributeType.CATEGORICAL]])
+                numerical_single_attribute = [1] * attribute_type_counter[AttributeType.NUMERICAL]
                 numerical_tiles = np.tile(numerical_single_attribute, [case_max_length])
                 w2v_tiles = np.concatenate((categorical_tiles, numerical_tiles))
 
@@ -346,12 +346,15 @@ class DAE(NNAnomalyDetector):
             # np.mean for the proportion of the one-hot encoded predictions being wrong
             # np.sum for the total one-hot predictions being wrong
             # (attributes * events, cases)
-            errors_attr_split_summed = [np.mean(attribute, axis=1) for attribute in errors_attr_split]
+            if categorical_encoding == EncodingCategorical.WORD_2_VEC:
+                errors_attr_split_summed = [np.sum(attribute, axis=1) for attribute in errors_attr_split]
+            else:
+                errors_attr_split_summed = [np.mean(attribute, axis=1) for attribute in errors_attr_split]
             
             # Split the attributes based on which event it belongs to
             if categorical_encoding == EncodingCategorical.WORD_2_VEC:
                 # Everything before the shared index is shared between each event as they are averaged during encoding
-                shared_index = counter[AttributeType.CATEGORICAL]
+                shared_index = attribute_type_counter[AttributeType.CATEGORICAL]
                 split_shared = np.split(errors_attr_split_summed, [shared_index])
 
                 shared_indexes = split_shared[0]
@@ -359,20 +362,26 @@ class DAE(NNAnomalyDetector):
 
                 # Combining both arrays
                 expanded_shared_indexes = np.expand_dims(shared_indexes, axis=0) # Shape: (1, 5, 1000)
+                # Duplicate the average error over all the events for compatibility with the rest of the code
                 errors_event_split_categorical = np.tile(expanded_shared_indexes, (case_max_length, 1, 1)) # Shape: (13, 5, 1000)
 
                 # Split the rest of the numerical values
-                if counter[AttributeType.NUMERICAL] > 0:
+                if attribute_type_counter[AttributeType.NUMERICAL] > 0:
                     split_event = np.arange(
                         start=shared_index, 
                         stop=len(errors_attr_split_summed), 
-                        step=counter[AttributeType.NUMERICAL])[:-1]
+                        step=attribute_type_counter[AttributeType.NUMERICAL])[:-1]
                 
                     errors_event_split_numerical = np.array(np.split(split_indexes, split_event, axis=0))
 
                     errors_event_split = np.concatenate((errors_event_split_numerical, errors_event_split_categorical), axis=1)
                 else:
                     errors_event_split = errors_event_split_categorical
+                
+                # (events, attributes, cases)
+                # to
+                # (attributes, events, cases)
+                errors_event_split = np.transpose(errors_event_split, (1,0,2))
             else:
                 split_event = np.arange(
                     start=case_max_length, 
@@ -394,7 +403,9 @@ class DAE(NNAnomalyDetector):
             attr_level_abnormal_scores = defaultdict(list)
             for anomaly_perspective in grouped_error_scores_per_perspective.keys():
                 # Transpose the axis to make it easier to work with 
-                # (perspective, cases, events, attributes) 
+                # (perspective, attributes, events, cases)
+                # to
+                # (cases, events, attributes) 
                 t = np.transpose(grouped_error_scores_per_perspective[anomaly_perspective], (2, 1, 0))
                 event_dimension = case_lengths
                 attribute_dimension = t.shape[-1]
