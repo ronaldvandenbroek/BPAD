@@ -506,13 +506,13 @@ class Dataset(object):
             case_targets = np.zeros((num_events, num_attributes, num_perspectives), dtype=int) 
             for event_index, event in enumerate(case.events):
                 event:Event
-                if event.attributes['_label'] is not None and '_label' in event.attributes:
+                if '_label' in event.attributes and event.attributes['_label'] is not None:
                     event_labels = event.attributes['_label']
                     # if case_index < 2:
                     #     print(f'{case_index} {event_index} {event_labels}')
                     for label in event_labels:
                         # Encode the label into the targets:
-                        case_targets, perspective = label_to_targets(case_targets, event_index, label)
+                        case_targets, perspective = label_to_targets(event_log, case_targets, event_index, label)
 
                         # Debug code to see if labels are set correctly TODO can remove if not nessesary anymore
                         # if case_index < 2:

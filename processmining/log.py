@@ -72,10 +72,19 @@ class EventLog(object):
                 [key for key in self.attributes['global_attributes']['event'].keys() if key not in ignored])
         else:
             # RCVDB: Ignore event level label
-            # TODO: Change name of label to _label in generation to simplify code
             attributes += sorted(
                 [key for key in list(self.cases[0].events[0].attributes.keys()) if not(key.startswith('_'))])
         return attributes
+    
+    def get_activity_name(self):
+        return self.get_attribute_index('name')
+    
+    # RCVDB: Determine the index of a certain attribute
+    def get_attribute_index(self, atrribute_name):
+        attributes = self.event_attribute_keys
+        if atrribute_name in attributes:
+            return attributes.index(atrribute_name)
+        return None   
     
     # RCVDB: Determine the perspectives a certain attribute belongs to
     @property
