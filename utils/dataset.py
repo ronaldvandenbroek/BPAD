@@ -115,19 +115,6 @@ class Dataset(object):
         else:
             raise FileNotFoundError()
 
-    @property
-    def onehot_train_targets(self):
-        """
-        Return targets to be used when training predictive anomaly detectors.
-
-        Returns for each case the case shifted by one event to the left. A predictive anomaly detector is trained to
-        predict the nth + 1 event of a case when given the first n events.
-
-        :return:
-        """
-        return [np.pad(f[:, 1:], ((0, 0), (0, 1), (0, 0)), mode='constant') if t == AttributeType.CATEGORICAL else f
-                for f, t in zip(self.onehot_features, self.attribute_types)]
-
     def _load_dataset_from_cache(self, file):
         with gzip.open(file, 'rb') as f:
             (self._features, self.classes, self.labels, self._case_lens, self._attribute_dims,
@@ -138,13 +125,9 @@ class Dataset(object):
             pickle.dump((self._features, self.classes, self.labels, self._case_lens, self._attribute_dims,
                          self.encoders, self.attribute_types, self.attribute_keys), f)
 
-    @property
-    def weak_labels(self):
-        z = np.zeros(self.num_cases)
-        for i in self.labeled_indices:
-            z[i] = 1
-        return z
-
+    def __len__(self):
+        return self.num_cases
+    
     @property
     def mask(self):
         if self._mask is None:
@@ -164,24 +147,6 @@ class Dataset(object):
         return self._event_log
 
     @property
-    def binary_targets(self):
-        """Return targets for anomaly detection; 0 = normal, 1 = anomaly."""
-        # RCVDB: With multi-class prediction, the targets are already binary
-        print(f'Binary target shape: {self.classes.shape}')
-        return self.classes
-
-        # if self.classes is not None and len(self.classes) > 0:
-        #     print(f'Classes/Targets shape: {self.classes.shape}')
-        #     print(f'Labels shape: {self.labels.shape}')
-        #     targets = np.copy(self.classes)
-        #     targets[targets > Class.ANOMALY] = Class.ANOMALY
-        #     return targets
-        # return None
-
-    def __len__(self):
-        return self.num_cases
-
-    @property
     def text_labels(self):
         """Return the labels transformed into text, one string for each case in the event log."""
         return np.array(['Normal' if l == 'normal' else l['anomaly'] for l in self.labels])
@@ -195,12 +160,6 @@ class Dataset(object):
     def unique_anomaly_text_labels(self):
         """Return only the unique anomaly text labels."""
         return [l for l in self.unique_text_labels if l != 'Normal']
-
-    def get_indices_for_type(self, t):
-        if len(self.text_labels) > 0:
-            return np.where(self.text_labels == t)[0]
-        else:
-            return range(int(self.num_cases))
 
     @property
     def case_target(self):
@@ -241,10 +200,6 @@ class Dataset(object):
         # print(f'Attribute Dimensions: {self._attribute_dims}')
         return self._attribute_dims
     
-    def attribute_type_count(self, type=AttributeType):
-        counter = Counter(self.attribute_types)
-        return counter[type]
-
     @property
     def num_attributes(self):
         """Return the number of attributes in the event log."""
@@ -264,219 +219,6 @@ class Dataset(object):
     def max_len(self):
         """Return the length of the case with the most events."""
         return self.features[0].shape[1]
-
-    @property
-    def _reverse_features(self):
-        reverse_features = [np.copy(f) for f in self._features]
-        for f in reverse_features:
-            for _f, m in zip(f, self.mask):
-                _f[~m] = _f[~m][::-1]
-        return reverse_features
-
-    @property
-    def features(self):
-        return self._features
-
-    @property
-    def flat_features(self):
-        """
-        Return combined features in one single tensor.
-
-        `features` returns one tensor per attribute. This method combines all attributes into one tensor. Resulting
-        shape of the tensor will be (number_of_cases, max_case_length, number_of_attributes).
-
-        :return:
-        """
-        return np.dstack(self.features)
-
-    @property
-    def w2v_features(self):
-        def convert_to_sentences(input):
-            return [[str(i)] for i in input]
-
-        # W2V setup
-        training_sentences = []
-        for attribute_type, key in zip(self.attribute_types, self.event_log.event_attribute_keys):
-            if attribute_type == AttributeType.CATEGORICAL:
-                encoder:AttributeDictionary = self.encoders[key]
-                attributes = convert_to_sentences(encoder.encoded_attributes() + encoder.buffer_attributes())
-                training_sentences += attributes
-
-        w2v_encoder = ProcessWord2Vec(
-            training_sentences=training_sentences,
-            vector_size=self.w2v_vector_size,
-            window=self.w2v_window_size)
-        
-        w2v_features = []
-        w2v_feature_names = []
-        numeric_features = []
-        numeric_feature_names = []
-        for index, (feature, attribute_type, attribute_key) in enumerate(zip(self._features, self.attribute_types, self.event_log.event_attribute_keys)):
-            # RCVDB: TODO Experimental, not encoding start and end event
-            # feature_experimental = []
-            # for case in feature:
-            #     feature_experimental.append(case[1:-1])
-            # feature = feature_experimental  
-
-            if attribute_type == AttributeType.NUMERICAL:
-                numeric_features.append(np.array(feature,dtype=np.float32))
-                numeric_feature_names.append(attribute_key)
-            elif attribute_type == AttributeType.CATEGORICAL:
-                encoded_feature = []
-                for attr_trace in feature:
-                    trace_attributes = []
-                    for attr in attr_trace:
-                        if attr != 0: # Attributes with 0 are from events that do not exist
-                            w2v_attr_vector = w2v_encoder.encode_attribute(attr)
-                            trace_attributes.append(np.array(w2v_attr_vector, dtype=np.float32))
-                    # Average the attribute value over all events
-                    encoded_feature.append(np.mean(np.vstack(trace_attributes), axis=0))
-                w2v_features.append(np.array(encoded_feature, dtype=np.float32))
-                w2v_feature_names.append(attribute_key) 
-            
-        return np.array(w2v_features, dtype=np.float32), np.array(numeric_features, dtype=np.float32), np.array(numeric_feature_names), np.array(w2v_feature_names)
-    
-    @property
-    def flat_w2v_features_2d(self):
-        w2v_features, numeric_features, numeric_feature_names, w2v_feature_names = self.w2v_features
-
-        # RCVDB: Interleaf the w2v features
-        # (num_attribute, num_cases, vector_size) 
-        # (num_cases, num_attribute, vector_size) 
-        # (num_cases, num_attribute * vector_size) 
-        transposed_w2v_features = np.transpose(w2v_features, (1, 0, 2))
-        dim0, dim1, dim2 = transposed_w2v_features.shape
-        # Need order C so the whole w2v of each attribute is next to each other
-        flat_w2v_features = np.reshape(transposed_w2v_features, (dim0, dim1 * dim2), order='C')
-
-        # RCVDB: Interleaf the numeric features
-        # (num_attribute, num_cases, num_events) 
-        # (num_cases, num_attribute, num_events) 
-        # (num_cases, num_attribute * num_events)
-        if len(numeric_features) > 0:
-            transposed_numeric_features = np.transpose(numeric_features, (1, 0, 2))
-            dim0, dim1, dim2 = transposed_numeric_features.shape
-            # Need order F so each event but not each attribute of the same type are next to eachother
-            flat_numeric_features = np.reshape(transposed_numeric_features, (dim0, dim1 * dim2), order='F')
-
-            flat_w2v_numeric_features = np.concatenate((flat_w2v_features,flat_numeric_features), axis=1)
-        else:
-            flat_w2v_numeric_features = flat_w2v_features
-
-        # RCVDB: Sanity check to see if all values are encoded correctly.
-        assert not np.any(np.isnan(flat_w2v_numeric_features)), "Data contains NaNs!"
-        assert not np.any(np.isinf(flat_w2v_numeric_features)), "Data contains Infs!"
-
-        return flat_w2v_numeric_features
-
-    @property
-    def embedding_features(self):
-        import torch.nn as nn
-
-        embedded_features = []
-
-        for feature, attribute_type in zip(self._features, self.attribute_types):
-            embedding_dim = 5  # Fixed-size output vector
-
-            unique_features = np.unique(feature)
-            if attribute_type == AttributeType.CATEGORICAL:
-                num_categories = len(unique_features)
-            elif attribute_type == AttributeType.NUMERICAL:
-                num_categories = np.max(unique_features)
-
-            print(num_categories)
-            attribute_embedding_layer = nn.Embedding(num_categories, embedding_dim)
-
-            try:
-                feature_tensor = torch.tensor(feature).long()
-                feature_embedding = attribute_embedding_layer(feature_tensor).detach().numpy()
-                embedded_features.append(feature_embedding)
-            except:
-                print('test')
-
-        return embedded_features
-    
-    @property
-    def flat_embedding_features(self):
-        flat_embedding_features = np.concatenate(self.embedding_features, axis=2)
-
-        return flat_embedding_features
-    
-    @property
-    def flat_embedding_features_2d(self):
-        flat_embedding_features_2d = self.remove_time_dimension(self.flat_embedding_features)
-        print('Flat-Embedding features 2d shape: ', len(flat_embedding_features_2d), len(flat_embedding_features_2d[0]))
-
-        return flat_embedding_features_2d
-
-    @property
-    def onehot_features(self):
-        """
-        Return one-hot encoding of integer encoded features, while numerical features are passed as they are.
-
-        As `features` this will return one tensor for each attribute. Shape of tensor for each attribute will be
-        (number_of_cases, max_case_length, attribute_dimension). The attribute dimension refers to the number of unique
-        values of the respective attribute encountered in the event log.
-
-        :return:
-        """
-        one_hot_features = [self._to_categorical(f)[:, :, 1:] if t == AttributeType.CATEGORICAL else np.expand_dims(f, axis=2)
-                for f, t in zip(self._features, self.attribute_types)]
-        
-        # RCVDB: Tensor seems to be of shape (attribute_dimension, number_of_cases, max_case_length)
-        # print('One-hot features shape: ', len(one_hot_features), len(one_hot_features[0]), len(one_hot_features[0][0]))
-
-        # RCVDB: Debug to get an overview of how the features are encoded
-        # for i in range(len(one_hot_features)):
-        #     print(one_hot_features[i][0][0])
-
-        return one_hot_features
-
-    @property
-    def flat_onehot_features(self):
-        """
-        Return combined one-hot features in one single tensor.
-
-        One-hot vectors for each attribute in each event will be concatenated. Resulting shape of tensor will be
-        (number_of_cases, max_case_length, attribute_dimension[0] + attribute_dimension[1] + ... + attribute_dimension[n]).
-
-        :return:
-        """
-        flat_one_hot_features = np.concatenate(self.onehot_features, axis=2)
-        # print('Flat-One-hot features shape: ', len(flat_one_hot_features), len(flat_one_hot_features[0]), len(flat_one_hot_features[0][0]))
-
-        return flat_one_hot_features
-
-    @staticmethod
-    def remove_time_dimension(x):
-        return x.reshape((x.shape[0], np.product(x.shape[1:])))
-
-    @property
-    def flat_features_2d(self):
-        """
-        Return 2d tensor of flat features.
-
-        Concatenates all attributes together, removing the time dimension. Resulting tensor shape will be
-        (number_of_cases, max_case_length * number_of_attributes).
-
-        :return:
-        """
-        return self.remove_time_dimension(self.flat_features)
-
-    @property
-    def flat_onehot_features_2d(self):
-        """
-        Return 2d tensor of one-hot encoded features.
-
-        Same as `flat_onehot_features`, but with flattened time dimension (the second dimension). Resulting tensor shape
-        will be (number_of_cases, max_case_length * (attribute_dimension[0] + attribute_dimension[1] + ... + attribute_dimension[n]).
-
-        :return:
-        """
-        flat_onehot_features_2d = self.remove_time_dimension(self.flat_onehot_features)
-        print('Flat-One-hot features 2d shape: ', len(flat_onehot_features_2d), len(flat_onehot_features_2d[0]))
-
-        return flat_onehot_features_2d
     
     # RCVDB: This version of the function aims for the models to predict the anomaly perspective themselves, 
     # however this can also be achieved by generating an error score for each attribute 
@@ -716,97 +458,258 @@ class Dataset(object):
             return (feature_column - f_min) / (f_max - f_min)
         else:
             return np.zeros_like(feature_column)
+
+    def attribute_type_count(self, type=AttributeType):
+        counter = Counter(self.attribute_types)
+        return counter[type]
+
+    def get_indices_for_type(self, t):
+        if len(self.text_labels) > 0:
+            return np.where(self.text_labels == t)[0]
+        else:
+            return range(int(self.num_cases))
+
+    @staticmethod
+    def remove_time_dimension(x):
+        return x.reshape((x.shape[0], np.product(x.shape[1:])))
+
+    @property
+    def _reverse_features(self):
+        reverse_features = [np.copy(f) for f in self._features]
+        for f in reverse_features:
+            for _f, m in zip(f, self.mask):
+                _f[~m] = _f[~m][::-1]
+        return reverse_features
+
+    # Features
+    @property
+    def features(self):
+        return self._features
+
+    @property
+    def flat_features(self):
+        """
+        Return combined features in one single tensor.
+
+        `features` returns one tensor per attribute. This method combines all attributes into one tensor. Resulting
+        shape of the tensor will be (number_of_cases, max_case_length, number_of_attributes).
+
+        :return:
+        """
+        return np.dstack(self.features)
+
+    @property
+    def flat_features_2d(self):
+        """
+        Return 2d tensor of flat features.
+
+        Concatenates all attributes together, removing the time dimension. Resulting tensor shape will be
+        (number_of_cases, max_case_length * number_of_attributes).
+
+        :return:
+        """
+        return self.remove_time_dimension(self.flat_features)
+
+    @property
+    def binary_targets(self):
+        """Return targets for anomaly detection; 0 = normal, 1 = anomaly."""
+        # RCVDB: With multi-class prediction, the targets are already binary
+        print(f'Binary target shape: {self.classes.shape}')
+        return self.classes
+
+        # if self.classes is not None and len(self.classes) > 0:
+        #     print(f'Classes/Targets shape: {self.classes.shape}')
+        #     print(f'Labels shape: {self.labels.shape}')
+        #     targets = np.copy(self.classes)
+        #     targets[targets > Class.ANOMALY] = Class.ANOMALY
+        #     return targets
+        # return None
+
+    # W2V Features
+    @property
+    def w2v_features(self):
+        def convert_to_sentences(input):
+            return [[str(i)] for i in input]
+
+        # W2V setup
+        training_sentences = []
+        for attribute_type, key in zip(self.attribute_types, self.event_log.event_attribute_keys):
+            if attribute_type == AttributeType.CATEGORICAL:
+                encoder:AttributeDictionary = self.encoders[key]
+                attributes = convert_to_sentences(encoder.encoded_attributes() + encoder.buffer_attributes())
+                training_sentences += attributes
+
+        w2v_encoder = ProcessWord2Vec(
+            training_sentences=training_sentences,
+            vector_size=self.w2v_vector_size,
+            window=self.w2v_window_size)
         
-    # def _gen_trace_graphs(self):
+        w2v_features = []
+        w2v_feature_names = []
+        numeric_features = []
+        numeric_feature_names = []
+        for index, (feature, attribute_type, attribute_key) in enumerate(zip(self._features, self.attribute_types, self.event_log.event_attribute_keys)):
+            # RCVDB: TODO Experimental, not encoding start and end event
+            # feature_experimental = []
+            # for case in feature:
+            #     feature_experimental.append(case[1:-1])
+            # feature = feature_experimental  
 
-    #     graph_relation = np.zeros((self.attribute_dims[0]+1,self.attribute_dims[0]+1),dtype='int32')
-    #     for case_index in range(self.num_cases):
-    #         if self.case_lens[case_index]>1:
-    #             for activity_index in range(1, self.case_lens[case_index]):
-    #                 graph_relation[ self.features[0][case_index][activity_index - 1] , self.features[0][case_index][activity_index] ] += 1
-    #     dims_temp = []
-    #     dims_temp.append(self.attribute_dims[0])
-    #     for j in range(1, len(self.attribute_dims)):
-    #         dims_temp.append(dims_temp[j - 1] + self.attribute_dims[j])
-    #     dims_temp.insert(0, 0)
-    #     dims_range = [(dims_temp[i - 1], dims_temp[i]) for i in range(1, len(dims_temp))]
+            if attribute_type == AttributeType.NUMERICAL:
+                numeric_features.append(np.array(feature,dtype=np.float32))
+                numeric_feature_names.append(attribute_key)
+            elif attribute_type == AttributeType.CATEGORICAL:
+                encoded_feature = []
+                for attr_trace in feature:
+                    trace_attributes = []
+                    for attr in attr_trace:
+                        if attr != 0: # Attributes with 0 are from events that do not exist
+                            w2v_attr_vector = w2v_encoder.encode_attribute(attr)
+                            trace_attributes.append(np.array(w2v_attr_vector, dtype=np.float32))
+                    # Average the attribute value over all events
+                    encoded_feature.append(np.mean(np.vstack(trace_attributes), axis=0))
+                w2v_features.append(np.array(encoded_feature, dtype=np.float32))
+                w2v_feature_names.append(attribute_key) 
+            
+        return np.array(w2v_features, dtype=np.float32), np.array(numeric_features, dtype=np.float32), np.array(numeric_feature_names), np.array(w2v_feature_names)
+    
+    @property
+    def flat_w2v_features_2d(self):
+        w2v_features, numeric_features, numeric_feature_names, w2v_feature_names = self.w2v_features
 
-    #     graph_relation = np.array(graph_relation >= self.beta*self.num_cases, dtype='int32')
+        # RCVDB: Interleaf the w2v features
+        # (num_attribute, num_cases, vector_size) 
+        # (num_cases, num_attribute, vector_size) 
+        # (num_cases, num_attribute * vector_size) 
+        transposed_w2v_features = np.transpose(w2v_features, (1, 0, 2))
+        dim0, dim1, dim2 = transposed_w2v_features.shape
+        # Need order C so the whole w2v of each attribute is next to each other
+        flat_w2v_features = np.reshape(transposed_w2v_features, (dim0, dim1 * dim2), order='C')
 
-    #     onehot_features = self.flat_onehot_features
-    #     eye = np.eye(self.max_len, dtype=int)
-    #     for case_index in range(self.num_cases):  #生成图
-    #         attr_graphs = []
-    #         edge = []
-    #         xs = []
-    #         ##构造顶点信息
-    #         for attr_index in range(self.num_attributes):
-    #             xs.append(
-    #                 torch.tensor(onehot_features[case_index, :, dims_range[attr_index][0]:dims_range[attr_index][1]]))
+        # RCVDB: Interleaf the numeric features
+        # (num_attribute, num_cases, num_events) 
+        # (num_cases, num_attribute, num_events) 
+        # (num_cases, num_attribute * num_events)
+        if len(numeric_features) > 0:
+            transposed_numeric_features = np.transpose(numeric_features, (1, 0, 2))
+            dim0, dim1, dim2 = transposed_numeric_features.shape
+            # Need order F so each event but not each attribute of the same type are next to eachother
+            flat_numeric_features = np.reshape(transposed_numeric_features, (dim0, dim1 * dim2), order='F')
 
-    #         if self.case_lens[case_index]>1:
-    #             ##构造边信息
-    #             node = self.features[0][case_index,:self.case_lens[case_index]]
-    #             for activity_index in range(0, self.case_lens[case_index]):
-    #                 out = np.argwhere( graph_relation[self.features[0][case_index,activity_index]] == 1).flatten()
-    #                 a = set(node)
-    #                 b = set(out)
-    #                 if activity_index+1< self.case_lens[case_index]:
-    #                     edge.append([activity_index, activity_index+1])  #保证trace中相连的activity一定有边。
-    #                 for node_name in a.intersection(b):
-    #                     for node_index in np.argwhere(node == node_name).flatten():
-    #                         if  activity_index+1 != node_index:
-    #                             edge.append([activity_index, node_index])  # 添加有向边
-    #         edge_index = torch.tensor(edge, dtype=torch.long)
-    #         self.node_xs.append(xs)
-    #         self.edge_indexs.append(edge_index.T)
+            flat_w2v_numeric_features = np.concatenate((flat_w2v_features,flat_numeric_features), axis=1)
+        else:
+            flat_w2v_numeric_features = flat_w2v_features
 
-    #     self.node_dims = self.attribute_dims.copy()
+        # RCVDB: Sanity check to see if all values are encoded correctly.
+        assert not np.any(np.isnan(flat_w2v_numeric_features)), "Data contains NaNs!"
+        assert not np.any(np.isinf(flat_w2v_numeric_features)), "Data contains Infs!"
 
-    # def _gen_trace_graphs_GAE(self):
+        return flat_w2v_numeric_features
 
-    #     dims_temp = []
-    #     dims_temp.append(self.attribute_dims[0])
-    #     for j in range(1, len(self.attribute_dims)):
-    #         dims_temp.append(dims_temp[j - 1] + self.attribute_dims[j])
-    #     dims_temp.insert(0, 0)
-    #     dims_range = [(dims_temp[i - 1], dims_temp[i]) for i in range(1, len(dims_temp))]
+    # Embedding Features
+    @property
+    def embedding_features(self):
+        import torch.nn as nn
 
-    #     onehot_features = self.flat_onehot_features
-    #     for case_index in range(self.num_cases):  #生成图
-    #         edge = []
-    #         xs = []
-    #         edge_attr = None
-    #         for attr_index in range(self.num_attributes):
-    #             xs.append(onehot_features[case_index, :self.case_lens[case_index],
-    #                       dims_range[attr_index][0]:dims_range[attr_index][1]])
-    #         if self.case_lens[case_index]>1:
-    #             ##构造顶点,边信息
-    #             node=[]
-    #             activity_array=xs[0]
-    #             index_helper=[]
-    #             for activity_index in range(0, self.case_lens[case_index]):
-    #                 if list(activity_array[activity_index]) not in node:
-    #                     node.append(list(activity_array[activity_index] )) #节点加入
-    #                     index_helper.append(len(node)-1)
-    #                 else:
-    #                     index_helper.append(node.index(list(activity_array[activity_index])))
+        embedded_features = []
 
-    #             edge=[[index_helper[i],index_helper[i+1]] for i in range(len(index_helper)-1)]
+        for feature, attribute_type in zip(self._features, self.attribute_types):
+            embedding_dim = 5  # Fixed-size output vector
 
+            unique_features = np.unique(feature)
+            if attribute_type == AttributeType.CATEGORICAL:
+                num_categories = len(unique_features)
+            elif attribute_type == AttributeType.NUMERICAL:
+                num_categories = np.max(unique_features)
 
-    #             for attr_index in range(1, self.num_attributes):
-    #                 if edge_attr is None:
-    #                     edge_attr = np.array(xs[attr_index])
-    #                 else:
-    #                     edge_attr = np.concatenate((edge_attr, xs[attr_index]), 1)
-    #             if edge_attr is not None:
-    #                 edge_attr = torch.tensor(edge_attr[:-1], dtype=torch.float )
-    #         else:
-    #             node=xs[0]
-    #         edge_index = torch.tensor(edge, dtype=torch.long)
-    #         if edge_attr is None:
-    #             self.trace_graphs_GAE.append(Data(torch.tensor(np.array(node), dtype=torch.float), edge_index=edge_index.T))
-    #         else:
-    #             self.trace_graphs_GAE.append(
-    #                 Data(torch.tensor(np.array(node), dtype=torch.float), edge_index=edge_index.T, edge_attr=edge_attr))
+            print(num_categories)
+            attribute_embedding_layer = nn.Embedding(num_categories, embedding_dim)
+
+            try:
+                feature_tensor = torch.tensor(feature).long()
+                feature_embedding = attribute_embedding_layer(feature_tensor).detach().numpy()
+                embedded_features.append(feature_embedding)
+            except:
+                print('test')
+
+        return embedded_features
+    
+    @property
+    def flat_embedding_features(self):
+        flat_embedding_features = np.concatenate(self.embedding_features, axis=2)
+
+        return flat_embedding_features
+    
+    @property
+    def flat_embedding_features_2d(self):
+        flat_embedding_features_2d = self.remove_time_dimension(self.flat_embedding_features)
+        print('Flat-Embedding features 2d shape: ', len(flat_embedding_features_2d), len(flat_embedding_features_2d[0]))
+
+        return flat_embedding_features_2d
+
+    # One-hot Features
+    @property
+    def onehot_features(self):
+        """
+        Return one-hot encoding of integer encoded features, while numerical features are passed as they are.
+
+        As `features` this will return one tensor for each attribute. Shape of tensor for each attribute will be
+        (number_of_cases, max_case_length, attribute_dimension). The attribute dimension refers to the number of unique
+        values of the respective attribute encountered in the event log.
+
+        :return:
+        """
+        one_hot_features = [self._to_categorical(f)[:, :, 1:] if t == AttributeType.CATEGORICAL else np.expand_dims(f, axis=2)
+                for f, t in zip(self._features, self.attribute_types)]
+        
+        # RCVDB: Tensor seems to be of shape (attribute_dimension, number_of_cases, max_case_length)
+        # print('One-hot features shape: ', len(one_hot_features), len(one_hot_features[0]), len(one_hot_features[0][0]))
+
+        # RCVDB: Debug to get an overview of how the features are encoded
+        # for i in range(len(one_hot_features)):
+        #     print(one_hot_features[i][0][0])
+
+        return one_hot_features
+
+    @property
+    def flat_onehot_features(self):
+        """
+        Return combined one-hot features in one single tensor.
+
+        One-hot vectors for each attribute in each event will be concatenated. Resulting shape of tensor will be
+        (number_of_cases, max_case_length, attribute_dimension[0] + attribute_dimension[1] + ... + attribute_dimension[n]).
+
+        :return:
+        """
+        flat_one_hot_features = np.concatenate(self.onehot_features, axis=2)
+        # print('Flat-One-hot features shape: ', len(flat_one_hot_features), len(flat_one_hot_features[0]), len(flat_one_hot_features[0][0]))
+
+        return flat_one_hot_features
+
+    @property
+    def flat_onehot_features_2d(self):
+        """
+        Return 2d tensor of one-hot encoded features.
+
+        Same as `flat_onehot_features`, but with flattened time dimension (the second dimension). Resulting tensor shape
+        will be (number_of_cases, max_case_length * (attribute_dimension[0] + attribute_dimension[1] + ... + attribute_dimension[n]).
+
+        :return:
+        """
+        flat_onehot_features_2d = self.remove_time_dimension(self.flat_onehot_features)
+        print('Flat-One-hot features 2d shape: ', len(flat_onehot_features_2d), len(flat_onehot_features_2d[0]))
+
+        return flat_onehot_features_2d
+    
+    @property
+    def onehot_train_targets(self):
+        """
+        Return targets to be used when training predictive anomaly detectors.
+
+        Returns for each case the case shifted by one event to the left. A predictive anomaly detector is trained to
+        predict the nth + 1 event of a case when given the first n events.
+
+        :return:
+        """
+        return [np.pad(f[:, 1:], ((0, 0), (0, 1), (0, 0)), mode='constant') if t == AttributeType.CATEGORICAL else f
+                for f, t in zip(self.onehot_features, self.attribute_types)]
