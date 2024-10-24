@@ -71,7 +71,7 @@ class DAE(NNAnomalyDetector):
         elif categorical_encoding == EncodingCategorical.EMBEDDING:
             features = dataset.flat_embedding_features_2d
         elif categorical_encoding == EncodingCategorical.WORD_2_VEC:
-            features = dataset.flat_w2v_features_2d
+            features = dataset.flat_w2v_features_2d()
         else:
             features = dataset.flat_features_2d
 

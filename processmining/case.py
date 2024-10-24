@@ -73,6 +73,16 @@ class Case(object):
     def add_event(self, event):
         self.events.append(event)
 
+    def get_attributes_by_type(self, attribute_key):
+        attribute_values = []
+        for event in self.events:
+            event:Event
+            if attribute_key in event.attributes:
+                attribute_values.append(event.attributes[attribute_key])
+            elif attribute_key == 'name':
+                attribute_values.append(event.name)
+        return attribute_values
+
     # RCVDB: For sorting the prefixes on the last event arrival, which is the timestamp of the last event in events
     @property
     def last_event_arrival(self):

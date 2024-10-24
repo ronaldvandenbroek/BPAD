@@ -17,6 +17,7 @@ import os.path
 from pathlib import Path
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 from utils.enums import Perspective
 
@@ -63,6 +64,25 @@ class FSSave():
     def save_raw_results(self, level, results):
         file_name = self._generate_file_name(['result', self.model_name, level, self.perspective, self.bucket_size])
         self._save(file_name, results)
+
+    def save_embedding_space(self, encoder_name, pretrain_percentage, words, word_vectors):
+        file_name = self._generate_file_name(['embedding', encoder_name, pretrain_percentage])
+
+        plt.scatter(word_vectors[:, 0], word_vectors[:, 1], color='red')
+
+        # Annotate the points with the corresponding words
+        for i, word in enumerate(words):
+            if int(word) < 10:
+                plt.annotate(word, xy=(word_vectors[i, 0], word_vectors[i, 1]), fontsize=12, color='green')
+
+        # Set the title and labels
+        plt.title(f'{encoder_name} Word Embeddings With {pretrain_percentage * 100}% Pretraining')
+        # plt.xlabel('Dimension 1')
+        # plt.ylabel('Dimension 2')
+        plt.grid()
+        # plt.legend()
+        print(f'Saving Embedding plot {file_name}')
+        plt.savefig(os.path.join(self.path, file_name + ".png"), format='png', dpi=300)
     
     def _generate_file_name(self, name_parts):
         name = None

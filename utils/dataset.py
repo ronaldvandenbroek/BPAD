@@ -24,7 +24,7 @@ import torch
 from torch_geometric.data import Data
 from tqdm import tqdm
 from utils.anomaly import label_to_targets
-from utils.embedding import AttributeDictionary, ProcessWord2Vec
+from utils.embedding.embedding import AttributeDictionary, ProcessWord2Vec
 from utils.enums import AttributeType, EncodingCategorical, EncodingNumerical, Perspective
 from utils.enums import Class
 from utils.enums import PadMode
@@ -38,17 +38,19 @@ class Dataset(object):
     def __init__(self, 
                  dataset_name=None, 
                  beta=0, 
-                 label_percent = 0,
+                 pretrain_percentage = 0,
                  w2v_vector_size = 50,
                  w2v_window_size = 10, 
                  prefix=True, 
                  categorical_encoding=EncodingCategorical.ONE_HOT,
-                 numerical_encoding=EncodingNumerical.MIN_MAX_SCALING):
+                 numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
+                 fs_save=None):
         # Public properties
         self.dataset_name = dataset_name
         self.beta=beta   #used by GAMA
         self.attribute_types = None
         self.attribute_keys = None
+        self.fs_save=fs_save
 
         # Encoding types
         self.categorical_encoding = categorical_encoding
@@ -65,7 +67,7 @@ class Dataset(object):
         self.node_dims=[]
         self.edge_indexs = []
         self.node_xs = []
-        self.label_percent = label_percent   # Used by weakly supervised methods to control the percentage of anomalies labeled during training
+        self.pretrain_percentage = pretrain_percentage  
         self.w2v_vector_size = w2v_vector_size
         self.w2v_window_size = w2v_window_size
 
@@ -345,7 +347,7 @@ class Dataset(object):
 
             # Integer encode categorical data
             if attribute_type == AttributeType.CATEGORICAL:
-                from utils.embedding import AttributeDictionary
+                from utils.embedding.embedding import AttributeDictionary
 
                 # Dynamic max size
                 unknown_buffer_percentage = 1.25
@@ -525,86 +527,18 @@ class Dataset(object):
         #     return targets
         # return None
 
-    # W2V Features
-    @property
-    def w2v_features(self):
-        def convert_to_sentences(input):
-            return [[str(i)] for i in input]
-
-        # W2V setup
-        training_sentences = []
-        for attribute_type, key in zip(self.attribute_types, self.event_log.event_attribute_keys):
-            if attribute_type == AttributeType.CATEGORICAL:
-                encoder:AttributeDictionary = self.encoders[key]
-                attributes = convert_to_sentences(encoder.encoded_attributes() + encoder.buffer_attributes())
-                training_sentences += attributes
-
-        w2v_encoder = ProcessWord2Vec(
-            training_sentences=training_sentences,
-            vector_size=self.w2v_vector_size,
-            window=self.w2v_window_size)
-        
-        w2v_features = []
-        w2v_feature_names = []
-        numeric_features = []
-        numeric_feature_names = []
-        for index, (feature, attribute_type, attribute_key) in enumerate(zip(self._features, self.attribute_types, self.event_log.event_attribute_keys)):
-            # RCVDB: TODO Experimental, not encoding start and end event
-            # feature_experimental = []
-            # for case in feature:
-            #     feature_experimental.append(case[1:-1])
-            # feature = feature_experimental  
-
-            if attribute_type == AttributeType.NUMERICAL:
-                numeric_features.append(np.array(feature,dtype=np.float32))
-                numeric_feature_names.append(attribute_key)
-            elif attribute_type == AttributeType.CATEGORICAL:
-                encoded_feature = []
-                for attr_trace in feature:
-                    trace_attributes = []
-                    for attr in attr_trace:
-                        if attr != 0: # Attributes with 0 are from events that do not exist
-                            w2v_attr_vector = w2v_encoder.encode_attribute(attr)
-                            trace_attributes.append(np.array(w2v_attr_vector, dtype=np.float32))
-                    # Average the attribute value over all events
-                    encoded_feature.append(np.mean(np.vstack(trace_attributes), axis=0))
-                w2v_features.append(np.array(encoded_feature, dtype=np.float32))
-                w2v_feature_names.append(attribute_key) 
-            
-        return np.array(w2v_features, dtype=np.float32), np.array(numeric_features, dtype=np.float32), np.array(numeric_feature_names), np.array(w2v_feature_names)
-    
-    @property
     def flat_w2v_features_2d(self):
-        w2v_features, numeric_features, numeric_feature_names, w2v_feature_names = self.w2v_features
-
-        # RCVDB: Interleaf the w2v features
-        # (num_attribute, num_cases, vector_size) 
-        # (num_cases, num_attribute, vector_size) 
-        # (num_cases, num_attribute * vector_size) 
-        transposed_w2v_features = np.transpose(w2v_features, (1, 0, 2))
-        dim0, dim1, dim2 = transposed_w2v_features.shape
-        # Need order C so the whole w2v of each attribute is next to each other
-        flat_w2v_features = np.reshape(transposed_w2v_features, (dim0, dim1 * dim2), order='C')
-
-        # RCVDB: Interleaf the numeric features
-        # (num_attribute, num_cases, num_events) 
-        # (num_cases, num_attribute, num_events) 
-        # (num_cases, num_attribute * num_events)
-        if len(numeric_features) > 0:
-            transposed_numeric_features = np.transpose(numeric_features, (1, 0, 2))
-            dim0, dim1, dim2 = transposed_numeric_features.shape
-            # Need order F so each event but not each attribute of the same type are next to eachother
-            flat_numeric_features = np.reshape(transposed_numeric_features, (dim0, dim1 * dim2), order='F')
-
-            flat_w2v_numeric_features = np.concatenate((flat_w2v_features,flat_numeric_features), axis=1)
-        else:
-            flat_w2v_numeric_features = flat_w2v_features
-
-        # RCVDB: Sanity check to see if all values are encoded correctly.
-        assert not np.any(np.isnan(flat_w2v_numeric_features)), "Data contains NaNs!"
-        assert not np.any(np.isinf(flat_w2v_numeric_features)), "Data contains Infs!"
-
-        return flat_w2v_numeric_features
+        w2v_encoder = ProcessWord2Vec(
+            encoders=self.encoders,
+            pretrain_percentage=self.pretrain_percentage,
+            attribute_types=self.attribute_types,
+            event_attribute_keys=self.event_log.event_attribute_keys,
+            features=self._features,
+            event_log=self.event_log,
+            vector_size=self.w2v_vector_size,
+            window=self.w2v_window_size,
+            fs_save=self.fs_save) 
+        return w2v_encoder.encode_flat_features_2d()
 
     # Embedding Features
     @property

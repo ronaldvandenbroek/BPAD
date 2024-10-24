@@ -47,27 +47,28 @@ def fit_and_eva(dataset_name, ad, fit_kwargs=None, ad_kwargs=None):
     numerical_encoding = fit_kwargs['numerical_encoding']
     w2v_vector_size = fit_kwargs['w2v_vector_size']
     w2v_window_size = fit_kwargs['w2v_window_size']
+    pretrain_percentage = fit_kwargs['pretrain_percentage']
 
     start_time = time.time()
 
-    print(dataset_name)
 
-    # Dataset
-    dataset = Dataset(dataset_name, 
-                      beta=0.005, 
-                      prefix=prefix,
-                      w2v_vector_size=w2v_vector_size,
-                      w2v_window_size=w2v_window_size, 
-                      categorical_encoding=categorical_encoding,
-                      numerical_encoding=numerical_encoding)
     # if bucket_boundaries is not None:
     #     bucket_boundaries.append(dataset.max_len)
 
     # AD
     ad = ad(**ad_kwargs)
-    print(ad.name)
+    print(ad.name, dataset_name)
 
     fs_save = FSSave(start_time=start_time, model_name=ad.name)
+    dataset = Dataset(dataset_name, 
+                      beta=0.005, 
+                      prefix=prefix,
+                      pretrain_percentage=pretrain_percentage,
+                      w2v_vector_size=w2v_vector_size,
+                      w2v_window_size=w2v_window_size, 
+                      categorical_encoding=categorical_encoding,
+                      numerical_encoding=numerical_encoding,
+                      fs_save=fs_save)
 
     bucket_trace_level_abnormal_scores, bucket_event_level_abnormal_scores, bucket_attr_level_abnormal_scores, bucket_losses, bucket_case_labels, bucket_event_labels, bucket_attr_labels = ad.train_and_predict(dataset, 
                                                                                                                                                                                                                  batch_size=batch_size, 
@@ -142,53 +143,62 @@ if __name__ == '__main__':
     # In practice probably more accurrate to have one epoch and a batch size of one to simulate each event arriving seperately
     ads = [
         dict(ad=DAE, fit_kwargs=dict( 
-            batch_size=1, 
-            prefix=True, 
-            bucket_boundaries = None, # [3,4,5,6,7,8,9], #None
-            categorical_encoding=EncodingCategorical.WORD_2_VEC,
-            numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
-            w2v_vector_size = 100,
-            w2v_window_size = 10)),
-        dict(ad=DAE, fit_kwargs=dict(
-            batch_size=1, 
-            prefix=True, 
-            bucket_boundaries = None,
-            categorical_encoding=EncodingCategorical.ONE_HOT,
-            numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
-            w2v_vector_size = 100,
-            w2v_window_size = 10)),
-        dict(ad=DAE, fit_kwargs=dict(
-            batch_size=1, 
-            prefix=True, 
-            bucket_boundaries = [5,8], # [3,4,5,6,7,8,9], #None
-            categorical_encoding=EncodingCategorical.WORD_2_VEC,
-            numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
-            w2v_vector_size = 100,
-            w2v_window_size = 10)),
-        dict(ad=DAE, fit_kwargs=dict(
-            batch_size=1, 
-            prefix=True, 
-            bucket_boundaries = [5,8],
-            categorical_encoding=EncodingCategorical.ONE_HOT,
-            numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
-            w2v_vector_size = 100,
-            w2v_window_size = 10)),
-        dict(ad=DAE, fit_kwargs=dict( 
-            batch_size=8, 
-            prefix=True, 
-            bucket_boundaries = [3,4,5,6,7,8,9], #None
-            categorical_encoding=EncodingCategorical.WORD_2_VEC,
-            numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
-            w2v_vector_size = 100,
-            w2v_window_size = 10)),
-        dict(ad=DAE, fit_kwargs=dict( 
             batch_size=8, 
             prefix=True, 
             bucket_boundaries = [3,4,5,6,7,8,9],
-            categorical_encoding=EncodingCategorical.ONE_HOT,
+            categorical_encoding=EncodingCategorical.WORD_2_VEC,
             numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
+            pretrain_percentage=0.5,
             w2v_vector_size = 100,
             w2v_window_size = 10)),
+        # dict(ad=DAE, fit_kwargs=dict( 
+        #     batch_size=1, 
+        #     prefix=True, 
+        #     bucket_boundaries = None, # [3,4,5,6,7,8,9], #None
+        #     categorical_encoding=EncodingCategorical.WORD_2_VEC,
+        #     numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
+        #     w2v_vector_size = 100,
+        #     w2v_window_size = 10)),
+        # dict(ad=DAE, fit_kwargs=dict(
+        #     batch_size=1, 
+        #     prefix=True, 
+        #     bucket_boundaries = None,
+        #     categorical_encoding=EncodingCategorical.ONE_HOT,
+        #     numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
+        #     w2v_vector_size = 100,
+        #     w2v_window_size = 10)),
+        # dict(ad=DAE, fit_kwargs=dict(
+        #     batch_size=1, 
+        #     prefix=True, 
+        #     bucket_boundaries = [5,8], # [3,4,5,6,7,8,9], #None
+        #     categorical_encoding=EncodingCategorical.WORD_2_VEC,
+        #     numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
+        #     w2v_vector_size = 100,
+        #     w2v_window_size = 10)),
+        # dict(ad=DAE, fit_kwargs=dict(
+        #     batch_size=1, 
+        #     prefix=True, 
+        #     bucket_boundaries = [5,8],
+        #     categorical_encoding=EncodingCategorical.ONE_HOT,
+        #     numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
+        #     w2v_vector_size = 100,
+        #     w2v_window_size = 10)),
+        # dict(ad=DAE, fit_kwargs=dict( 
+        #     batch_size=8, 
+        #     prefix=True, 
+        #     bucket_boundaries = [3,4,5,6,7,8,9], #None
+        #     categorical_encoding=EncodingCategorical.WORD_2_VEC,
+        #     numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
+        #     w2v_vector_size = 100,
+        #     w2v_window_size = 10)),
+        # dict(ad=DAE, fit_kwargs=dict( 
+        #     batch_size=8, 
+        #     prefix=True, 
+        #     bucket_boundaries = [3,4,5,6,7,8,9],
+        #     categorical_encoding=EncodingCategorical.ONE_HOT,
+        #     numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
+        #     w2v_vector_size = 100,
+        #     w2v_window_size = 10)),
     ]
 
     # RCVDB: Full Configuration
