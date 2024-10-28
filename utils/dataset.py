@@ -318,8 +318,17 @@ class Dataset(object):
 
         # Save all values in a flat 1d array. This is necessary for the preprocessing. We will reshape later.
         for i, case in enumerate(event_log.cases):
-            case_lens.append(case.num_events + 2)  # +2 for start and end events
-            for event in [start_event] + case.events + [end_event]:
+            # RCVDB: Do not add the end event if the trace is not 'complete' or in other words is a prefix
+            case:Case
+
+            if case.complete_trace: # or not case.complete_trace:
+                case_lens.append(case.num_events + 2)  # +2 for start and end events
+                trace = [start_event] + case.events + [end_event]
+            else:
+                case_lens.append(case.num_events + 1)  # +1 for start event
+                trace = [start_event] + case.events
+
+            for event in trace:
                 for attribute in event_log.event_attribute_keys:
                     # Get attribute value from event log
                     if attribute == 'name':
@@ -341,6 +350,7 @@ class Dataset(object):
         dictionary_starting_index = 1
         for index, (key, attribute_type) in enumerate(zip(feature_columns.keys(), attr_types)):
             replace_attribute_type = None
+            # print(f'Pre-Processing {key} {attribute_type}')
 
             # Integer encode categorical data
             if attribute_type == AttributeType.CATEGORICAL:
@@ -367,7 +377,9 @@ class Dataset(object):
 
             # Normalize numerical data
             elif attribute_type == AttributeType.NUMERICAL:
+                print(self.numerical_encoding, EncodingNumerical.MIN_MAX_SCALING)
                 if self.numerical_encoding == EncodingNumerical.MIN_MAX_SCALING:
+                    # print('Minmax scaling ' + key)
                     feature_columns[key] = self._min_max_scaling(feature_columns[key])
 
             if replace_attribute_type is None:
@@ -453,8 +465,14 @@ class Dataset(object):
         # feature_columns[key] = (f - f.mean()) / f.std()  # 0 mean and 1 std normalization
         f_min = np.min(feature_column)
         f_max = np.max(feature_column)
-        if f_max != f_min:
-            return (feature_column - f_min) / (f_max - f_min)
+        print(f_min, f_max)
+        if f_max > f_min:
+            scaled_feature_column = (feature_column - f_min) / (f_max - f_min)
+
+            f_min = np.min(scaled_feature_column)
+            f_max = np.max(scaled_feature_column)
+            print(f_min, f_max)
+            return scaled_feature_column
         else:
             return np.zeros_like(feature_column)
 

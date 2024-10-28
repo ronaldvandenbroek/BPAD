@@ -37,8 +37,12 @@ class ProcessWord2Vec():
 
         self.fs_save=fs_save
 
-        self.w2v_models = {}
+        # Precompute
+        self.frequencies = np.linspace(1, vector_size / 2, vector_size // 2)
+        self.zero_vector = np.zeros(vector_size, dtype=np.float32)
 
+        # Setup models
+        self.w2v_models = {}
         percentage_index = int(np.ceil((pretrain_percentage * len(event_log.cases))))
         pretrain_cases = event_log.cases[:percentage_index]
         for attribute_type, attribute_key in zip(self.attribute_types, self.event_attribute_keys):
@@ -51,7 +55,8 @@ class ProcessWord2Vec():
                 w2v_model:Word2Vec = self.create_model(pretrain_sentences)
                 self.w2v_models[attribute_key] = w2v_model
 
-                self._save_embedding_space(w2v_model, attribute_key, pretrain_percentage)
+                if fs_save is not None:
+                    self._save_embedding_space(w2v_model, attribute_key, pretrain_percentage)
 
     def create_training_data(self, pretrain_cases, attribute_key, encoder:AttributeDictionary):
         pretrain_sentences = []
@@ -88,7 +93,7 @@ class ProcessWord2Vec():
             print(model.wv.index_to_key)
             raise e
     
-    def encode_features(self):
+    def encode_features(self, average=True, match_numerical=False):
         w2v_features = []
         w2v_feature_names = []
         numeric_features = []
@@ -101,7 +106,19 @@ class ProcessWord2Vec():
             # feature = feature_experimental  
 
             if attribute_type == AttributeType.NUMERICAL:
-                numeric_features.append(np.array(feature,dtype=np.float32))
+                if match_numerical:
+                    encoded_feature = []
+                    for attr_trace in feature:
+                        trace_attributes = []
+                        for attr in attr_trace:
+                            if attr != 0:
+                                trace_attributes.append(np.array(self._fourier_encoding(attr),dtype=np.float32))
+                            else:
+                                trace_attributes.append(self.zero_vector)
+                        encoded_feature.append(trace_attributes)     
+                    numeric_features.append(encoded_feature)
+                else:
+                    numeric_features.append(np.array(feature,dtype=np.float32))
                 numeric_feature_names.append(attribute_key)
             elif attribute_type == AttributeType.CATEGORICAL:
                 encoded_feature = []
@@ -112,8 +129,14 @@ class ProcessWord2Vec():
                             # print(attribute_key)
                             w2v_attr_vector = self.encode_attribute(attr, attribute_key)
                             trace_attributes.append(np.array(w2v_attr_vector, dtype=np.float32))
-                    # Average the attribute value over all events
-                    encoded_feature.append(np.mean(np.vstack(trace_attributes), axis=0))
+                        elif average == False:
+                            trace_attributes.append(self.zero_vector)
+
+                    if average:
+                        # Average the attribute value over all events
+                        encoded_feature.append(np.mean(np.vstack(trace_attributes), axis=0))
+                    else:
+                        encoded_feature.append(trace_attributes)
                 w2v_features.append(np.array(encoded_feature, dtype=np.float32))
                 w2v_feature_names.append(attribute_key) 
             
@@ -159,3 +182,8 @@ class ProcessWord2Vec():
         word_vectors_2d = pca.fit_transform(word_vectors)
 
         self.fs_save.save_embedding_space(f"W2V_{attribute_key}", pretrain_percentage, words, word_vectors_2d)
+
+    def _fourier_encoding(self, x):
+        sin_part = np.sin(self.frequencies * x * np.pi)
+        cos_part = np.cos(self.frequencies * x * np.pi)
+        return np.concatenate([sin_part, cos_part]).astype(np.float32)

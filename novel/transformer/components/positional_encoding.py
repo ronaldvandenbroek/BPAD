@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 
 # https://machinelearningmastery.com/the-transformer-positional-encoding-layer-in-keras-part-2/
 
-class PositionEmbeddingLayer(Layer):
+class PositionWordEmbeddingLayer(Layer):
     def __init__(self, sequence_length, vocab_size, output_dim, **kwargs):
-        super(PositionEmbeddingLayer, self).__init__(**kwargs)
+        super(PositionWordEmbeddingLayer, self).__init__(**kwargs)
         # RCVDB: TODO Can use w2v here
         # RCVDB: TODO Probably need to implement the Attribute Dictionary here to make it as dynamic as possible
         self.word_embedding_layer = Embedding(
@@ -26,9 +26,9 @@ class PositionEmbeddingLayer(Layer):
         return embedded_words + embedded_indices
 
 # Attention is all you need version
-class PositionEmbeddingFixedWeights(Layer):
+class PositionWordEmbeddingFixedWeights(Layer):
     def __init__(self, sequence_length, vocab_size, output_dim, **kwargs):
-        super(PositionEmbeddingFixedWeights, self).__init__(**kwargs)
+        super(PositionWordEmbeddingFixedWeights, self).__init__(**kwargs)
         word_embedding_matrix = self.get_position_encoding(vocab_size, output_dim)   
         position_embedding_matrix = self.get_position_encoding(sequence_length, output_dim)                                          
         self.word_embedding_layer = Embedding(
@@ -57,3 +57,15 @@ class PositionEmbeddingFixedWeights(Layer):
         embedded_indices = self.position_embedding_layer(position_indices)
         return embedded_words + embedded_indices
 
+class PositionEmbeddingLayer(Layer):
+    def __init__(self, sequence_length, output_dim, **kwargs):
+        super(PositionEmbeddingLayer, self).__init__(**kwargs)
+
+        self.position_embedding_layer = Embedding(
+            input_dim=sequence_length, output_dim=output_dim
+        )
+
+    def call(self, inputs):        
+        position_indices = tf.range(tf.shape(inputs)[-1])
+        embedded_indices = self.position_embedding_layer(position_indices)
+        return inputs + embedded_indices

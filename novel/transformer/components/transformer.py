@@ -8,11 +8,11 @@ from novel.transformer.components.encoder import Encoder
 # https://machinelearningmastery.com/joining-the-transformer-encoder-and-decoder-and-masking/
 
 class TransformerModel(Model):
-    def __init__(self, enc_vocab_size, dec_vocab_size, enc_seq_length, dec_seq_length, h, d_k, d_v, d_model, d_ff_inner, n, rate, **kwargs):
+    def __init__(self, dec_vocab_size, enc_seq_length, dec_seq_length, h, d_k, d_v, d_model, d_ff_inner, n, rate, **kwargs):
         super(TransformerModel, self).__init__(**kwargs)
 
         # Set up the encoder
-        self.encoder = Encoder(enc_vocab_size, enc_seq_length, h, d_k, d_v, d_model, d_ff_inner, n, rate)
+        self.encoder = Encoder(enc_seq_length, h, d_k, d_v, d_model, d_ff_inner, n, rate)
 
         # Set up the decoder
         self.decoder = Decoder(dec_vocab_size, dec_seq_length, h, d_k, d_v, d_model, d_ff_inner, n, rate)

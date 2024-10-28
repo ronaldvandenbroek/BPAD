@@ -27,6 +27,9 @@ class Case(object):
         else:
             self.events = events
         self.attributes = dict(kwargs)
+        
+        # RCVDB: Determine if the trace is complete or a prefix of a complete trace
+        self.complete_trace = True
 
     def __eq__(self, other):
         if len(self) != len(other):

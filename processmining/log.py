@@ -230,18 +230,30 @@ class EventLog(object):
         prefix = True
         for case in log[case_key]:
             _case = Case(id=case['id'], **case['attributes'])
-            for e in case['events']:
+            events = case['events']
+            num_events = len(events)
+
+            for i, e in enumerate(events):
                 event = Event(name=e['name'], timestamp=e['timestamp'], **e['attributes'])
                 _case.add_event(event)
+
                 # RCVDB: If the event_log is prefix based add a clone of each case to the log after every added event
                 # This simulates that each 'new' event loads the corresponding prefix of the case.
                 if prefix:
-                    event_log.add_case(Case.clone(_case))
-            # RCVDB: If the event_log is not prefix based add only the complete traces to the log
-            if not prefix:
-                event_log.add_case(_case)
+                    cloned_case = Case.clone(_case)
 
-        
+                    # Mark if the event is a prefix or a complete trace
+                    is_last_event = (i == num_events - 1)
+                    if not is_last_event:
+                        cloned_case.complete_trace = False
+
+                    event_log.add_case(cloned_case)
+
+            # RCVDB: If the event_log is not prefix based add only the complete traces to the log
+            # If it is prefix based then add a final 'complete' case to the trace
+            # if not prefix:
+            _case.complete_trace = True
+            event_log.add_case(_case)
 
         # RCVDB: Sort the event_log so the prefixes are ordered by the order the last event arrived
         if prefix:
