@@ -21,13 +21,10 @@ import pickle as pickle
 
 import numpy as np
 import torch
-from torch_geometric.data import Data
 from tqdm import tqdm
 from utils.anomaly import label_to_targets
-from utils.embedding.embedding import AttributeDictionary, ProcessWord2Vec
+from utils.embedding.w2v import ProcessWord2Vec
 from utils.enums import AttributeType, EncodingCategorical, EncodingNumerical, Perspective
-from utils.enums import Class
-from utils.enums import PadMode
 from utils.fs import EventLogFile
 from processmining.event import Event
 from processmining.case import Case
@@ -347,7 +344,7 @@ class Dataset(object):
 
             # Integer encode categorical data
             if attribute_type == AttributeType.CATEGORICAL:
-                from utils.embedding.embedding import AttributeDictionary
+                from utils.embedding.w2v import AttributeDictionary
 
                 # Dynamic max size
                 unknown_buffer_percentage = 1.25

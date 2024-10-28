@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ==============================================================================
+from datetime import datetime
 import os.path
 from pathlib import Path
 
@@ -35,11 +36,11 @@ RESULTS_RAW_DIR = os.path.join(ROOT_DIR,'results','raw') # For the model raw err
 EVENTLOG_CACHE_DIR = os.path.join(ROOT_DIR,'eventlogs', 'cache')  # For caching datasets so the event log does not always have to be loaded
 
 class FSSave():
-    def __init__(self, start_time, model_name) -> None:
+    def __init__(self, start_time:datetime, run_name, model_name) -> None:
         self.perspective = 'none'
         self.bucket_size = None
         self.model_name = model_name
-        self.path = os.path.join(RESULTS_RAW_DIR, str(start_time))
+        self.path = os.path.join(RESULTS_RAW_DIR, run_name, str(start_time.strftime('%y-%m-%d-%H-%M')))
         if not os.path.exists(self.path):
             os.makedirs(self.path)
 

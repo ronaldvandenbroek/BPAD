@@ -1,3 +1,5 @@
+from datetime import datetime
+import itertools
 import os
 import traceback
 import time
@@ -33,7 +35,7 @@ warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-def fit_and_eva(dataset_name, ad, fit_kwargs=None, ad_kwargs=None):
+def fit_and_eva(dataset_name, run_name, ad, fit_kwargs=None, ad_kwargs=None):
     print(fit_kwargs, ad_kwargs)
     if ad_kwargs is None:
         ad_kwargs = {}
@@ -59,7 +61,7 @@ def fit_and_eva(dataset_name, ad, fit_kwargs=None, ad_kwargs=None):
     ad = ad(**ad_kwargs)
     print(ad.name, dataset_name)
 
-    fs_save = FSSave(start_time=start_time, model_name=ad.name)
+    fs_save = FSSave(start_time=datetime.now(), run_name=run_name, model_name=ad.name)
     dataset = Dataset(dataset_name, 
                       beta=0.005, 
                       prefix=prefix,
@@ -139,18 +141,50 @@ if __name__ == '__main__':
     dataset_names_real = list(set(dataset_names)-set(dataset_names_syn))
     dataset_names_real.sort()
 
-    # RCVDB: Configuration to test multi-label anomalies
-    # In practice probably more accurrate to have one epoch and a batch size of one to simulate each event arriving seperately
-    ads = [
-        dict(ad=DAE, fit_kwargs=dict( 
+
+    run_name = 'W2V_Gridsearch_v2_batch_8_no_pretrain'
+    w2v_vector_sizes = [20,40,60,80,100,150,200]
+    w2v_window_size = [2,4,6,8,10]
+    # pre_train_percentage = [0,0.1,0.5]
+    pre_train_percentage = [0]
+
+    ads_w2v_embedding_search = []
+    w2v_combinations = list(itertools.product(w2v_vector_sizes, w2v_window_size, pre_train_percentage))
+    for w2v_combination in w2v_combinations:
+        w2v_vector_size, w2v_window_size, pre_train_percentage = w2v_combination
+
+        ads_w2v_embedding_search.append(dict(ad=DAE, fit_kwargs=dict( 
             batch_size=8, 
             prefix=True, 
             bucket_boundaries = [3,4,5,6,7,8,9],
             categorical_encoding=EncodingCategorical.WORD_2_VEC,
             numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
-            pretrain_percentage=0.5,
-            w2v_vector_size = 100,
-            w2v_window_size = 10)),
+            pretrain_percentage=pre_train_percentage,
+            w2v_vector_size = w2v_vector_size,
+            w2v_window_size = w2v_window_size)))
+        
+    ads_w2v_embedding_search.append(dict(ad=DAE, fit_kwargs=dict( 
+            batch_size=8, 
+            prefix=True, 
+            bucket_boundaries = [3,4,5,6,7,8,9],
+            categorical_encoding=EncodingCategorical.ONE_HOT,
+            numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
+            pretrain_percentage=0,
+            w2v_vector_size=0,
+            w2v_window_size=0)))
+
+    # RCVDB: Configuration to test multi-label anomalies
+    # In practice probably more accurrate to have one epoch and a batch size of one to simulate each event arriving seperately
+    # ads = [
+    #     dict(ad=DAE, fit_kwargs=dict( 
+    #         batch_size=8, 
+    #         prefix=True, 
+    #         bucket_boundaries = [3,4,5,6,7,8,9],
+    #         categorical_encoding=EncodingCategorical.WORD_2_VEC,
+    #         numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
+    #         pretrain_percentage=0.5,
+    #         w2v_vector_size = 100,
+    #         w2v_window_size = 10)),
         # dict(ad=DAE, fit_kwargs=dict( 
         #     batch_size=1, 
         #     prefix=True, 
@@ -199,7 +233,7 @@ if __name__ == '__main__':
         #     numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
         #     w2v_vector_size = 100,
         #     w2v_window_size = 10)),
-    ]
+    # ]
 
     # RCVDB: Full Configuration
     # ads = [
@@ -219,66 +253,10 @@ if __name__ == '__main__':
     #     dict(ad=VAEOCSVM) # Control flow, trace-level   ---Variational Autoencoder for Anomaly Detection in Event Data in Online Process Mining
     # ]
 
-
-    print('number of datasets:' + str(len(dataset_names)))
-    for ad in ads:
+    print(f'Total Planned configurations: {len(ads_w2v_embedding_search)}')
+    print(f'Total Number of datasets: {len(dataset_names)}')
+    for ad in ads_w2v_embedding_search:
         for d in dataset_names:
-            p = Process(target=fit_and_eva, kwargs={ 'dataset_name' : d,  **ad })
+            p = Process(target=fit_and_eva, kwargs={ 'dataset_name' : d,  'run_name' : run_name, **ad })
             p.start()
             p.join()
-
-    # res = [fit_and_eva(d, **ad) for ad in ads for d in dataset_names]
-
-
-
-        # RCVBD: TODO Determine if the high error scores compare to the anomalous traces
-    # try:
-    #     skip = True
-    #     if not skip:
-    #         ##trace level
-    #         trace_p, trace_r, trace_f1, trace_aupr = cal_best_PRF(dataset.case_target, trace_level_abnormal_scores)
-    #         print("Trace-level anomaly detection")
-    #         print(f'precision: {trace_p}, recall: {trace_r}, F1-score: {trace_f1}, AP: {trace_aupr}')
-
-    #         if event_level_abnormal_scores is not None:
-    #             ##event level
-    #             eventTemp = dataset.binary_targets.sum(2).flatten()
-    #             eventTemp[eventTemp > 1] = 1
-    #             event_p, event_r, event_f1, event_aupr = cal_best_PRF(eventTemp, event_level_abnormal_scores.flatten())
-    #             print("Event-level anomaly detection")
-    #             print(f'precision: {event_p}, recall: {event_r}, F1-score: {event_f1}, AP: {event_aupr}')
-    #         else:
-    #             event_p, event_r, event_f1, event_aupr = 0,0,0,0
-
-    #         ##attr level
-    #         if attr_level_abnormal_scores is not None:
-    #             attr_p, attr_r, attr_f1, attr_aupr = cal_best_PRF(dataset.binary_targets.flatten(),
-    #                                                             attr_level_abnormal_scores.flatten())
-    #             print("Attribute-level anomaly detection")
-    #             print(f'precision: {attr_p}, recall: {attr_r}, F1-score: {attr_f1}, AP: {attr_aupr}')
-    #         else:
-    #             attr_p, attr_r, attr_f1, attr_aupr = 0, 0, 0, 0
-
-    #         datanew = pd.DataFrame([{'index':dataset_name,'trace_p': trace_p, "trace_r": trace_r,'trace_f1':trace_f1,'trace_aupr':trace_aupr,
-    #                                 'event_p': event_p, "event_r": event_r, 'event_f1': event_f1, 'event_aupr': event_aupr,
-    #                                 'attr_p': attr_p, "attr_r": attr_r, 'attr_f1': attr_f1, 'attr_aupr': attr_aupr,'time':run_time
-    #                                 }])
-            
-    #         resPath=os.path.join(ROOT_DIR, f'result_{ad.name}.csv')
-    #         if os.path.exists(resPath):
-    #             data = pd.read_csv(resPath)
-    #             # RCVDB: Updating outdated code:
-    #             # data = data.append(datanew,ignore_index=True)
-    #             data = pd.concat([data, datanew], ignore_index=True)
-    #         else:
-    #             data = datanew
-    #         data.to_csv(resPath ,index=False)
-    # except Exception as e:
-    #     traceback.print_exc()
-    #     datanew = pd.DataFrame([{'index': dataset_name}])
-    #     if os.path.exists(resPath):
-    #         data = pd.read_csv(resPath)
-    #         data = data.append(datanew, ignore_index=True)
-    #     else:
-    #         data = datanew
-    #     data.to_csv(resPath, index=False)
