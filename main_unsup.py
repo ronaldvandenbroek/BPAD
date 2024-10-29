@@ -142,7 +142,7 @@ if __name__ == '__main__':
     dataset_names_real.sort()
 
 
-    run_name = 'W2V_Gridsearch_v2_batch_8_no_pretrain'
+    run_name = 'W2V_Gridsearch_v3_batch_8_no_pretrain'
     w2v_vector_sizes = [20,40,60,80,100,150,200]
     w2v_window_size = [2,4,6,8,10]
     # pre_train_percentage = [0,0.1,0.5]

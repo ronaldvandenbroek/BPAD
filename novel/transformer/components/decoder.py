@@ -2,7 +2,7 @@ from keras.layers import Layer, Dropout, Input
 from keras import Model
 
 from novel.transformer.components.attention import MultiHeadAttention
-from novel.transformer.components.positional_encoding import PositionWordEmbeddingFixedWeights
+from novel.transformer.components.positional_encoding import PositionEmbeddingFixedWeights, PositionWordEmbeddingFixedWeights
 from novel.transformer.components.encoder import AddNormalization, FeedForward
 
 # https://machinelearningmastery.com/implementing-the-transformer-decoder-from-scratch-in-tensorflow-and-keras/
@@ -63,9 +63,12 @@ class DecoderLayer(Layer):
 
 # Implementing the Decoder
 class Decoder(Layer):
-    def __init__(self, vocab_size, sequence_length, h, d_k, d_v, d_model, d_ff, n, rate, **kwargs):
+    def __init__(self, sequence_length, h, d_k, d_v, d_model, d_ff, n, rate, dec_vocab_size=None, **kwargs):
         super(Decoder, self).__init__(**kwargs)
-        self.pos_encoding = PositionWordEmbeddingFixedWeights(sequence_length, vocab_size, d_model)
+        if dec_vocab_size is not None:
+            self.pos_encoding = PositionWordEmbeddingFixedWeights(sequence_length, dec_vocab_size, d_model)
+        else:
+            self.pos_encoding = PositionEmbeddingFixedWeights(sequence_length, d_model)
         self.dropout = Dropout(rate)
         self.decoder_layer = [DecoderLayer(sequence_length, h, d_k, d_v, d_model, d_ff, rate) for _ in range(n)]
 

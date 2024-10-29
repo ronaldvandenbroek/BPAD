@@ -2,11 +2,18 @@
 from collections import defaultdict
 
 class AttributeDictionary():
-    def __init__(self, start_index=1, max_size=100) -> None:
+    def __init__(self, start_index=3, max_size=100, start_symbol= '▶', end_symbol='■') -> None:
         self.max_size = max_size
         self.start_index = start_index
         self.encodings = defaultdict(str)
         self.encodings_inv = defaultdict(int)
+        
+        # Hardcoding start and end symbols to reserve the space
+        # 0 is reserved for padding
+        self.encodings[start_symbol] = 1
+        self.encodings_inv[1] = start_symbol
+        self.encodings[end_symbol] = 2
+        self.encodings_inv[2] = end_symbol       
 
     def encode_list(self, list):
         for i, label in enumerate(list):

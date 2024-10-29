@@ -347,7 +347,7 @@ class Dataset(object):
         # Data preprocessing
         final_attribute_types = []
         encoders = {}
-        dictionary_starting_index = 1
+        dictionary_starting_index = 3 # 0,1,2 reserved for padding,start and endsymbol respectively
         for index, (key, attribute_type) in enumerate(zip(feature_columns.keys(), attr_types)):
             replace_attribute_type = None
             # print(f'Pre-Processing {key} {attribute_type}')
@@ -360,7 +360,10 @@ class Dataset(object):
                 unknown_buffer_percentage = 1.25
                 unique_values_count = len(set(feature_columns[key]))
                 dictionary_size = math.ceil(unique_values_count * unknown_buffer_percentage)
-                encoder = AttributeDictionary(max_size=dictionary_size, start_index=dictionary_starting_index)
+                encoder = AttributeDictionary(max_size=dictionary_size, 
+                                              start_index=dictionary_starting_index,
+                                              start_symbol=event_log.start_symbol,
+                                              end_symbol=event_log.end_symbol)
 
                 feature_columns[key] = encoder.encode_list(feature_columns[key])
                 encoders[key] = encoder

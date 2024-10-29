@@ -2,7 +2,7 @@ from keras.layers import LayerNormalization, Layer, Dense, ReLU, Dropout, Input
 from keras import Model
 
 from novel.transformer.components.attention import MultiHeadAttention
-from novel.transformer.components.positional_encoding import PositionWordEmbeddingFixedWeights, PositionEmbeddingLayer
+from novel.transformer.components.positional_encoding import PositionEmbeddingFixedWeights, PositionWordEmbeddingFixedWeights
 
 # https://machinelearningmastery.com/implementing-the-transformer-encoder-from-scratch-in-tensorflow-and-keras/
 
@@ -77,9 +77,12 @@ class EncoderLayer(Layer):
 
 # Implementing the Encoder
 class Encoder(Layer):
-    def __init__(self, sequence_length, h, d_k, d_v, d_model, d_ff, n, rate, **kwargs):
+    def __init__(self, sequence_length, h, d_k, d_v, d_model, d_ff, n, rate, enc_vocab_size=None, **kwargs):
         super(Encoder, self).__init__(**kwargs)
-        self.pos_encoding = PositionEmbeddingLayer(sequence_length, d_model)
+        if enc_vocab_size is not None:
+            self.pos_encoding = PositionWordEmbeddingFixedWeights(sequence_length, enc_vocab_size, d_model)
+        else:
+            self.pos_encoding = PositionEmbeddingFixedWeights(sequence_length, d_model)
         self.dropout = Dropout(rate)
         self.encoder_layer = [EncoderLayer(sequence_length, h, d_k, d_v, d_model, d_ff, rate) for _ in range(n)]
 

@@ -8,26 +8,32 @@ from novel.transformer.components.encoder import Encoder
 # https://machinelearningmastery.com/joining-the-transformer-encoder-and-decoder-and-masking/
 
 class TransformerModel(Model):
-    def __init__(self, dec_vocab_size, enc_seq_length, dec_seq_length, h, d_k, d_v, d_model, d_ff_inner, n, rate, **kwargs):
+    def __init__(self, enc_seq_length, dec_seq_length, h, d_k, d_v, d_model, d_ff_inner, n, rate, enc_vocab_size=None, dec_vocab_size=None, **kwargs):
         super(TransformerModel, self).__init__(**kwargs)
 
         # Set up the encoder
-        self.encoder = Encoder(enc_seq_length, h, d_k, d_v, d_model, d_ff_inner, n, rate)
+        self.encoder = Encoder(enc_seq_length, h, d_k, d_v, d_model, d_ff_inner, n, rate, enc_vocab_size=enc_vocab_size)
 
         # Set up the decoder
-        self.decoder = Decoder(dec_vocab_size, dec_seq_length, h, d_k, d_v, d_model, d_ff_inner, n, rate)
+        self.decoder = Decoder(dec_seq_length, h, d_k, d_v, d_model, d_ff_inner, n, rate, dec_vocab_size=dec_vocab_size)
 
         # Define the final dense layer
-        self.model_last_layer = Dense(dec_vocab_size)
+        if dec_vocab_size is not None:
+            self.model_last_layer = Dense(dec_vocab_size)
+        else:
+            self.model_last_layer = Dense(dec_seq_length)
+        # self.model_last_layer = Dense(dec_vocab_size)
 
     def padding_mask(self, input):
         # Create mask which marks the zero padding values in the input by a 1.0
         mask = math.equal(input, 0)
         mask = cast(mask, float32)
+        mask = mask[:, newaxis, newaxis, :]
+        print(mask.shape, "Mask")
 
         # The shape of the mask should be broadcastable to the shape
         # of the attention weights that it will be masking later on
-        return mask[:, newaxis, newaxis, :]
+        return mask
 
     def lookahead_mask(self, shape):
         # Mask out future entries by marking them with a 1.0
