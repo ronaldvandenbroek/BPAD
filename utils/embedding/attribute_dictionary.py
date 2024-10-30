@@ -1,6 +1,8 @@
 # RCVDB: Dictionary only needs to keep track of the unique values of a single attribute
 from collections import defaultdict
 
+import numpy as np
+
 class AttributeDictionary():
     def __init__(self, start_index=3, max_size=100, start_symbol= '▶', end_symbol='■') -> None:
         self.max_size = max_size
@@ -18,7 +20,7 @@ class AttributeDictionary():
     def encode_list(self, list):
         for i, label in enumerate(list):
             list[i] = self.encode(label)
-        return list
+        return np.array(list, dtype=float)
 
     def encode(self, label):
         if label in self.encodings.keys():

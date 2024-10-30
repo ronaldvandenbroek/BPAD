@@ -19,6 +19,7 @@ from baseline.Sylvio import W2VLOF
 from baseline.VAE.vae import VAE
 from baseline.VAEOCSVM.vaeOCSVM import VAEOCSVM
 from experiments.dea_experiments import DAE_gridsearch_batch_bucketing
+from experiments.fixed_vector_experiments import Fixed_Vector_gridsearch_vector_sizes
 from experiments.general_experiments import All_original_models_finetuned
 from experiments.w2v_experiments import W2V_finetuned, W2V_gridsearch_vector_window_size, W2V_no_averaging
 from novel.dae.dae import DAE
@@ -50,8 +51,8 @@ def fit_and_eva(dataset_name, run_name, ad, fit_kwargs=None, ad_kwargs=None):
     bucket_boundaries = fit_kwargs['bucket_boundaries']
     categorical_encoding = fit_kwargs['categorical_encoding']
     numerical_encoding = fit_kwargs['numerical_encoding']
-    w2v_vector_size = fit_kwargs['w2v_vector_size']
-    w2v_window_size = fit_kwargs['w2v_window_size']
+    vector_size = fit_kwargs['vector_size']
+    window_size = fit_kwargs['window_size']
     pretrain_percentage = fit_kwargs['pretrain_percentage']
 
     start_time = time.time()
@@ -69,8 +70,8 @@ def fit_and_eva(dataset_name, run_name, ad, fit_kwargs=None, ad_kwargs=None):
                       beta=0.005, 
                       prefix=prefix,
                       pretrain_percentage=pretrain_percentage,
-                      w2v_vector_size=w2v_vector_size,
-                      w2v_window_size=w2v_window_size, 
+                      vector_size=vector_size,
+                      window_size=window_size, 
                       categorical_encoding=categorical_encoding,
                       numerical_encoding=numerical_encoding,
                       fs_save=fs_save)
@@ -79,7 +80,7 @@ def fit_and_eva(dataset_name, run_name, ad, fit_kwargs=None, ad_kwargs=None):
                                                                                                                                                                                                                  batch_size=batch_size, 
                                                                                                                                                                                                                  bucket_boundaries=bucket_boundaries, 
                                                                                                                                                                                                                  categorical_encoding=categorical_encoding,
-                                                                                                                                                                                                                 w2v_vector_size=w2v_vector_size)
+                                                                                                                                                                                                                 vector_size=vector_size)
 
     end_time = time.time()
     run_time=end_time-start_time
@@ -145,7 +146,8 @@ if __name__ == '__main__':
     dataset_names_real.sort()
 
     # ads,run_name = W2V_gridsearch_vector_window_size()
-    ads,run_name = W2V_no_averaging()
+    # ads,run_name = W2V_no_averaging()
+    ads,run_name = Fixed_Vector_gridsearch_vector_sizes()
     # ads,run_name = W2V_finetuned()
     # ads,run_name = DAE_gridsearch_batch_bucketing()
     # ads,run_name = All_original_models_finetuned()

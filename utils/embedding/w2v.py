@@ -6,10 +6,11 @@ from sklearn.decomposition import PCA
 from processmining.case import Case
 from processmining.log import EventLog
 from utils.embedding.attribute_dictionary import AttributeDictionary
+from utils.embedding.util import fourier_encoding
 from utils.enums import AttributeType
 from utils.fs import FSSave
 
-class ProcessWord2Vec():
+class ProcessWord2VecEncoder():
     def __init__(self,
                  encoders, 
                  attribute_types, 
@@ -112,7 +113,7 @@ class ProcessWord2Vec():
                         trace_attributes = []
                         for attr in attr_trace:
                             if attr != 0:
-                                trace_attributes.append(np.array(self._fourier_encoding(attr),dtype=np.float32))
+                                trace_attributes.append(np.array(fourier_encoding(attr, self.frequencies),dtype=np.float32))
                             else:
                                 trace_attributes.append(self.zero_vector)
                         encoded_feature.append(trace_attributes)     
@@ -230,8 +231,3 @@ class ProcessWord2Vec():
         word_vectors_2d = pca.fit_transform(word_vectors)
 
         self.fs_save.save_embedding_space(f"W2V_{attribute_key}", pretrain_percentage, words, word_vectors_2d)
-
-    def _fourier_encoding(self, x):
-        sin_part = np.sin(self.frequencies * x * np.pi)
-        cos_part = np.cos(self.frequencies * x * np.pi)
-        return np.concatenate([sin_part, cos_part]).astype(np.float32)

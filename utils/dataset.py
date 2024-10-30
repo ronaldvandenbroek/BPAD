@@ -23,7 +23,8 @@ import numpy as np
 import torch
 from tqdm import tqdm
 from utils.anomaly import label_to_targets
-from utils.embedding.w2v import ProcessWord2Vec
+from utils.embedding.fixed_vector import FixedVectorEncoder
+from utils.embedding.w2v import ProcessWord2VecEncoder
 from utils.enums import AttributeType, EncodingCategorical, EncodingNumerical, Perspective
 from utils.fs import EventLogFile
 from processmining.event import Event
@@ -36,8 +37,8 @@ class Dataset(object):
                  dataset_name=None, 
                  beta=0, 
                  pretrain_percentage = 0,
-                 w2v_vector_size = 50,
-                 w2v_window_size = 10, 
+                 vector_size = 50,
+                 window_size = 10, 
                  prefix=True, 
                  categorical_encoding=EncodingCategorical.ONE_HOT,
                  numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
@@ -65,8 +66,8 @@ class Dataset(object):
         self.edge_indexs = []
         self.node_xs = []
         self.pretrain_percentage = pretrain_percentage  
-        self.w2v_vector_size = w2v_vector_size
-        self.w2v_window_size = w2v_window_size
+        self.vector_size = vector_size
+        self.window_size = window_size
 
         # Private properties
         self._mask = None
@@ -373,7 +374,7 @@ class Dataset(object):
                 dictionary_starting_index += dictionary_size
 
                 # If categorical encoding is none then categorical values are treated as numerical thus can scale
-                if self.categorical_encoding == EncodingCategorical.NONE:
+                if self.categorical_encoding == EncodingCategorical.NONE or self.categorical_encoding == EncodingCategorical.FIXED_VECTOR:
                     if self.numerical_encoding == EncodingNumerical.MIN_MAX_SCALING:
                         feature_columns[key] = self._min_max_scaling(feature_columns[key])
                     replace_attribute_type = AttributeType.NUMERICAL
@@ -546,15 +547,15 @@ class Dataset(object):
         # return None
 
     def _build_w2v_model(self):
-        return ProcessWord2Vec(
+        return ProcessWord2VecEncoder(
             encoders=self.encoders,
             pretrain_percentage=self.pretrain_percentage,
             attribute_types=self.attribute_types,
             event_attribute_keys=self.event_log.event_attribute_keys,
             features=self._features,
             event_log=self.event_log,
-            vector_size=self.w2v_vector_size,
-            window=self.w2v_window_size,
+            vector_size=self.vector_size,
+            window=self.window_size,
             fs_save=self.fs_save)         
 
     def flat_w2v_features_2d_average(self):
@@ -563,8 +564,15 @@ class Dataset(object):
         
     def flat_w2v_features_2d(self):
         w2v_encoder = self._build_w2v_model()
-        self._attribute_dims = np.array([self.w2v_vector_size] * len(self.attribute_dims))
+        self._attribute_dims = np.array([self.vector_size] * len(self.attribute_dims))
         return w2v_encoder.encode_flat_features_2d(attribute_keys=self.attribute_keys)
+    
+    def flat_fixed_vector_features_2d(self):
+        fixed_vector_encoder = FixedVectorEncoder(
+            vector_size=self.vector_size, 
+            features=self.features)
+        self._attribute_dims = np.array([self.vector_size] * len(self.attribute_dims))
+        return fixed_vector_encoder.flat_features_2d()
 
     # Embedding Features
     @property

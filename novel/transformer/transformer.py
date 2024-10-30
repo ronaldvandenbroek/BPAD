@@ -38,7 +38,7 @@ class Transformer(NNAnomalyDetector):
         super(Transformer, self).__init__(model=model)
 
     @staticmethod
-    def model_fn(dataset:Dataset, bucket_boundaries:list, categorical_encoding, w2v_vector_size=None, **kwargs):
+    def model_fn(dataset:Dataset, bucket_boundaries:list, categorical_encoding, vector_size=None, **kwargs):
         # Model Paramerters
         heads = 8  # Number of self-attention heads
         dim_queries_keys = 64  # Dimensionality of the linearly projected queries and keys
@@ -103,5 +103,5 @@ class Transformer(NNAnomalyDetector):
                           batch_size=2, 
                           bucket_boundaries=None, 
                           categorical_encoding=EncodingCategorical.ONE_HOT, 
-                          w2v_vector_size=None):
-        model_buckets, features_buckets, targets_buckets, case_lengths_buckets, bucket_case_labels, bucket_event_labels, bucket_attr_labels = self.model_fn(dataset, bucket_boundaries, categorical_encoding, w2v_vector_size, **self.config)
+                          vector_size=None):
+        model_buckets, features_buckets, targets_buckets, case_lengths_buckets, bucket_case_labels, bucket_event_labels, bucket_attr_labels = self.model_fn(dataset, bucket_boundaries, categorical_encoding, vector_size, **self.config)

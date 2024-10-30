@@ -61,7 +61,7 @@ class DAE(NNAnomalyDetector):
         super(DAE, self).__init__(model=model)
 
     @staticmethod
-    def model_fn(dataset:Dataset, bucket_boundaries:list, categorical_encoding, w2v_vector_size=None, **kwargs):
+    def model_fn(dataset:Dataset, bucket_boundaries:list, categorical_encoding, vector_size=None, **kwargs):
         hidden_layers = kwargs.pop('hidden_layers')
         hidden_size_factor = kwargs.pop('hidden_size_factor')
         noise = kwargs.pop('noise')
@@ -74,6 +74,8 @@ class DAE(NNAnomalyDetector):
             features = dataset.flat_w2v_features_2d_average()
         elif categorical_encoding == EncodingCategorical.WORD_2_VEC_C:
             features = dataset.flat_w2v_features_2d()
+        elif categorical_encoding == EncodingCategorical.FIXED_VECTOR:
+            features = dataset.flat_fixed_vector_features_2d()
         else:
             features = dataset.flat_features_2d
 
@@ -109,7 +111,7 @@ class DAE(NNAnomalyDetector):
             for i, boundary in enumerate(bucket_boundaries):
                 if categorical_encoding == EncodingCategorical.WORD_2_VEC_ATC:
                     # If using w2v every categorical event length has the same shape as the events are aggregated
-                    input_size = w2v_vector_size * dataset.attribute_type_count(AttributeType.CATEGORICAL) + boundary * dataset.attribute_type_count(AttributeType.NUMERICAL)
+                    input_size = vector_size * dataset.attribute_type_count(AttributeType.CATEGORICAL) + boundary * dataset.attribute_type_count(AttributeType.NUMERICAL)
                 else:
                     input_size = int(boundary * event_length)
                 bucket_input_sizes.append(input_size)
@@ -242,8 +244,8 @@ class DAE(NNAnomalyDetector):
             return total_loss
         return loss
   
-    def train_and_predict(self, dataset:Dataset, batch_size=2, bucket_boundaries=None, categorical_encoding=EncodingCategorical.ONE_HOT, w2v_vector_size=None):
-        model_buckets, features_buckets, targets_buckets, case_lengths_buckets, bucket_case_labels, bucket_event_labels, bucket_attr_labels = self.model_fn(dataset, bucket_boundaries, categorical_encoding, w2v_vector_size, **self.config)
+    def train_and_predict(self, dataset:Dataset, batch_size=2, bucket_boundaries=None, categorical_encoding=EncodingCategorical.ONE_HOT, vector_size=None):
+        model_buckets, features_buckets, targets_buckets, case_lengths_buckets, bucket_case_labels, bucket_event_labels, bucket_attr_labels = self.model_fn(dataset, bucket_boundaries, categorical_encoding, vector_size, **self.config)
 
         # Parameters
         attribute_dims = dataset.attribute_dims
@@ -330,7 +332,7 @@ class DAE(NNAnomalyDetector):
             if categorical_encoding == EncodingCategorical.WORD_2_VEC_ATC:
                 attribute_type_counter = Counter(dataset.attribute_types)
 
-                categorical_tiles = np.tile(w2v_vector_size, [attribute_type_counter[AttributeType.CATEGORICAL]])
+                categorical_tiles = np.tile(vector_size, [attribute_type_counter[AttributeType.CATEGORICAL]])
                 numerical_single_attribute = [1] * attribute_type_counter[AttributeType.NUMERICAL]
                 numerical_tiles = np.tile(numerical_single_attribute, [case_max_length])
                 w2v_tiles = np.concatenate((categorical_tiles, numerical_tiles))
