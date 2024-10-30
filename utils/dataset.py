@@ -556,7 +556,12 @@ class Dataset(object):
             vector_size=self.w2v_vector_size,
             window=self.w2v_window_size,
             fs_save=self.fs_save) 
-        return w2v_encoder.encode_flat_features_2d()
+        if self.categorical_encoding == EncodingCategorical.WORD_2_VEC_ATC:
+            return w2v_encoder.encode_flat_features_2d_concatinate()
+        elif self.categorical_encoding == EncodingCategorical.WORD_2_VEC_C:
+            return w2v_encoder.encode_flat_features_2d()
+        else:
+            raise "No valid W2V encoding set"
 
     # Embedding Features
     @property

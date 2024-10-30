@@ -230,15 +230,17 @@ class EncodingCategorical(Enum):
     NONE = 'None'
     ONE_HOT = 'One Hot'
     EMBEDDING = 'Embedding'
-    WORD_2_VEC = 'Word2Vec'
+    WORD_2_VEC_ATC = 'Word2Vec Average Then Concatinate'
+    WORD_2_VEC_C = 'Word2Vec Concatinate'
+    FIXED_VECTOR = 'Fixed Vector'
 
     @staticmethod
     def values():
-        return ['None', 'One Hot', 'Embedding', 'Word2Vec']
+        return ['None', 'One Hot', 'Embedding', 'Word2Vec Average Then Concatinate', 'Word2Vec Concatinate', 'Fixed Vector']
 
     @staticmethod
     def keys():
-        return [EncodingCategorical.NONE, EncodingCategorical.ONE_HOT, EncodingCategorical.EMBEDDING, EncodingCategorical.WORD_2_VEC]
+        return [EncodingCategorical.NONE, EncodingCategorical.ONE_HOT, EncodingCategorical.EMBEDDING, EncodingCategorical.WORD_2_VEC_ATC, EncodingCategorical.WORD_2_VEC_C, EncodingCategorical.FIXED_VECTOR]
 
     @staticmethod
     def items():

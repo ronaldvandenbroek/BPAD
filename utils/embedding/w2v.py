@@ -143,6 +143,9 @@ class ProcessWord2Vec():
         return np.array(w2v_features, dtype=np.float32), np.array(numeric_features, dtype=np.float32), np.array(numeric_feature_names), np.array(w2v_feature_names)
 
     def encode_flat_features_2d(self):
+        w2v_features, numeric_features, numeric_feature_names, w2v_feature_names = self.encode_features(average=True, match_numerical=True)
+
+    def encode_flat_features_2d_concatinate(self):
         w2v_features, numeric_features, numeric_feature_names, w2v_feature_names = self.encode_features()
 
         # RCVDB: Interleaf the w2v features

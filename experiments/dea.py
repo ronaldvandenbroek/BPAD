@@ -11,7 +11,7 @@ def DAE_gridsearch_batch_bucketing():
             batch_size=8, 
             prefix=True, 
             bucket_boundaries = [3,4,5,6,7,8,9],
-            categorical_encoding=EncodingCategorical.WORD_2_VEC,
+            categorical_encoding=EncodingCategorical.WORD_2_VEC_ATC,
             numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
             pretrain_percentage=0.5,
             w2v_vector_size = 100,
@@ -20,7 +20,7 @@ def DAE_gridsearch_batch_bucketing():
             batch_size=1, 
             prefix=True, 
             bucket_boundaries = None, # [3,4,5,6,7,8,9], #None
-            categorical_encoding=EncodingCategorical.WORD_2_VEC,
+            categorical_encoding=EncodingCategorical.WORD_2_VEC_ATC,
             numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
             w2v_vector_size = 100,
             w2v_window_size = 10)),
@@ -36,7 +36,7 @@ def DAE_gridsearch_batch_bucketing():
             batch_size=1, 
             prefix=True, 
             bucket_boundaries = [5,8], # [3,4,5,6,7,8,9], #None
-            categorical_encoding=EncodingCategorical.WORD_2_VEC,
+            categorical_encoding=EncodingCategorical.WORD_2_VEC_ATC,
             numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
             w2v_vector_size = 100,
             w2v_window_size = 10)),
@@ -52,7 +52,7 @@ def DAE_gridsearch_batch_bucketing():
             batch_size=8, 
             prefix=True, 
             bucket_boundaries = [3,4,5,6,7,8,9], #None
-            categorical_encoding=EncodingCategorical.WORD_2_VEC,
+            categorical_encoding=EncodingCategorical.WORD_2_VEC_ATC,
             numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
             w2v_vector_size = 100,
             w2v_window_size = 10)),

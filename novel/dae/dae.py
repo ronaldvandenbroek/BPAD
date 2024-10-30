@@ -70,7 +70,7 @@ class DAE(NNAnomalyDetector):
             features = dataset.flat_onehot_features_2d
         elif categorical_encoding == EncodingCategorical.EMBEDDING:
             features = dataset.flat_embedding_features_2d
-        elif categorical_encoding == EncodingCategorical.WORD_2_VEC:
+        elif categorical_encoding == EncodingCategorical.WORD_2_VEC_ATC:
             features = dataset.flat_w2v_features_2d()
         else:
             features = dataset.flat_features_2d
@@ -105,7 +105,7 @@ class DAE(NNAnomalyDetector):
             
             bucket_models = {}
             for i, boundary in enumerate(bucket_boundaries):
-                if categorical_encoding == EncodingCategorical.WORD_2_VEC:
+                if categorical_encoding == EncodingCategorical.WORD_2_VEC_ATC:
                     # If using w2v every categorical event length has the same shape as the events are aggregated
                     input_size = w2v_vector_size * dataset.attribute_type_count(AttributeType.CATEGORICAL) + boundary * dataset.attribute_type_count(AttributeType.NUMERICAL)
                 else:
@@ -248,7 +248,7 @@ class DAE(NNAnomalyDetector):
 
         # If using WORD2VEC all categorical values are indexed first and then the numerical, internal order is maintained
         anomaly_perspectives = dataset.event_log.event_attribute_perspectives
-        if categorical_encoding == EncodingCategorical.WORD_2_VEC:
+        if categorical_encoding == EncodingCategorical.WORD_2_VEC_ATC:
             perspective_array = np.array(anomaly_perspectives)
 
             categorical_mask = np.array(dataset.attribute_types) == AttributeType.CATEGORICAL
@@ -312,7 +312,7 @@ class DAE(NNAnomalyDetector):
             # errors = targets - predictions
 
             # RCVDB: Mask empty events if no buckets are used or encoding method is not W2V
-            if bucket_boundaries is None and categorical_encoding != EncodingCategorical.WORD_2_VEC: 
+            if bucket_boundaries is None and categorical_encoding != EncodingCategorical.WORD_2_VEC_ATC: 
             # Applies a mask to remove the events not present in the trace   
             # (cases, flattened_errors) --> errors_unmasked
             # (cases, num_events) --> dataset.mask (~ inverts mask)
@@ -325,7 +325,7 @@ class DAE(NNAnomalyDetector):
                 errors = errors_unmasked
 
             # If W2V all categorical events are embedded into a single vector
-            if categorical_encoding == EncodingCategorical.WORD_2_VEC:
+            if categorical_encoding == EncodingCategorical.WORD_2_VEC_ATC:
                 attribute_type_counter = Counter(dataset.attribute_types)
 
                 categorical_tiles = np.tile(w2v_vector_size, [attribute_type_counter[AttributeType.CATEGORICAL]])
@@ -346,13 +346,13 @@ class DAE(NNAnomalyDetector):
             # np.mean for the proportion of the one-hot encoded predictions being wrong
             # np.sum for the total one-hot predictions being wrong
             # (attributes * events, cases)
-            if categorical_encoding == EncodingCategorical.WORD_2_VEC:
+            if categorical_encoding == EncodingCategorical.WORD_2_VEC_ATC:
                 errors_attr_split_summed = [np.sum(attribute, axis=1) for attribute in errors_attr_split]
             else:
                 errors_attr_split_summed = [np.mean(attribute, axis=1) for attribute in errors_attr_split]
             
             # Split the attributes based on which event it belongs to
-            if categorical_encoding == EncodingCategorical.WORD_2_VEC:
+            if categorical_encoding == EncodingCategorical.WORD_2_VEC_ATC:
                 # Everything before the shared index is shared between each event as they are averaged during encoding
                 shared_index = attribute_type_counter[AttributeType.CATEGORICAL]
                 split_shared = np.split(errors_attr_split_summed, [shared_index])

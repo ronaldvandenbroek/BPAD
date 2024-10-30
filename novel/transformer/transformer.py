@@ -59,7 +59,7 @@ class Transformer(NNAnomalyDetector):
             features = dataset.flat_onehot_features_2d
         elif categorical_encoding == EncodingCategorical.EMBEDDING:
             features = dataset.flat_embedding_features_2d
-        elif categorical_encoding == EncodingCategorical.WORD_2_VEC:
+        elif categorical_encoding == EncodingCategorical.WORD_2_VEC_C:
             features = dataset.flat_w2v_features_2d()
         else:
             features = dataset.flat_features_2d
