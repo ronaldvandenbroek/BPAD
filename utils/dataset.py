@@ -545,8 +545,8 @@ class Dataset(object):
         #     return targets
         # return None
 
-    def flat_w2v_features_2d(self):
-        w2v_encoder = ProcessWord2Vec(
+    def _build_w2v_model(self):
+        return ProcessWord2Vec(
             encoders=self.encoders,
             pretrain_percentage=self.pretrain_percentage,
             attribute_types=self.attribute_types,
@@ -555,13 +555,16 @@ class Dataset(object):
             event_log=self.event_log,
             vector_size=self.w2v_vector_size,
             window=self.w2v_window_size,
-            fs_save=self.fs_save) 
-        if self.categorical_encoding == EncodingCategorical.WORD_2_VEC_ATC:
-            return w2v_encoder.encode_flat_features_2d_concatinate()
-        elif self.categorical_encoding == EncodingCategorical.WORD_2_VEC_C:
-            return w2v_encoder.encode_flat_features_2d()
-        else:
-            raise "No valid W2V encoding set"
+            fs_save=self.fs_save)         
+
+    def flat_w2v_features_2d_average(self):
+        w2v_encoder = self._build_w2v_model()
+        return w2v_encoder.encode_flat_features_2d_average()
+        
+    def flat_w2v_features_2d(self):
+        w2v_encoder = self._build_w2v_model()
+        self._attribute_dims = np.array([self.w2v_vector_size] * len(self.attribute_dims))
+        return w2v_encoder.encode_flat_features_2d(attribute_keys=self.attribute_keys)
 
     # Embedding Features
     @property

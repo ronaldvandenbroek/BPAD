@@ -71,6 +71,8 @@ class DAE(NNAnomalyDetector):
         elif categorical_encoding == EncodingCategorical.EMBEDDING:
             features = dataset.flat_embedding_features_2d
         elif categorical_encoding == EncodingCategorical.WORD_2_VEC_ATC:
+            features = dataset.flat_w2v_features_2d_average()
+        elif categorical_encoding == EncodingCategorical.WORD_2_VEC_C:
             features = dataset.flat_w2v_features_2d()
         else:
             features = dataset.flat_features_2d
@@ -246,7 +248,7 @@ class DAE(NNAnomalyDetector):
         # Parameters
         attribute_dims = dataset.attribute_dims
 
-        # If using WORD2VEC all categorical values are indexed first and then the numerical, internal order is maintained
+        # If using WORD2VEC_ATC all categorical values are indexed first and then the numerical, internal order is maintained
         anomaly_perspectives = dataset.event_log.event_attribute_perspectives
         if categorical_encoding == EncodingCategorical.WORD_2_VEC_ATC:
             perspective_array = np.array(anomaly_perspectives)

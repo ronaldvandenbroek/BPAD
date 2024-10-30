@@ -142,10 +142,55 @@ class ProcessWord2Vec():
             
         return np.array(w2v_features, dtype=np.float32), np.array(numeric_features, dtype=np.float32), np.array(numeric_feature_names), np.array(w2v_feature_names)
 
-    def encode_flat_features_2d(self):
-        w2v_features, numeric_features, numeric_feature_names, w2v_feature_names = self.encode_features(average=True, match_numerical=True)
+    def encode_flat_features_2d(self, attribute_keys):
+        w2v_features, numeric_features, numeric_feature_names, w2v_feature_names = self.encode_features(average=False, match_numerical=True)
+        # print(w2v_features.shape, numeric_features.shape)
+        transposed_w2v_features = np.transpose(w2v_features, (1, 2, 0, 3))
+        transposed_numeric_features = np.transpose(numeric_features, (1, 2, 0, 3))
+        # print(transposed_w2v_features.shape, transposed_numeric_features.shape)
 
-    def encode_flat_features_2d_concatinate(self):
+        # Shapes of the input data
+        num_traces, num_events, num_numeric_features, vector_size = transposed_numeric_features.shape
+        _, _, num_w2v_features, _ = transposed_w2v_features.shape
+
+        # Initialize the merged array
+        merged_features = np.zeros((num_traces, num_events, num_numeric_features + num_w2v_features, vector_size))
+        # print(merged_features.shape)
+              
+        # Keep track of the current indices for numeric and w2v features
+        numeric_index, w2v_index = 0, 0
+
+        # Iterate over dataset.attribute_keys to place each feature in the correct order
+        for i, key in enumerate(attribute_keys):
+            # print(key)
+            if key in numeric_feature_names:
+                # print("Numeric feature shape:", transposed_numeric_features[:, :, numeric_index, :].shape)
+                # print("Target shape:", merged_features[:, :, i, :].shape)
+                # print(numeric_index)
+                # Place numeric feature in the merged array
+                merged_features[:, :, i, :] = transposed_numeric_features[:, :, numeric_index, :]
+                numeric_index += 1
+            elif key in w2v_feature_names:
+                # print("W2V feature shape:", transposed_w2v_features[:, :, w2v_index, :].shape)
+                # print("Target shape:", merged_features[:, :, i, :].shape)
+                # print(w2v_index)
+                # Place w2v feature in the merged array
+                merged_features[:, :, i, :] = transposed_w2v_features[:, :, w2v_index, :]
+                w2v_index += 1
+            else:
+                raise ValueError(f"Unexpected attribute key '{key}' not found in either feature list.")
+        
+        # print(merged_features.shape)
+        dim0, dim1, dim2, dim3 = merged_features.shape
+        merged_features = np.reshape(merged_features, (dim0, dim1, dim2 * dim3))#, order='C')
+        # print(merged_features.shape)
+        merged_features = np.reshape(merged_features, (dim0, dim1 * dim2 * dim3))#, order='C')
+        # print(merged_features.shape)
+
+        return merged_features
+
+
+    def encode_flat_features_2d_average(self):
         w2v_features, numeric_features, numeric_feature_names, w2v_feature_names = self.encode_features()
 
         # RCVDB: Interleaf the w2v features
