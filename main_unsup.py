@@ -18,6 +18,9 @@ from baseline.LAE.lae import LAE
 from baseline.Sylvio import W2VLOF
 from baseline.VAE.vae import VAE
 from baseline.VAEOCSVM.vaeOCSVM import VAEOCSVM
+from experiments.dea import DAE_gridsearch_batch_bucketing
+from experiments.general import All_original_models_finetuned
+from experiments.w2v import W2V_finetuned, W2V_gridsearch_vector_window_size
 from novel.dae.dae import DAE
 from baseline.bezerra import SamplingAnomalyDetector, NaiveAnomalyDetector
 from baseline.binet.binet import BINetv3, BINetv2
@@ -141,121 +144,17 @@ if __name__ == '__main__':
     dataset_names_real = list(set(dataset_names)-set(dataset_names_syn))
     dataset_names_real.sort()
 
+    # ads,run_name = W2V_gridsearch_vector_window_size()
+    ads,run_name = W2V_finetuned()
+    # ads,run_name = DAE_gridsearch_batch_bucketing()
+    # ads,run_name = All_original_models_finetuned()
+    run_name = "Temp Test Run"
 
-    run_name = 'W2V_Gridsearch_v3_batch_8_no_pretrain'
-    w2v_vector_sizes = [20,40,60,80,100,150,200]
-    w2v_window_size = [2,4,6,8,10]
-    # pre_train_percentage = [0,0.1,0.5]
-    pre_train_percentage = [0]
 
-    ads_w2v_embedding_search = []
-    w2v_combinations = list(itertools.product(w2v_vector_sizes, w2v_window_size, pre_train_percentage))
-    for w2v_combination in w2v_combinations:
-        w2v_vector_size, w2v_window_size, pre_train_percentage = w2v_combination
 
-        ads_w2v_embedding_search.append(dict(ad=DAE, fit_kwargs=dict( 
-            batch_size=8, 
-            prefix=True, 
-            bucket_boundaries = [3,4,5,6,7,8,9],
-            categorical_encoding=EncodingCategorical.WORD_2_VEC,
-            numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
-            pretrain_percentage=pre_train_percentage,
-            w2v_vector_size = w2v_vector_size,
-            w2v_window_size = w2v_window_size)))
-        
-    ads_w2v_embedding_search.append(dict(ad=DAE, fit_kwargs=dict( 
-            batch_size=8, 
-            prefix=True, 
-            bucket_boundaries = [3,4,5,6,7,8,9],
-            categorical_encoding=EncodingCategorical.ONE_HOT,
-            numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
-            pretrain_percentage=0,
-            w2v_vector_size=0,
-            w2v_window_size=0)))
-
-    # RCVDB: Configuration to test multi-label anomalies
-    # In practice probably more accurrate to have one epoch and a batch size of one to simulate each event arriving seperately
-    # ads = [
-    #     dict(ad=DAE, fit_kwargs=dict( 
-    #         batch_size=8, 
-    #         prefix=True, 
-    #         bucket_boundaries = [3,4,5,6,7,8,9],
-    #         categorical_encoding=EncodingCategorical.WORD_2_VEC,
-    #         numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
-    #         pretrain_percentage=0.5,
-    #         w2v_vector_size = 100,
-    #         w2v_window_size = 10)),
-        # dict(ad=DAE, fit_kwargs=dict( 
-        #     batch_size=1, 
-        #     prefix=True, 
-        #     bucket_boundaries = None, # [3,4,5,6,7,8,9], #None
-        #     categorical_encoding=EncodingCategorical.WORD_2_VEC,
-        #     numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
-        #     w2v_vector_size = 100,
-        #     w2v_window_size = 10)),
-        # dict(ad=DAE, fit_kwargs=dict(
-        #     batch_size=1, 
-        #     prefix=True, 
-        #     bucket_boundaries = None,
-        #     categorical_encoding=EncodingCategorical.ONE_HOT,
-        #     numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
-        #     w2v_vector_size = 100,
-        #     w2v_window_size = 10)),
-        # dict(ad=DAE, fit_kwargs=dict(
-        #     batch_size=1, 
-        #     prefix=True, 
-        #     bucket_boundaries = [5,8], # [3,4,5,6,7,8,9], #None
-        #     categorical_encoding=EncodingCategorical.WORD_2_VEC,
-        #     numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
-        #     w2v_vector_size = 100,
-        #     w2v_window_size = 10)),
-        # dict(ad=DAE, fit_kwargs=dict(
-        #     batch_size=1, 
-        #     prefix=True, 
-        #     bucket_boundaries = [5,8],
-        #     categorical_encoding=EncodingCategorical.ONE_HOT,
-        #     numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
-        #     w2v_vector_size = 100,
-        #     w2v_window_size = 10)),
-        # dict(ad=DAE, fit_kwargs=dict( 
-        #     batch_size=8, 
-        #     prefix=True, 
-        #     bucket_boundaries = [3,4,5,6,7,8,9], #None
-        #     categorical_encoding=EncodingCategorical.WORD_2_VEC,
-        #     numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
-        #     w2v_vector_size = 100,
-        #     w2v_window_size = 10)),
-        # dict(ad=DAE, fit_kwargs=dict( 
-        #     batch_size=8, 
-        #     prefix=True, 
-        #     bucket_boundaries = [3,4,5,6,7,8,9],
-        #     categorical_encoding=EncodingCategorical.ONE_HOT,
-        #     numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
-        #     w2v_vector_size = 100,
-        #     w2v_window_size = 10)),
-    # ]
-
-    # RCVDB: Full Configuration
-    # ads = [
-    #     dict(ad=LikelihoodPlusAnomalyDetector),  ## Multi-perspective, attr-level    --- Multi-perspective anomaly detection in business process execution events (extended to support the use of external threshold)
-    #     dict(ad=NaiveAnomalyDetector),  # Control flow, trace-level    ---Algorithms for anomaly detection of traces in logs of process aware information systems
-    #     dict(ad=SamplingAnomalyDetector),  # Control flow, trace-level    ---Algorithms for anomaly detection of traces in logs of process aware information systems
-    #     dict(ad=DAE, fit_kwargs=dict(epochs=100, batch_size=64)),  ## Multi-perspective, attr-level    ---Analyzing business process anomalies using autoencoders
-    #     dict(ad=BINetv3, fit_kwargs=dict(epochs=20, batch_size=64)), ## Multi-perspective, attr-level  ---BINet: Multi-perspective business process anomaly classification
-    #     dict(ad=BINetv2, fit_kwargs=dict(epochs=20, batch_size=64)), ## Multi-perspective, attr-level  ---BINet: Multivariate business process anomaly detection using deep learning
-    #     dict(ad=GAMA,ad_kwargs=dict(n_epochs=20)), ## Multi-perspective, attr-level    ---GAMA: A Multi-graph-based Anomaly Detection Framework for Business Processes via Graph Neural Networks
-    #     dict(ad=VAE), ## Multi-perspective, attr-level 自己修改后使其能够检测attr-level      ---Autoencoders for improving quality of process event logs
-    #     dict(ad=LAE), ## Multi-perspective, attr-level  自己修改后使其能够检测attr-level      ---Autoencoders for improving quality of process event logs
-    #     dict(ad=GAE), ## Multi-perspective, trace-level       ---Graph Autoencoders for Business Process Anomaly Detection
-    #     dict(ad=GRASPED), ## Multi-perspective, attr-level    ---GRASPED: A GRU-AE Network Based Multi-Perspective Business Process Anomaly Detection Model
-    #     dict(ad=Leverage), # Control flow, trace-level       ---Keeping our rivers clean: Information-theoretic online anomaly detection for streaming business process events
-    #     dict(ad=W2VLOF), # Control flow, trace-level     ---Anomaly Detection on Event Logs with a Scarcity of Labels
-    #     dict(ad=VAEOCSVM) # Control flow, trace-level   ---Variational Autoencoder for Anomaly Detection in Event Data in Online Process Mining
-    # ]
-
-    print(f'Total Planned configurations: {len(ads_w2v_embedding_search)}')
+    print(f'Total Planned configurations: {len(ads)}')
     print(f'Total Number of datasets: {len(dataset_names)}')
-    for ad in ads_w2v_embedding_search:
+    for ad in ads:
         for d in dataset_names:
             p = Process(target=fit_and_eva, kwargs={ 'dataset_name' : d,  'run_name' : run_name, **ad })
             p.start()
