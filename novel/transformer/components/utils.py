@@ -25,7 +25,7 @@ def loss_fcn(target, prediction):
     padding_mask = cast(padding_mask, float32)
 
     # Compute a sparse categorical cross-entropy loss on the unmasked values
-    loss = sparse_categorical_crossentropy(target, prediction, from_logits=True) * padding_mask
+    loss = sparse_categorical_crossentropy(target, prediction, from_logits=False) * padding_mask
 
     # Compute the mean loss over the unmasked values
     return reduce_sum(loss) / reduce_sum(padding_mask)

@@ -1,6 +1,6 @@
 from tensorflow import math, cast, float32, linalg, ones, maximum, newaxis
 from keras import Model
-from keras.layers import Dense
+from keras.layers import Dense, Activation
 
 from novel.transformer.components.decoder import Decoder
 from novel.transformer.components.encoder import Encoder
@@ -59,5 +59,8 @@ class TransformerModel(Model):
 
         # Pass the decoder output through a final dense layer
         model_output = self.model_last_layer(decoder_output)
+
+        # Apply softmax to ensure probabilities for each token
+        model_output = Activation('softmax')(model_output)  # Apply softmax along the last dimension
 
         return model_output
