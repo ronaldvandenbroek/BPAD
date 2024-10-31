@@ -18,10 +18,10 @@ from baseline.LAE.lae import LAE
 from baseline.Sylvio import W2VLOF
 from baseline.VAE.vae import VAE
 from baseline.VAEOCSVM.vaeOCSVM import VAEOCSVM
-from experiments.dea_experiments import DAE_gridsearch_batch_bucketing
+from experiments.dea_experiments import DAE_finetuned_embedding, DAE_gridsearch_batch_bucketing, DAE_repeatability_experiment
 from experiments.fixed_vector_experiments import Fixed_Vector_gridsearch_vector_sizes
 from experiments.general_experiments import All_original_models_finetuned
-from experiments.w2v_experiments import W2V_finetuned, W2V_gridsearch_vector_window_size, W2V_no_averaging
+from experiments.w2v_experiments import W2V_finetuned, W2V_gridsearch_vector_window_size, W2V_no_averaging, W2V_pretrain
 from novel.dae.dae import DAE
 from baseline.bezerra import SamplingAnomalyDetector, NaiveAnomalyDetector
 from baseline.binet.binet import BINetv3, BINetv2
@@ -145,9 +145,11 @@ if __name__ == '__main__':
     dataset_names_real = list(set(dataset_names)-set(dataset_names_syn))
     dataset_names_real.sort()
 
+    ads,run_name = W2V_pretrain()
+    # ads,run_name = DAE_repeatability_experiment()
     # ads,run_name = W2V_gridsearch_vector_window_size()
     # ads,run_name = W2V_no_averaging()
-    ads,run_name = Fixed_Vector_gridsearch_vector_sizes()
+    # ads,run_name = Fixed_Vector_gridsearch_vector_sizes()
     # ads,run_name = W2V_finetuned()
     # ads,run_name = DAE_gridsearch_batch_bucketing()
     # ads,run_name = All_original_models_finetuned()
