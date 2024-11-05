@@ -371,12 +371,14 @@ class DAE(NNAnomalyDetector):
 
                 # Split the rest of the numerical values
                 if attribute_type_counter[AttributeType.NUMERICAL] > 0:
+                    event_numerical_size = attribute_type_counter[AttributeType.NUMERICAL]
                     split_event = np.arange(
-                        start=shared_index, 
+                        start=event_numerical_size, #shared_index, 
                         stop=len(errors_attr_split_summed), 
-                        step=attribute_type_counter[AttributeType.NUMERICAL])[:-1]
-                
-                    errors_event_split_numerical = np.array(np.split(split_indexes, split_event, axis=0))
+                        step=event_numerical_size)[:-1]
+
+                    errors_event_split_numerical_splits = np.split(split_indexes, split_event, axis=0)
+                    errors_event_split_numerical = np.array(errors_event_split_numerical_splits)
 
                     errors_event_split = np.concatenate((errors_event_split_numerical, errors_event_split_categorical), axis=1)
                 else:

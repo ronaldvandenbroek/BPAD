@@ -81,10 +81,6 @@ class Dataset(object):
         if self.dataset_name is not None:
             self.load(self.dataset_name, prefix)
 
-        # RCVDB: TODO Support the weakly supervised methods
-        # self.labeled_indices = np.random.choice(self.anomaly_indices, size=max(int(
-        #     len(self.anomaly_indices) * self.label_percent),1), replace=False)  ### Used by weakly supervised methods to indicate indices of labeled anomalies during training
-
     def load(self, dataset_name, prefix):
         """
         Load dataset from disk. If there exists a cached file, load from cache. If no cache file exists, load from
@@ -426,12 +422,16 @@ class Dataset(object):
         """
         # Get features from event log
         self._features, self._case_lens, self.attribute_types, self.encoders = self._from_event_log(event_log)
-
+        print("Generating log from data.")
+        
         # Get targets and labels from event log
         self.attr_labels, self.event_labels, self.case_labels = self._get_classes_and_labels_from_event_log(event_log)
+        print("Generating labels from log.")  
 
         # Attribute keys (names)
+        # self.attribute_keys = [a.replace(' ', '_') for a in self.event_log.event_attribute_keys]
         self.attribute_keys = [a.replace(':', '_').replace(' ', '_') for a in self.event_log.event_attribute_keys]
+        print("Generating attribute keys from log.")  
 
     def assign_to_buckets(self, bucket_boundaries):
         max_bucket_size = len(bucket_boundaries)
@@ -565,7 +565,7 @@ class Dataset(object):
     def flat_w2v_features_2d(self):
         w2v_encoder = self._build_w2v_model()
         self._attribute_dims = np.array([self.vector_size] * len(self.attribute_dims))
-        return w2v_encoder.encode_flat_features_2d(attribute_keys=self.attribute_keys)
+        return w2v_encoder.encode_flat_features_2d(attribute_keys=self.event_log.event_attribute_keys)
     
     def flat_fixed_vector_features_2d(self):
         fixed_vector_encoder = FixedVectorEncoder(
@@ -627,11 +627,25 @@ class Dataset(object):
 
         :return:
         """
-        one_hot_features = [self._to_categorical(f)[:, :, 1:] if t == AttributeType.CATEGORICAL else np.expand_dims(f, axis=2)
-                for f, t in zip(self._features, self.attribute_types)]
+        # one_hot_features = [self._to_categorical(f)[:, :, 1:] if t == AttributeType.CATEGORICAL else np.expand_dims(f, axis=2)
+        #         for f, t in zip(self._features, self.attribute_types)]
+
+        # RCVDB: With the real world dataset the above operation causes memory errors
+        # Setting dtype for numerical stability and memory efficiency
+        dtype = np.float32
+
+        # Generator expression to generate features on-demand
+        one_hot_features = (
+            (self._to_categorical(f).astype(dtype)[:, :, 1:] if t == AttributeType.CATEGORICAL 
+            else np.expand_dims(f.astype(dtype), axis=2))
+            for f, t in zip(self._features, self.attribute_types)
+        )
+
+        # If a list is required, wrap the generator expression in list()
+        one_hot_features = list(one_hot_features)
         
         # RCVDB: Tensor seems to be of shape (attribute_dimension, number_of_cases, max_case_length)
-        # print('One-hot features shape: ', len(one_hot_features), len(one_hot_features[0]), len(one_hot_features[0][0]))
+        print('One-hot features shape: ', len(one_hot_features), len(one_hot_features[0]), len(one_hot_features[0][0]))
 
         # RCVDB: Debug to get an overview of how the features are encoded
         # for i in range(len(one_hot_features)):
@@ -649,8 +663,13 @@ class Dataset(object):
 
         :return:
         """
-        flat_one_hot_features = np.concatenate(self.onehot_features, axis=2)
-        # print('Flat-One-hot features shape: ', len(flat_one_hot_features), len(flat_one_hot_features[0]), len(flat_one_hot_features[0][0]))
+        # flat_one_hot_features = np.concatenate(self.onehot_features, axis=2)
+        # RCVDB: With the real world dataset the above operation causes memory errors
+        # Setting dtype for numerical stability and memory efficiency
+
+        flat_one_hot_features = np.concatenate([feature for feature in self.onehot_features], axis=2)
+        print('Flat-One-hot features shape: ', len(flat_one_hot_features), len(flat_one_hot_features[0]), len(flat_one_hot_features[0][0]))
+        # print(flat_one_hot_features.shape)
 
         return flat_one_hot_features
 

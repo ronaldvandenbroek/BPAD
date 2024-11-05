@@ -76,6 +76,7 @@ def DAE_finetuned_embedding():
     
     return ads, run_name
 
+
 def DAE_gridsearch_batch_bucketing():
     # RCVDB: Configuration to test multi-label anomalies
     # In practice probably more accurrate to have one epoch and a batch size of one to simulate each event arriving seperately
@@ -170,5 +171,82 @@ def DAE_repeatability_experiment():
             pretrain_percentage=0,
             vector_size=0,
             window_size=0)))
+    
+    return ads, run_name
+
+
+def DAE_bpic2015(
+        run_name='DAE_bpic2015',
+        batch_size=8,
+        bucket=[20,30,40,50,60],
+        repeats=1,
+        prefix=False):
+
+    ads = []
+    for _ in range(repeats):
+        ads.append(dict(ad=DAE, fit_kwargs=dict(
+            batch_size=batch_size, 
+            prefix=prefix, 
+            bucket_boundaries = bucket,
+            categorical_encoding=EncodingCategorical.ONE_HOT,
+            numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
+            pretrain_percentage=0,
+            vector_size=0,
+            window_size=0)))
+        
+    for _ in range(repeats):
+        ads.append(dict(ad=DAE, fit_kwargs=dict( 
+            batch_size=batch_size, 
+            prefix=prefix, 
+            bucket_boundaries=bucket,
+            categorical_encoding=EncodingCategorical.FIXED_VECTOR,
+            numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
+            pretrain_percentage=0,
+            vector_size=50,
+            window_size=0)))
+        
+    for _ in range(repeats):
+        ads.append(dict(ad=DAE, fit_kwargs=dict( 
+            batch_size=batch_size, 
+            prefix=prefix, 
+            bucket_boundaries=bucket,
+            categorical_encoding=EncodingCategorical.WORD_2_VEC_C,
+            numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
+            pretrain_percentage=0,
+            vector_size=20,
+            window_size=2)))
+        
+    for _ in range(repeats):
+        ads.append(dict(ad=DAE, fit_kwargs=dict( 
+            batch_size=batch_size, 
+            prefix=prefix, 
+            bucket_boundaries=bucket,
+            categorical_encoding=EncodingCategorical.WORD_2_VEC_C,
+            numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
+            pretrain_percentage=0,
+            vector_size=200,
+            window_size=10)))
+        
+    for _ in range(repeats):
+        ads.append(dict(ad=DAE, fit_kwargs=dict( 
+            batch_size=batch_size, 
+            prefix=prefix, 
+            bucket_boundaries=bucket,
+            categorical_encoding=EncodingCategorical.WORD_2_VEC_ATC,
+            numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
+            pretrain_percentage=0,
+            vector_size=20,
+            window_size=2)))
+        
+    for _ in range(repeats):
+        ads.append(dict(ad=DAE, fit_kwargs=dict( 
+            batch_size=batch_size, 
+            prefix=prefix, 
+            bucket_boundaries=bucket,
+            categorical_encoding=EncodingCategorical.WORD_2_VEC_ATC,
+            numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
+            pretrain_percentage=0,
+            vector_size=200,
+            window_size=10)))
     
     return ads, run_name

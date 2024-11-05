@@ -149,13 +149,15 @@ class ProcessWord2VecEncoder():
         transposed_w2v_features = np.transpose(w2v_features, (1, 2, 0, 3))
         transposed_numeric_features = np.transpose(numeric_features, (1, 2, 0, 3))
         # print(transposed_w2v_features.shape, transposed_numeric_features.shape)
+        print(numeric_feature_names, w2v_feature_names)
 
         # Shapes of the input data
         num_traces, num_events, num_numeric_features, vector_size = transposed_numeric_features.shape
         _, _, num_w2v_features, _ = transposed_w2v_features.shape
 
         # Initialize the merged array
-        merged_features = np.zeros((num_traces, num_events, num_numeric_features + num_w2v_features, vector_size))
+        # RCVDB: Due to memory allocation with real world datasets use float32
+        merged_features = np.zeros((num_traces, num_events, num_numeric_features + num_w2v_features, vector_size), dtype=np.float32)
         # print(merged_features.shape)
               
         # Keep track of the current indices for numeric and w2v features

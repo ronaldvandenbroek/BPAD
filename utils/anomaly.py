@@ -166,9 +166,15 @@ class AttributeAnomaly(Anomaly):
     @staticmethod
     def targets(event_log:EventLog, targets, event_index, label):
         anomalous_attributes = label['attr']['attribute']
+        # try:
         for anomalous_attribute in anomalous_attributes:
             attribute_index = event_log.get_attribute_index(anomalous_attribute)
             targets[event_index, attribute_index, Perspective.ATTRIBUTE] = 1
+        # except IndexError as e:
+        #     print("INDEX ERROR")
+        #     print(attribute_index)
+        #     print(targets.shape)
+        #     print(anomalous_attributes)
 
         return targets, Perspective.ATTRIBUTE
 
@@ -227,10 +233,18 @@ class GlobalWorkloadAnomaly(Anomaly):
     @staticmethod
     def targets(event_log, targets, event_index, label):
         workload_timesteps = label['attr']['timestep']
+        # try:
         for workload_timestep in workload_timesteps:
             attribute_index = event_log.get_attribute_index(f'global_workload_{workload_timestep}')
             targets[event_index, attribute_index, Perspective.WORKLOAD] = 1
-
+        # except IndexError as e:
+        #     print(targets.shape)
+        #     print(workload_timestep)
+        #     print(event_log.event_attribute_keys)
+        #     print(event_index)
+        #     print(attribute_index)
+        #     print(Perspective.WORKLOAD)
+        #     raise e
         return targets, Perspective.WORKLOAD
 
     @staticmethod

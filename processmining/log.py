@@ -71,9 +71,14 @@ class EventLog(object):
             attributes += sorted(
                 [key for key in self.attributes['global_attributes']['event'].keys() if key not in ignored])
         else:
+            ignored = ['action_code', 'activityNameEN', 'activityNameNL',
+                       'dateFinished', 'dueDate', 'lifecycle:transition',
+                       'monitoringResource','planned','question',
+                       'concept:name', 'time:timestamp']
+
             # RCVDB: Ignore event level label
             attributes += sorted(
-                [key for key in list(self.cases[0].events[0].attributes.keys()) if not(key.startswith('_'))])
+                [key for key in list(self.cases[0].events[0].attributes.keys()) if not(key.startswith('_')) and key not in ignored])
         return attributes
     
     def get_activity_name(self):
@@ -227,7 +232,6 @@ class EventLog(object):
         else:
             case_key = 'cases'
 
-        prefix = True
         for case in log[case_key]:
             _case = Case(id=case['id'], **case['attributes'])
             events = case['events']

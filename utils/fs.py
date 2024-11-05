@@ -14,11 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ==============================================================================
 from datetime import datetime
+from enum import Enum
 import os.path
 from pathlib import Path
 
 import numpy as np
 import matplotlib.pyplot as plt
+import json
 
 from utils.enums import Perspective
 
@@ -36,13 +38,25 @@ RESULTS_RAW_DIR = os.path.join(ROOT_DIR,'results','raw') # For the model raw err
 EVENTLOG_CACHE_DIR = os.path.join(ROOT_DIR,'eventlogs', 'cache')  # For caching datasets so the event log does not always have to be loaded
 
 class FSSave():
-    def __init__(self, start_time:datetime, run_name, model_name) -> None:
+    def __init__(self, start_time:datetime, run_name, model_name, config, categorical_encoding, numerical_encoding) -> None:
         self.perspective = 'none'
         self.bucket_size = None
         self.model_name = model_name
-        self.path = os.path.join(RESULTS_RAW_DIR, run_name, str(start_time.strftime('%y-%m-%d-%H-%M')))
+        start_time_str = str(start_time.strftime('%y-%m-%d-%H-%M'))
+        run_path = f'{start_time_str}_{model_name}_{str(categorical_encoding)}_{str(numerical_encoding)}'
+        print(run_path)
+        self.path = os.path.join(RESULTS_RAW_DIR, run_name, run_path)
         if not os.path.exists(self.path):
             os.makedirs(self.path)
+        
+
+        # Saving the config file
+        serializable_config = {
+            key: (value.value if isinstance(value, Enum) else value) for key, value in config.items()
+        }
+        file_name = self._generate_file_name(['config.json'])
+        with open(os.path.join(self.path, file_name), "w") as f:
+            json.dump(serializable_config, f)
 
     def set_bucket_size(self, bucket_size):
         self.bucket_size = str(bucket_size)

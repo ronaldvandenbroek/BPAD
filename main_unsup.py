@@ -18,7 +18,7 @@ from baseline.LAE.lae import LAE
 from baseline.Sylvio import W2VLOF
 from baseline.VAE.vae import VAE
 from baseline.VAEOCSVM.vaeOCSVM import VAEOCSVM
-from experiments.dea_experiments import DAE_finetuned_embedding, DAE_gridsearch_batch_bucketing, DAE_repeatability_experiment
+from experiments.dea_experiments import DAE_bpic2015, DAE_finetuned_embedding, DAE_gridsearch_batch_bucketing, DAE_repeatability_experiment
 from experiments.fixed_vector_experiments import Fixed_Vector_gridsearch_vector_sizes
 from experiments.general_experiments import All_original_models_finetuned
 from experiments.w2v_experiments import W2V_finetuned, W2V_gridsearch_vector_window_size, W2V_no_averaging, W2V_pretrain
@@ -39,7 +39,7 @@ warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-def fit_and_eva(dataset_name, run_name, ad, fit_kwargs=None, ad_kwargs=None):
+def fit_and_eva(dataset_name, run_name, seed, ad, fit_kwargs=None, ad_kwargs=None):
     print(fit_kwargs, ad_kwargs)
     if ad_kwargs is None:
         ad_kwargs = {}
@@ -55,6 +55,8 @@ def fit_and_eva(dataset_name, run_name, ad, fit_kwargs=None, ad_kwargs=None):
     window_size = fit_kwargs['window_size']
     pretrain_percentage = fit_kwargs['pretrain_percentage']
 
+    np.random.seed(seed)
+
     start_time = time.time()
 
 
@@ -65,7 +67,7 @@ def fit_and_eva(dataset_name, run_name, ad, fit_kwargs=None, ad_kwargs=None):
     ad = ad(**ad_kwargs)
     print(ad.name, dataset_name)
 
-    fs_save = FSSave(start_time=datetime.now(), run_name=run_name, model_name=ad.name)
+    fs_save = FSSave(start_time=datetime.now(), run_name=run_name, model_name=ad.name, config=fit_kwargs, categorical_encoding=categorical_encoding, numerical_encoding=numerical_encoding)
     dataset = Dataset(dataset_name, 
                       beta=0.005, 
                       prefix=prefix,
@@ -145,7 +147,9 @@ if __name__ == '__main__':
     dataset_names_real = list(set(dataset_names)-set(dataset_names_syn))
     dataset_names_real.sort()
 
-    ads,run_name = W2V_pretrain()
+
+    seed=2024
+    # ads,run_name = W2V_pretrain()
     # ads,run_name = DAE_repeatability_experiment()
     # ads,run_name = W2V_gridsearch_vector_window_size()
     # ads,run_name = W2V_no_averaging()
@@ -153,7 +157,14 @@ if __name__ == '__main__':
     # ads,run_name = W2V_finetuned()
     # ads,run_name = DAE_gridsearch_batch_bucketing()
     # ads,run_name = All_original_models_finetuned()
-    # run_name = "Temp Test Run"
+    ads,run_name = DAE_bpic2015(
+                        run_name='DAE_bpic2015_prefixes',
+                        batch_size=8,
+                        bucket=[20,30,40,50,60],
+                        repeats=2,
+                        prefix=True)
+    # ads,run_name = DAE_finetuned_embedding()
+    # run_name = "Mem Test"
 
 
 
@@ -161,6 +172,6 @@ if __name__ == '__main__':
     print(f'Total Number of datasets: {len(dataset_names)}')
     for ad in ads:
         for d in dataset_names:
-            p = Process(target=fit_and_eva, kwargs={ 'dataset_name' : d,  'run_name' : run_name, **ad })
+            p = Process(target=fit_and_eva, kwargs={ 'dataset_name' : d,  'run_name' : run_name, 'seed': seed, **ad })
             p.start()
             p.join()
