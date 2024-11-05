@@ -80,6 +80,8 @@ class DAE(NNAnomalyDetector):
             features = dataset.flat_w2v_features_2d(trace2vec=True)
         elif categorical_encoding == EncodingCategorical.FIXED_VECTOR:
             features = dataset.flat_fixed_vector_features_2d()
+        elif categorical_encoding == EncodingCategorical.ELMO:
+            features = dataset.flat_elmo_features_2d()
         else:
             features = dataset.flat_features_2d
 

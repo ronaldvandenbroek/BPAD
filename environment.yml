@@ -16,6 +16,7 @@ dependencies:
           - torch==1.13.0
           - tensorflow==2.10.0
           - pm4py==2.7.4
+          - transformers==4.46.2
 
 # RCVDB: TODO Try to get Tensorflow on the GPU working
 # Follow instructions: https://www.tensorflow.org/install/pip#windows-wsl2

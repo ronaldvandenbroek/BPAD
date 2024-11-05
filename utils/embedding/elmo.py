@@ -1,47 +1,55 @@
 import numpy as np
 import torch
-from allennlp.commands.elmo import ElmoEmbedder
+from transformers import BertModel, BertTokenizer
+from tqdm import tqdm 
+
 
 class ProcessELMoEncoder():
     def __init__(self,
-                 encoders, 
-                 attribute_types, 
-                 event_attribute_keys,
                  features,
                  vector_size=1024) -> None:
         
         if vector_size != 1024:
             raise 'Error ELMo only allows for vector_sizes of 1024'
 
-        #self.encoders = encoders
-        self.attribute_types = attribute_types
-        self.event_attribute_keys = event_attribute_keys
-        self.features = features
+        # #self.encoders = encoders
+        # self.attribute_types = attribute_types
+        # self.event_attribute_keys = event_attribute_keys
+        print("Setup ELMO Encoding")
+        self.features = np.array(features).astype(str)
+        print("Converted Features to strings")
 
         self.vector_size = vector_size
 
         # Initialize the ELMo embedder with a pretrained model
-        self.elmo = ElmoEmbedder()
+        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        self.model = BertModel.from_pretrained('bert-base-uncased')
+        print("Loaded BERT tokenizer and model")
 
-    def flat_features_2d(self):
+    def encode_attribute(self, attribute):
+        inputs = self.tokenizer(attribute, return_tensors='pt')
+        outputs = self.model(**inputs)
+        return outputs.last_hidden_state[:, 0, :]  # CLS token embedding
+
+    def flat_elmo_features_2d(self):
+        print("Encoding cases with ELMO")
         features = []
-        for feature in self.features:
+        for feature in tqdm(self.features, desc="Features", leave=False):
             encoded_feature = []
-            for attr_trace in feature:
-                sentence = attr_trace
+            for attr_trace in tqdm(feature, desc="Attribute Traces", leave=False):
+                trace_attributes = []
+                for attr in tqdm(attr_trace, desc="Attributes", leave=False):
+                    enc_attr = self.encode_attribute(attr)
+    
+                    trace_attributes.append(enc_attr)
 
-                elmo_embedding = self.elmo.embed_sentence(sentence)
-                word_embeddings = torch.mean(torch.tensor(elmo_embedding), dim=0)
+                    #     if attr != 0:
+                    #         # (num_words, 1024)
 
-                # trace_attributes = []
-                # for attr in attr_trace:
-                #     if attr != 0:
-                #         # (num_words, 1024)
-
-                #         trace_attributes.append(np.array(fourier_encoding(attr, self.frequencies),dtype=np.float32))
-                #     else:
-                #         trace_attributes.append(self.zero_vector)
-                encoded_feature.append(word_embeddings)     
+                    #         trace_attributes.append(np.array(fourier_encoding(attr, self.frequencies),dtype=np.float32))
+                    #     else:
+                    #         trace_attributes.append(self.zero_vector)
+                encoded_feature.append(trace_attributes)     
             features.append(encoded_feature)
 
         features = np.array(features, dtype=np.float32)

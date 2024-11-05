@@ -23,6 +23,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 from utils.anomaly import label_to_targets
+from utils.embedding.elmo import ProcessELMoEncoder
 from utils.embedding.fixed_vector import FixedVectorEncoder
 from utils.embedding.w2v import ProcessWord2VecEncoder
 from utils.embedding.attribute_dictionary import AttributeDictionary
@@ -351,7 +352,7 @@ class Dataset(object):
             # print(f'Pre-Processing {key} {attribute_type}')
 
             # Integer encode categorical data
-            if attribute_type == AttributeType.CATEGORICAL:
+            if attribute_type == AttributeType.CATEGORICAL:# and not self.categorical_encoding == EncodingCategorical.ELMO:
                 # Dynamic max size
                 unknown_buffer_percentage = 1.25
                 unique_values_count = len(set(feature_columns[key]))
@@ -389,7 +390,11 @@ class Dataset(object):
         # Transform back into sequences
         case_lens = np.array(case_lens)
         offsets = np.concatenate(([0], np.cumsum(case_lens)[:-1]))
-        features = [np.zeros((case_lens.shape[0], case_lens.max()),dtype='float') for _ in range(len(feature_columns))]
+        # if self.categorical_encoding == EncodingCategorical.ELMO:
+        #     features = [np.zeros((case_lens.shape[0], case_lens.max()),dtype=str) for _ in range(len(feature_columns))]
+        # else:
+        features = [np.zeros((case_lens.shape[0], case_lens.max()),dtype=np.float32) for _ in range(len(feature_columns))]
+
         for i, (offset, case_len) in enumerate(zip(offsets, case_lens)):
             for k, key in enumerate(feature_columns):
                 x = feature_columns[key]
@@ -572,6 +577,13 @@ class Dataset(object):
             features=self.features)
         self._attribute_dims = np.array([self.vector_size] * len(self.attribute_dims))
         return fixed_vector_encoder.flat_features_2d()
+    
+    def flat_elmo_features_2d(self):
+        elmo_encoder = ProcessELMoEncoder(
+            vector_size=self.vector_size, 
+            features=self.features)
+        self._attribute_dims = np.array([self.vector_size] * len(self.attribute_dims))
+        return elmo_encoder.flat_elmo_features_2d()
 
     # Embedding Features
     @property

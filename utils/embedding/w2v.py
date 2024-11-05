@@ -194,7 +194,7 @@ class ProcessWord2VecEncoder():
             # Generates a single encoding per case that can be prepended to the w2v encoding
             trace_encoding = np.mean(transposed_w2v_features, axis=(1, 2))
             # (num_cases, trace_encoding + num_attribute * num_events)
-            flat_w2v_numeric_features = np.concatenate((trace_encoding,flat_w2v_numeric_features))  
+            merged_features = np.concatenate((trace_encoding,merged_features), axis=1)  
 
         return merged_features
 
@@ -227,9 +227,10 @@ class ProcessWord2VecEncoder():
 
         if trace2vec:
             # Generates a single encoding per case that can be prepended to the w2v encoding
+            # TODO: Error mean of empty slice in the smallest bucket
             trace_encoding = np.mean(transposed_w2v_features, axis=1)
             # (num_cases, trace_encoding + num_attribute * num_events)
-            flat_w2v_numeric_features = np.concatenate((trace_encoding,flat_w2v_numeric_features))      
+            flat_w2v_numeric_features = np.concatenate((trace_encoding,flat_w2v_numeric_features), axis=1)      
 
         # RCVDB: Sanity check to see if all values are encoded correctly.
         assert not np.any(np.isnan(flat_w2v_numeric_features)), "Data contains NaNs!"
