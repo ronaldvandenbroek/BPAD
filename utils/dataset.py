@@ -25,6 +25,7 @@ from tqdm import tqdm
 from utils.anomaly import label_to_targets
 from utils.embedding.fixed_vector import FixedVectorEncoder
 from utils.embedding.w2v import ProcessWord2VecEncoder
+from utils.embedding.attribute_dictionary import AttributeDictionary
 from utils.enums import AttributeType, EncodingCategorical, EncodingNumerical, Perspective
 from utils.fs import EventLogFile
 from processmining.event import Event
@@ -351,8 +352,6 @@ class Dataset(object):
 
             # Integer encode categorical data
             if attribute_type == AttributeType.CATEGORICAL:
-                from utils.embedding.w2v import AttributeDictionary
-
                 # Dynamic max size
                 unknown_buffer_percentage = 1.25
                 unique_values_count = len(set(feature_columns[key]))
@@ -558,14 +557,14 @@ class Dataset(object):
             window=self.window_size,
             fs_save=self.fs_save)         
 
-    def flat_w2v_features_2d_average(self):
+    def flat_w2v_features_2d_average(self, trace2vec=False):
         w2v_encoder = self._build_w2v_model()
-        return w2v_encoder.encode_flat_features_2d_average()
+        return w2v_encoder.encode_flat_features_2d_average(trace2vec=trace2vec)
         
-    def flat_w2v_features_2d(self):
+    def flat_w2v_features_2d(self, trace2vec=False):
         w2v_encoder = self._build_w2v_model()
         self._attribute_dims = np.array([self.vector_size] * len(self.attribute_dims))
-        return w2v_encoder.encode_flat_features_2d(attribute_keys=self.event_log.event_attribute_keys)
+        return w2v_encoder.encode_flat_features_2d(attribute_keys=self.event_log.event_attribute_keys, trace2vec=trace2vec)
     
     def flat_fixed_vector_features_2d(self):
         fixed_vector_encoder = FixedVectorEncoder(

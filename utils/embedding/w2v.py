@@ -143,7 +143,7 @@ class ProcessWord2VecEncoder():
             
         return np.array(w2v_features, dtype=np.float32), np.array(numeric_features, dtype=np.float32), np.array(numeric_feature_names), np.array(w2v_feature_names)
 
-    def encode_flat_features_2d(self, attribute_keys):
+    def encode_flat_features_2d(self, attribute_keys, trace2vec=False):
         w2v_features, numeric_features, numeric_feature_names, w2v_feature_names = self.encode_features(average=False, match_numerical=True)
         # print(w2v_features.shape, numeric_features.shape)
         transposed_w2v_features = np.transpose(w2v_features, (1, 2, 0, 3))
@@ -190,10 +190,16 @@ class ProcessWord2VecEncoder():
         merged_features = np.reshape(merged_features, (dim0, dim1 * dim2 * dim3))#, order='C')
         # print(merged_features.shape)
 
+        if trace2vec:
+            # Generates a single encoding per case that can be prepended to the w2v encoding
+            trace_encoding = np.mean(transposed_w2v_features, axis=(1, 2))
+            # (num_cases, trace_encoding + num_attribute * num_events)
+            flat_w2v_numeric_features = np.concatenate((trace_encoding,flat_w2v_numeric_features))  
+
         return merged_features
 
 
-    def encode_flat_features_2d_average(self):
+    def encode_flat_features_2d_average(self, trace2vec=False):
         w2v_features, numeric_features, numeric_feature_names, w2v_feature_names = self.encode_features()
 
         # RCVDB: Interleaf the w2v features
@@ -218,6 +224,12 @@ class ProcessWord2VecEncoder():
             flat_w2v_numeric_features = np.concatenate((flat_w2v_features,flat_numeric_features), axis=1)
         else:
             flat_w2v_numeric_features = flat_w2v_features
+
+        if trace2vec:
+            # Generates a single encoding per case that can be prepended to the w2v encoding
+            trace_encoding = np.mean(transposed_w2v_features, axis=1)
+            # (num_cases, trace_encoding + num_attribute * num_events)
+            flat_w2v_numeric_features = np.concatenate((trace_encoding,flat_w2v_numeric_features))      
 
         # RCVDB: Sanity check to see if all values are encoded correctly.
         assert not np.any(np.isnan(flat_w2v_numeric_features)), "Data contains NaNs!"

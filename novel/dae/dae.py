@@ -74,6 +74,10 @@ class DAE(NNAnomalyDetector):
             features = dataset.flat_w2v_features_2d_average()
         elif categorical_encoding == EncodingCategorical.WORD_2_VEC_C:
             features = dataset.flat_w2v_features_2d()
+        elif categorical_encoding == EncodingCategorical.TRACE_2_VEC_ATC:
+            features = dataset.flat_w2v_features_2d_average(trace2vec=True)
+        elif categorical_encoding == EncodingCategorical.TRACE_2_VEC_C:
+            features = dataset.flat_w2v_features_2d(trace2vec=True)
         elif categorical_encoding == EncodingCategorical.FIXED_VECTOR:
             features = dataset.flat_fixed_vector_features_2d()
         else:
@@ -112,6 +116,10 @@ class DAE(NNAnomalyDetector):
                 if categorical_encoding == EncodingCategorical.WORD_2_VEC_ATC:
                     # If using w2v every categorical event length has the same shape as the events are aggregated
                     input_size = vector_size * dataset.attribute_type_count(AttributeType.CATEGORICAL) + boundary * dataset.attribute_type_count(AttributeType.NUMERICAL)
+                elif categorical_encoding == EncodingCategorical.TRACE_2_VEC_ATC:
+                    input_size = vector_size + vector_size * dataset.attribute_type_count(AttributeType.CATEGORICAL) + boundary * dataset.attribute_type_count(AttributeType.NUMERICAL)
+                elif categorical_encoding == EncodingCategorical.TRACE_2_VEC_C:
+                    input_size = vector_size + int(boundary * event_length)    
                 else:
                     input_size = int(boundary * event_length)
                 bucket_input_sizes.append(input_size)
@@ -314,6 +322,10 @@ class DAE(NNAnomalyDetector):
             # (cases, events * flattened_attributes)
             errors_unmasked = np.power(targets - predictions, 2)
             # errors = targets - predictions
+
+            # RCVDB: If trace2vec than the first vector_size of outputs can be discarded as it is not relevant for specific perspectives
+            if categorical_encoding == EncodingCategorical.TRACE_2_VEC_ATC or categorical_encoding == EncodingCategorical.TRACE_2_VEC_C:
+                errors_unmasked = errors_unmasked[:, vector_size:]
 
             # RCVDB: Mask empty events if no buckets are used or encoding method is not W2V
             if bucket_boundaries is None and categorical_encoding != EncodingCategorical.WORD_2_VEC_ATC: 
