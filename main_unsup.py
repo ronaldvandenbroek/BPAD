@@ -18,7 +18,7 @@ from baseline.LAE.lae import LAE
 from baseline.Sylvio import W2VLOF
 from baseline.VAE.vae import VAE
 from baseline.VAEOCSVM.vaeOCSVM import VAEOCSVM
-from experiments.dea_experiments import DAE_bpic2015, DAE_finetuned_embedding, DAE_gridsearch_batch_bucketing, DAE_repeatability_experiment
+from experiments.dea_experiments import DAE_bpic2015, DAE_bpic2015_no_buckets, DAE_finetuned_embedding, DAE_gridsearch_batch_bucketing, DAE_repeatability_experiment
 from experiments.elmo_experiments import ELMo_finetuned
 from experiments.fixed_vector_experiments import Fixed_Vector_gridsearch_vector_sizes
 from experiments.general_experiments import All_original_models_finetuned
@@ -159,12 +159,12 @@ if __name__ == '__main__':
     # ads,run_name = W2V_finetuned()
     # ads,run_name = DAE_gridsearch_batch_bucketing()
     # ads,run_name = All_original_models_finetuned()
-    # ads,run_name = DAE_bpic2015(
-    #                     run_name='DAE_bpic2015_prefixes',
-    #                     batch_size=8,
-    #                     bucket=[20,30,40,50,60],
-    #                     repeats=2,
-    #                     prefix=True)
+    ads,run_name = DAE_bpic2015(
+                        run_name='DAE_bpic2015_prefixes',
+                        batch_size=8,
+                        bucket=[20,30,40,50,60],
+                        repeats=2,
+                        prefix=True)
 
     # ads_small,run_name = T2V_finetuned(
     #                     run_name='Trace2Vec_Synthetic',
@@ -184,13 +184,21 @@ if __name__ == '__main__':
     #                     prefix=True)
     # ads = ads_small + ads_large
 
-    ads, run_name = ELMo_finetuned(
-                        run_name='ELMo_Synthetic',
-                        vector_size=1024,
-                        batch_size=8,
-                        bucket=[3,4,5,6,7,8,9],
-                        repeats=1,
-                        prefix=True)
+    # ads, run_name = ELMo_finetuned(
+    #                     run_name='ELMo_Synthetic',
+    #                     vector_size=1024,
+    #                     batch_size=8,
+    #                     bucket=[3,4,5,6,7,8,9],
+    #                     repeats=1,
+    #                     prefix=True)
+    
+
+    # ads, run_name = DAE_bpic2015_no_buckets(
+    #                     run_name='DAE_bpic2015_no_buckets_real_world',
+    #                     batch_size=8,
+    #                     bucket=None,
+    #                     repeats=1,
+    #                     prefix=True)
 
     # ads,run_name = DAE_finetuned_embedding()
     # run_name = "Mem Test"

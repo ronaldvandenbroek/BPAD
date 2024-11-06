@@ -182,3 +182,4 @@ environment backup v2.yml
 .vscode/launch.json
 /results
 *.pkl
+/analysis/raw/plots
