@@ -1,6 +1,24 @@
 from novel.dae.dae import DAE
 from utils.enums import EncodingCategorical, EncodingNumerical
 
+def DAE_finetuned_embedding_batch_size_1():
+    run_name = 'DAE_finetuned_embedding_batch_size_1'
+    batch_size = 8
+    bucket = [3,4,5,6,7,8,9]
+
+    ads = []
+    ads.append(dict(ad=DAE, fit_kwargs=dict( 
+        batch_size=batch_size, 
+        prefix=True, 
+        bucket_boundaries=bucket,
+        categorical_encoding=EncodingCategorical.WORD_2_VEC_ATC,
+        numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
+        pretrain_percentage=0,
+        vector_size=200,
+        window_size=10)))
+    
+    return ads, run_name
+
 def DAE_finetuned_embedding():
     run_name = 'DAE_Finetuned_Embedding'
     batch_size = 8
