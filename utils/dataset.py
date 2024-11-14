@@ -564,6 +564,7 @@ class Dataset(object):
 
     def flat_w2v_features_2d_average(self, trace2vec=False):
         w2v_encoder = self._build_w2v_model()
+        # self._attribute_dims = np.array([self.vector_size] * len(self.attribute_dims))
         return w2v_encoder.encode_flat_features_2d_average(trace2vec=trace2vec)
         
     def flat_w2v_features_2d(self, trace2vec=False):

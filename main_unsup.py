@@ -18,7 +18,7 @@ from baseline.LAE.lae import LAE
 from baseline.Sylvio import W2VLOF
 from baseline.VAE.vae import VAE
 from baseline.VAEOCSVM.vaeOCSVM import VAEOCSVM
-from experiments.dea_experiments import DAE_bpic2015, DAE_bpic2015_no_buckets, DAE_finetuned_embedding, DAE_finetuned_embedding_batch_size_1, DAE_gridsearch_batch_bucketing, DAE_repeatability_experiment
+from experiments.dea_experiments import DAE_bpic2015, DAE_bpic2015_no_buckets, DAE_debug, DAE_finetuned_embedding, DAE_finetuned_embedding_batch_size_1, DAE_gridsearch_batch_bucketing, DAE_repeatability_experiment
 from experiments.elmo_experiments import ELMo_finetuned
 from experiments.fixed_vector_experiments import Fixed_Vector_gridsearch_vector_sizes
 from experiments.general_experiments import All_original_models_finetuned
@@ -80,7 +80,7 @@ def fit_and_eva(dataset_name, run_name, seed, ad, fit_kwargs=None, ad_kwargs=Non
                       numerical_encoding=numerical_encoding,
                       fs_save=fs_save)
 
-    bucket_trace_level_abnormal_scores, bucket_event_level_abnormal_scores, bucket_attr_level_abnormal_scores, bucket_losses, bucket_case_labels, bucket_event_labels, bucket_attr_labels = ad.train_and_predict(dataset, 
+    bucket_trace_level_abnormal_scores, bucket_event_level_abnormal_scores, bucket_attr_level_abnormal_scores, bucket_losses, bucket_case_labels, bucket_event_labels, bucket_attr_labels, bucket_errors_raw = ad.train_and_predict(dataset, 
                                                                                                                                                                                                                  batch_size=batch_size, 
                                                                                                                                                                                                                  bucket_boundaries=bucket_boundaries, 
                                                                                                                                                                                                                  categorical_encoding=categorical_encoding,
@@ -90,6 +90,7 @@ def fit_and_eva(dataset_name, run_name, seed, ad, fit_kwargs=None, ad_kwargs=Non
     run_time=end_time-start_time
     print(f'Runtime: {run_time}')
 
+    # RCVDB: Loop through each bucket size and handle each size seperately
     for i in range(len(bucket_losses)):
         if bucket_boundaries is not None:
             fs_save.set_bucket_size(bucket_boundaries[i])
@@ -101,8 +102,23 @@ def fit_and_eva(dataset_name, run_name, seed, ad, fit_kwargs=None, ad_kwargs=Non
         event_labels = bucket_event_labels[i]
         attr_labels = bucket_attr_labels[i]
         losses = bucket_losses[i]
+        errors_raw = bucket_errors_raw[i]
 
-        # RCVDB: Loop through each perspective and handle each results seperately
+        fs_save.save_raw_errors(
+            errors=errors_raw)
+        fs_save.save_raw_labels(
+            level='trace', 
+            labels=case_labels)
+        fs_save.save_raw_labels(
+            level='event', 
+            labels=event_labels)
+        fs_save.save_raw_labels(
+            level='attribute', 
+            labels=attr_labels)
+        fs_save.save_raw_losses(
+            losses=losses)
+
+        # RCVDB: Loop through each perspective and handle each result level seperately
         for anomaly_perspective in trace_level_abnormal_scores.keys():
             fs_save.set_perspective(anomaly_perspective)
 
@@ -115,17 +131,6 @@ def fit_and_eva(dataset_name, run_name, seed, ad, fit_kwargs=None, ad_kwargs=Non
             fs_save.save_raw_results(
                 level='attribute',
                 results=attr_level_abnormal_scores[anomaly_perspective])
-            fs_save.save_raw_labels(
-                level='trace', 
-                labels=case_labels)
-            fs_save.save_raw_labels(
-                level='event', 
-                labels=event_labels)
-            fs_save.save_raw_labels(
-                level='attribute', 
-                labels=attr_labels)
-            fs_save.save_raw_losses(
-                losses=losses)
 
 if __name__ == '__main__':
     multiprocessing.set_start_method('spawn')
@@ -200,7 +205,7 @@ if __name__ == '__main__':
     #                     repeats=1,
     #                     prefix=True)
 
-    ads,run_name = DAE_finetuned_embedding_batch_size_1()
+    ads,run_name = DAE_debug()
     # run_name = "Mem Test"
 
     print(f'Total Planned configurations: {len(ads)}')

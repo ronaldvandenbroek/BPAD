@@ -68,6 +68,10 @@ class FSSave():
     def _save(self, file_name, data):
         np.save(file=os.path.join(self.path, file_name), arr=data)
 
+    def save_raw_errors(self, errors):
+        file_name = self._generate_file_name(['errors', self.model_name, self.bucket_size])
+        self._save(file_name, errors)
+
     def save_raw_losses(self, losses):
         file_name = self._generate_file_name(['losses', self.model_name, self.bucket_size])
         self._save(file_name, losses)

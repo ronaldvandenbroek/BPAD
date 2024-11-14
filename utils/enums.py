@@ -265,6 +265,13 @@ class EncodingCategorical(Enum):
     def items():
         return dict(zip(EncodingCategorical.keys(), EncodingCategorical.values()))
     
+    @staticmethod
+    def from_string(value):
+        # Create a dictionary mapping each string value to the Enum member
+        lookup = {v.value: v for v in EncodingCategorical}
+        # Use the dictionary to return the matching enum member or raise KeyError
+        return lookup.get(value)
+    
 
 class EncodingNumerical(Enum):
     NONE = 'None'
