@@ -104,8 +104,8 @@ def fit_and_eva(dataset_name, run_name, seed, ad, fit_kwargs=None, ad_kwargs=Non
         losses = bucket_losses[i]
         errors_raw = bucket_errors_raw[i]
 
-        fs_save.save_raw_errors(
-            errors=errors_raw)
+        # fs_save.save_raw_errors(
+        #     errors=errors_raw)
         fs_save.save_raw_labels(
             level='trace', 
             labels=case_labels)

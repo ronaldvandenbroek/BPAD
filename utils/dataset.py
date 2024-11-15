@@ -370,7 +370,7 @@ class Dataset(object):
                 dictionary_starting_index += dictionary_size
 
                 # If categorical encoding is none then categorical values are treated as numerical thus can scale
-                if self.categorical_encoding == EncodingCategorical.NONE or self.categorical_encoding == EncodingCategorical.FIXED_VECTOR:
+                if self.categorical_encoding == EncodingCategorical.NONE:# or self.categorical_encoding == EncodingCategorical.FIXED_VECTOR:
                     if self.numerical_encoding == EncodingNumerical.MIN_MAX_SCALING:
                         feature_columns[key] = self._min_max_scaling(feature_columns[key])
                     replace_attribute_type = AttributeType.NUMERICAL
@@ -564,20 +564,22 @@ class Dataset(object):
 
     def flat_w2v_features_2d_average(self, trace2vec=False):
         w2v_encoder = self._build_w2v_model()
-        # self._attribute_dims = np.array([self.vector_size] * len(self.attribute_dims))
-        return w2v_encoder.encode_flat_features_2d_average(trace2vec=trace2vec)
+        features, self._attribute_dims = w2v_encoder.encode_flat_features_2d_average(trace2vec=trace2vec)
+        return features
         
     def flat_w2v_features_2d(self, trace2vec=False):
         w2v_encoder = self._build_w2v_model()
-        self._attribute_dims = np.array([self.vector_size] * len(self.attribute_dims))
-        return w2v_encoder.encode_flat_features_2d(attribute_keys=self.event_log.event_attribute_keys, trace2vec=trace2vec)
+        features, self._attribute_dims = w2v_encoder.encode_flat_features_2d(attribute_keys=self.event_log.event_attribute_keys, trace2vec=trace2vec)
+        return features
     
     def flat_fixed_vector_features_2d(self):
         fixed_vector_encoder = FixedVectorEncoder(
             vector_size=self.vector_size, 
-            features=self.features)
-        self._attribute_dims = np.array([self.vector_size] * len(self.attribute_dims))
-        return fixed_vector_encoder.flat_features_2d()
+            features=self.features,
+            attribute_types=self.attribute_types,
+            event_attribute_keys=self.event_log.event_attribute_keys)
+        features, self._attribute_dims = fixed_vector_encoder.flat_features_2d()
+        return features
     
     def flat_elmo_features_2d(self):
         elmo_encoder = ProcessELMoEncoder(

@@ -25,18 +25,40 @@ def process_bucket_results(
     if categorical_encoding in (EncodingCategorical.TRACE_2_VEC_ATC, EncodingCategorical.TRACE_2_VEC_C):
         errors_unmasked = errors_unmasked[:, vector_size:]
 
-    # RCVDB: Mask empty events if no buckets are used or encoding method is not W2V
-    if not bucketing and categorical_encoding in (EncodingCategorical.WORD_2_VEC_ATC, EncodingCategorical.TRACE_2_VEC_ATC):
-    # Applies a mask to remove the events not present in the trace   
-    # (cases, flattened_errors) --> errors_unmasked
-    # (cases, num_events) --> dataset.mask (~ inverts mask)
-    # (cases, num_events, 1) --> expand dimension for broadcasting
-    # (cases, num_events, attributes_dim) --> expand 2nd axis to size of the attributes
-    # (cases, num_events * attributes_dim) = (cases, flattened_mask) --> reshape to match flattened error shape
-        errors = errors_unmasked * np.expand_dims(~dataset_mask, 2).repeat(attribute_dims.sum(), 2).reshape(
-            dataset_mask.shape[0], -1)
-    else:
+
+    # RCVDB: Generate the mask per bucket
+    if categorical_encoding in (EncodingCategorical.WORD_2_VEC_ATC, EncodingCategorical.TRACE_2_VEC_ATC):
+        attribute_type_counter = Counter(attribute_types)
+
+        dataset_mask = np.zeros(errors_unmasked.shape, dtype=bool)
+        for mask, case_length in zip(dataset_mask, case_lengths):
+            mask_length = attribute_type_counter[AttributeType.CATEGORICAL] * vector_size + attribute_type_counter[AttributeType.NUMERICAL] * case_length
+            mask[:mask_length] = True
+
+        errors = errors_unmasked * dataset_mask
+    elif categorical_encoding in (EncodingCategorical.ONE_HOT, EncodingCategorical.WORD_2_VEC_C, EncodingCategorical.TRACE_2_VEC_C, EncodingCategorical.FIXED_VECTOR):
+        dataset_mask = np.zeros(errors_unmasked.shape, dtype=bool)
+        for mask, case_length in zip(dataset_mask, case_lengths):
+            mask_length = int(attribute_dims.sum() * case_length)
+            mask[:mask_length] = True
+
+        errors = errors_unmasked * dataset_mask
+
+    else:    
         errors = errors_unmasked
+
+    # # RCVDB: Mask empty events if no buckets are used or encoding method is not W2V
+    # if not bucketing and categorical_encoding in (EncodingCategorical.WORD_2_VEC_ATC, EncodingCategorical.TRACE_2_VEC_ATC):
+    # # Applies a mask to remove the events not present in the trace   
+    # # (cases, flattened_errors) --> errors_unmasked
+    # # (cases, num_events) --> dataset.mask (~ inverts mask)
+    # # (cases, num_events, 1) --> expand dimension for broadcasting
+    # # (cases, num_events, attributes_dim) --> expand 2nd axis to size of the attributes
+    # # (cases, num_events * attributes_dim) = (cases, flattened_mask) --> reshape to match flattened error shape
+    #     errors = errors_unmasked * np.expand_dims(~dataset_mask, 2).repeat(attribute_dims.sum(), 2).reshape(
+    #         dataset_mask.shape[0], -1)
+    # else:
+    #     errors = errors_unmasked
 
     # If W2V all categorical events are embedded into a single vector
     if categorical_encoding in (EncodingCategorical.WORD_2_VEC_ATC, EncodingCategorical.TRACE_2_VEC_ATC):
@@ -61,7 +83,8 @@ def process_bucket_results(
     # np.sum for the total one-hot predictions being wrong
     # (attributes * events, cases)
     # RCVDB: TODO Sum the errors to amplify the difference between normal and anomalous data
-    errors_attr_split_summed = [np.sum(attribute, axis=1) for attribute in errors_attr_split]
+    # Does have the problem that longer traces will always have higher sums
+    errors_attr_split_summed = [np.mean(attribute, axis=1) for attribute in errors_attr_split]
 
     # if categorical_encoding == EncodingCategorical.WORD_2_VEC_ATC or categorical_encoding == EncodingCategorical.TRACE_2_VEC_ATC:
     #     errors_attr_split_summed = [np.sum(attribute, axis=1) for attribute in errors_attr_split]

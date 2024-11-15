@@ -22,7 +22,7 @@ from baseline.binet.core import NNAnomalyDetector
 from utils import process_results
 from utils.dataset import Dataset
 from utils.enums import AttributeType, EncodingCategorical, Heuristic, Strategy, Mode, Base
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 from utils.settings.settings_multi_task import SettingsMultiTask
 
@@ -214,7 +214,7 @@ class DAE(NNAnomalyDetector):
             # metrics=['accuracy']
         )
 
-        model.summary()
+        # model.summary()
 
         return model
 
@@ -272,7 +272,8 @@ class DAE(NNAnomalyDetector):
             sorted_perspectives  = np.concatenate((perspective_array[categorical_mask], perspective_array[~categorical_mask]))
 
             anomaly_perspectives = sorted_perspectives
-
+            # self._attribute_dims = np.array([self.vector_size] * len(self.attribute_dims))
+        
         bucket_trace_level_abnormal_scores = []
         bucket_event_level_abnormal_scores = [] 
         bucket_attr_level_abnormal_scores = []

@@ -2,11 +2,12 @@ from gensim.models import Word2Vec
 import numpy as np
 
 from sklearn.decomposition import PCA
+from tqdm import tqdm
 
 from processmining.case import Case
 from processmining.log import EventLog
 from utils.embedding.attribute_dictionary import AttributeDictionary
-from utils.embedding.util import fourier_encoding
+from utils.embedding.util import fourier_encoding, recalculate_attribute_dimensions
 from utils.enums import AttributeType
 from utils.fs import FSSave
 
@@ -56,8 +57,8 @@ class ProcessWord2VecEncoder():
                 w2v_model:Word2Vec = self.create_model(pretrain_sentences)
                 self.w2v_models[attribute_key] = w2v_model
 
-                if fs_save is not None:
-                    self._save_embedding_space(w2v_model, attribute_key, pretrain_percentage)
+                # if fs_save is not None:
+                #     self._save_embedding_space(w2v_model, attribute_key, pretrain_percentage)
 
     def create_training_data(self, pretrain_cases, attribute_key, encoder:AttributeDictionary):
         pretrain_sentences = []
@@ -99,7 +100,7 @@ class ProcessWord2VecEncoder():
         w2v_feature_names = []
         numeric_features = []
         numeric_feature_names = []
-        for index, (feature, attribute_type, attribute_key) in enumerate(zip(self.features, self.attribute_types, self.event_attribute_keys)):
+        for index, (feature, attribute_type, attribute_key) in tqdm(enumerate(zip(self.features, self.attribute_types, self.event_attribute_keys)), "Encoding W2V Features"):
             # RCVDB: TODO Experimental, not encoding start and end event
             # feature_experimental = []
             # for case in feature:
@@ -117,10 +118,11 @@ class ProcessWord2VecEncoder():
                             else:
                                 trace_attributes.append(self.zero_vector)
                         encoded_feature.append(trace_attributes)     
-                    numeric_features.append(encoded_feature)
+                    numeric_features.append(np.array(encoded_feature, dtype=np.float32))
                 else:
                     numeric_features.append(np.array(feature,dtype=np.float32))
                 numeric_feature_names.append(attribute_key)
+                
             elif attribute_type == AttributeType.CATEGORICAL:
                 encoded_feature = []
                 for attr_trace in feature:
@@ -143,60 +145,56 @@ class ProcessWord2VecEncoder():
             
         return np.array(w2v_features, dtype=np.float32), np.array(numeric_features, dtype=np.float32), np.array(numeric_feature_names), np.array(w2v_feature_names)
 
-    def encode_flat_features_2d(self, attribute_keys, trace2vec=False):
-        w2v_features, numeric_features, numeric_feature_names, w2v_feature_names = self.encode_features(average=False, match_numerical=True)
+    def encode_flat_features_2d(self, attribute_keys, trace2vec=False, match_numerical=False):
+        # if numerical_encoding == Vector: w2v_features, numeric_features, numeric_feature_names, w2v_feature_names = self.encode_features(average=False, match_numerical=True)
+        w2v_features, numeric_features, numeric_feature_names, w2v_feature_names = self.encode_features(average=False, match_numerical=match_numerical)
         # print(w2v_features.shape, numeric_features.shape)
-        transposed_w2v_features = np.transpose(w2v_features, (1, 2, 0, 3))
-        transposed_numeric_features = np.transpose(numeric_features, (1, 2, 0, 3))
+
         # print(transposed_w2v_features.shape, transposed_numeric_features.shape)
-        print(numeric_feature_names, w2v_feature_names)
+        # print(numeric_features.shape, numeric_feature_names)
+        # print(w2v_features.shape, w2v_feature_names)
+        # print(attribute_keys)
 
-        # Shapes of the input data
-        num_traces, num_events, num_numeric_features, vector_size = transposed_numeric_features.shape
-        _, _, num_w2v_features, _ = transposed_w2v_features.shape
+        transposed_w2v_features = np.transpose(w2v_features, (1, 2, 0, 3))
+        transposed_numeric_features = np.transpose(numeric_features, (1, 2, 0))
 
-        # Initialize the merged array
-        # RCVDB: Due to memory allocation with real world datasets use float32
-        merged_features = np.zeros((num_traces, num_events, num_numeric_features + num_w2v_features, vector_size), dtype=np.float32)
-        # print(merged_features.shape)
-              
-        # Keep track of the current indices for numeric and w2v features
-        numeric_index, w2v_index = 0, 0
-
-        # Iterate over dataset.attribute_keys to place each feature in the correct order
-        for i, key in enumerate(attribute_keys):
-            # print(key)
-            if key in numeric_feature_names:
-                # print("Numeric feature shape:", transposed_numeric_features[:, :, numeric_index, :].shape)
-                # print("Target shape:", merged_features[:, :, i, :].shape)
-                # print(numeric_index)
-                # Place numeric feature in the merged array
-                merged_features[:, :, i, :] = transposed_numeric_features[:, :, numeric_index, :]
-                numeric_index += 1
-            elif key in w2v_feature_names:
-                # print("W2V feature shape:", transposed_w2v_features[:, :, w2v_index, :].shape)
-                # print("Target shape:", merged_features[:, :, i, :].shape)
-                # print(w2v_index)
-                # Place w2v feature in the merged array
-                merged_features[:, :, i, :] = transposed_w2v_features[:, :, w2v_index, :]
-                w2v_index += 1
-            else:
-                raise ValueError(f"Unexpected attribute key '{key}' not found in either feature list.")
+        # print(transposed_numeric_features.shape, numeric_feature_names)
+        # print(transposed_w2v_features.shape, w2v_feature_names)
+        # print(attribute_keys)
         
-        # print(merged_features.shape)
-        dim0, dim1, dim2, dim3 = merged_features.shape
-        merged_features = np.reshape(merged_features, (dim0, dim1, dim2 * dim3))#, order='C')
-        # print(merged_features.shape)
-        merged_features = np.reshape(merged_features, (dim0, dim1 * dim2 * dim3))#, order='C')
-        # print(merged_features.shape)
+        reordered_slices = []
+        numeric_feature_names = list(numeric_feature_names)
+        w2v_feature_names = list(w2v_feature_names)
+        # Iterate through each feature in the total_order
+        for feature in attribute_keys:
+            if feature in numeric_feature_names:
+                feature_index = numeric_feature_names.index(feature)
+                if match_numerical:
+                    reordered_slices.append(transposed_numeric_features[:, :, feature_index:feature_index+1])  # Retain shape (35483, 13, 1)
+                else:
+                    reordered_slices.append(transposed_w2v_features[:, :, feature_index, :])  # Shape (35483, 13, 200)
+            elif feature in w2v_feature_names:
+                feature_index = w2v_feature_names.index(feature)
+                reordered_slices.append(transposed_w2v_features[:, :, feature_index, :])  # Shape (35483, 13, 200)
+
+        # Concatenate all slices along the last axis
+        merged_features = np.concatenate(reordered_slices, axis=-1)
+
+        # Generates a single encoding per case that can be prepended to the w2v encoding
+        trace_encoding = np.mean(merged_features, axis=(1))
+
+        print(merged_features.shape)
+        dim0, dim1, dim2 = merged_features.shape
+        flat_merged_features = np.reshape(merged_features, (dim0, dim1 * dim2))#, order='C')
+        print(flat_merged_features.shape)
 
         if trace2vec:
-            # Generates a single encoding per case that can be prepended to the w2v encoding
-            trace_encoding = np.mean(transposed_w2v_features, axis=(1, 2))
             # (num_cases, trace_encoding + num_attribute * num_events)
-            merged_features = np.concatenate((trace_encoding,merged_features), axis=1)  
+            flat_merged_features = np.concatenate((trace_encoding,flat_merged_features), axis=1)  
 
-        return merged_features
+        print(flat_merged_features.shape)
+
+        return flat_merged_features, recalculate_attribute_dimensions(self.attribute_types, self.vector_size, sort=False, match_numerical=match_numerical)
 
 
     def encode_flat_features_2d_average(self, trace2vec=False):
@@ -236,7 +234,7 @@ class ProcessWord2VecEncoder():
         assert not np.any(np.isnan(flat_w2v_numeric_features)), "Data contains NaNs!"
         assert not np.any(np.isinf(flat_w2v_numeric_features)), "Data contains Infs!"
 
-        return flat_w2v_numeric_features
+        return flat_w2v_numeric_features, recalculate_attribute_dimensions(self.attribute_types, self.vector_size, sort=True, match_numerical=False)
     
     def _save_embedding_space(self, model, attribute_key, pretrain_percentage):
         words = list(model.wv.index_to_key)
@@ -246,3 +244,4 @@ class ProcessWord2VecEncoder():
         word_vectors_2d = pca.fit_transform(word_vectors)
 
         self.fs_save.save_embedding_space(f"W2V_{attribute_key}", pretrain_percentage, words, word_vectors_2d)
+        
