@@ -264,14 +264,21 @@ class DAE(NNAnomalyDetector):
         attribute_dims = dataset.attribute_dims
 
         # If using ATC all categorical values are indexed first and then the numerical, internal order is maintained
-        anomaly_perspectives = dataset.event_log.event_attribute_perspectives
+        attribute_perspectives = dataset.event_log.event_attribute_perspectives
+        attribute_perspectives_original = dataset.event_log.event_attribute_perspectives 
+        attribute_names = dataset.event_log.event_attribute_keys
+        attribute_names_original = dataset.event_log.event_attribute_keys
         if categorical_encoding in (EncodingCategorical.WORD_2_VEC_ATC, EncodingCategorical.TRACE_2_VEC_ATC):
-            perspective_array = np.array(anomaly_perspectives)
-
             categorical_mask = np.array(dataset.attribute_types) == AttributeType.CATEGORICAL
-            sorted_perspectives  = np.concatenate((perspective_array[categorical_mask], perspective_array[~categorical_mask]))
 
-            anomaly_perspectives = sorted_perspectives
+            perspective_array = np.array(attribute_perspectives)
+            sorted_perspectives  = np.concatenate((perspective_array[categorical_mask], perspective_array[~categorical_mask]))
+            attribute_perspectives = sorted_perspectives
+
+            name_array = np.array(attribute_names)
+            sorted_names = np.concatenate((name_array[categorical_mask], name_array[~categorical_mask]))
+            attribute_names = sorted_names
+
             # self._attribute_dims = np.array([self.vector_size] * len(self.attribute_dims))
         
         bucket_trace_level_abnormal_scores = []
@@ -341,7 +348,7 @@ class DAE(NNAnomalyDetector):
                 dataset_mask=dataset.mask,
                 attribute_types=dataset.attribute_types,
                 case_max_length=case_max_length,
-                anomaly_perspectives=anomaly_perspectives,
+                anomaly_perspectives=attribute_perspectives,
                 case_lengths=case_lengths,
                 error_power=2
             )
@@ -350,4 +357,15 @@ class DAE(NNAnomalyDetector):
             bucket_event_level_abnormal_scores.append(event_level_abnormal_scores)
             bucket_attr_level_abnormal_scores.append(attr_level_abnormal_scores)
 
-        return bucket_trace_level_abnormal_scores, bucket_event_level_abnormal_scores, bucket_attr_level_abnormal_scores, bucket_losses, bucket_case_labels, bucket_event_labels, bucket_attr_labels, bucket_errors_raw
+        return (bucket_trace_level_abnormal_scores, 
+                bucket_event_level_abnormal_scores, 
+                bucket_attr_level_abnormal_scores, 
+                bucket_losses, 
+                bucket_case_labels, 
+                bucket_event_labels, 
+                bucket_attr_labels, 
+                bucket_errors_raw,
+                attribute_perspectives,
+                attribute_perspectives_original,
+                attribute_names,
+                attribute_names_original)

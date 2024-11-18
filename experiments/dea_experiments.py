@@ -20,7 +20,7 @@ def DAE_debug():
         batch_size=batch_size, 
         prefix=True, 
         bucket_boundaries=bucket,
-        categorical_encoding=EncodingCategorical.FIXED_VECTOR,
+        categorical_encoding=EncodingCategorical.WORD_2_VEC_ATC,
         numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
         pretrain_percentage=0,
         vector_size=200,

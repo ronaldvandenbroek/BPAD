@@ -56,6 +56,10 @@ def fit_and_eva(dataset_name, run_name, seed, ad, fit_kwargs=None, ad_kwargs=Non
     vector_size = fit_kwargs['vector_size']
     window_size = fit_kwargs['window_size']
     pretrain_percentage = fit_kwargs['pretrain_percentage']
+    try:
+        repeat = fit_kwargs['repeat']
+    except:
+        repeat = None
 
     np.random.seed(seed)
 
@@ -69,7 +73,11 @@ def fit_and_eva(dataset_name, run_name, seed, ad, fit_kwargs=None, ad_kwargs=Non
     ad = ad(**ad_kwargs)
     print(ad.name, dataset_name)
 
-    fs_save = FSSave(start_time=datetime.now(), run_name=run_name, model_name=ad.name, config=fit_kwargs, categorical_encoding=categorical_encoding, numerical_encoding=numerical_encoding)
+    fs_save = FSSave(start_time=datetime.now(), 
+                     run_name=run_name, 
+                     model_name=ad.name, 
+                     categorical_encoding=categorical_encoding, 
+                     numerical_encoding=numerical_encoding)
     dataset = Dataset(dataset_name, 
                       beta=0.005, 
                       prefix=prefix,
@@ -80,15 +88,45 @@ def fit_and_eva(dataset_name, run_name, seed, ad, fit_kwargs=None, ad_kwargs=Non
                       numerical_encoding=numerical_encoding,
                       fs_save=fs_save)
 
-    bucket_trace_level_abnormal_scores, bucket_event_level_abnormal_scores, bucket_attr_level_abnormal_scores, bucket_losses, bucket_case_labels, bucket_event_labels, bucket_attr_labels, bucket_errors_raw = ad.train_and_predict(dataset, 
-                                                                                                                                                                                                                 batch_size=batch_size, 
-                                                                                                                                                                                                                 bucket_boundaries=bucket_boundaries, 
-                                                                                                                                                                                                                 categorical_encoding=categorical_encoding,
-                                                                                                                                                                                                                 vector_size=vector_size)
+    # Run the AD model
+    (
+        bucket_trace_level_abnormal_scores, 
+        bucket_event_level_abnormal_scores, 
+        bucket_attr_level_abnormal_scores, 
+        bucket_losses, bucket_case_labels, 
+        bucket_event_labels, 
+        bucket_attr_labels,
+        bucket_errors_raw, 
+        attribute_perspectives,
+        attribute_perspectives_original, 
+        attribute_names, 
+        attribute_names_original
+     ) = ad.train_and_predict(
+        dataset, 
+        batch_size=batch_size, 
+        bucket_boundaries=bucket_boundaries, 
+        categorical_encoding=categorical_encoding,
+        vector_size=vector_size
+    )
 
     end_time = time.time()
     run_time=end_time-start_time
     print(f'Runtime: {run_time}')
+
+    config = fit_kwargs
+    config['model'] = ad.name
+    config['dataset'] = dataset_name
+    config['seed'] = seed
+    config['run_name'] = run_name
+    config['start_time'] = start_time
+    config['end_time'] = end_time
+    config['run_time'] = run_time
+    config['repeat'] = repeat
+    config['attribute_perspectives'] = list(attribute_perspectives)
+    config['attribute_perspectives_original'] = list(attribute_perspectives_original)
+    config['attribute_names'] = list(attribute_names)
+    config['attribute_names_original'] = list(attribute_names_original)
+    fs_save.save_config(config)
 
     # RCVDB: Loop through each bucket size and handle each size seperately
     for i in range(len(bucket_losses)):

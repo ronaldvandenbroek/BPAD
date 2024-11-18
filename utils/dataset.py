@@ -237,13 +237,13 @@ class Dataset(object):
         num_cases = len(event_log.cases)
 
         # Labels One-hot encoded per case, event and attribute
-        labels_event_level = np.zeros((num_cases, num_events, num_perspectives), dtype=int)
-        labels_case_level = np.zeros((num_cases, num_perspectives), dtype=int)
+        labels_event_level = np.zeros((num_cases, num_events, num_perspectives), dtype=bool)
+        labels_case_level = np.zeros((num_cases, num_perspectives), dtype=bool)
         labels_attr_level = []
 
         for case_index, case in enumerate(event_log):
             case:Case
-            case_targets = np.zeros((num_events, num_attributes, num_perspectives), dtype=int) 
+            case_targets = np.zeros((num_events, num_attributes, num_perspectives), dtype=bool) 
             for event_index, event in enumerate(case.events):
                 event:Event
                 if '_label' in event.attributes and event.attributes['_label'] is not None:
@@ -260,8 +260,8 @@ class Dataset(object):
 
                         # Encode the perspective into labels
                         if perspective is not None: # If perspective is none then no anomalies need to be registered
-                            labels_case_level[case_index, perspective] = 1
-                            labels_event_level[case_index, event_index, perspective] = 1
+                            labels_case_level[case_index, perspective] = True
+                            labels_event_level[case_index, event_index, perspective] = True
 
             # Create a list of labels per case
             labels_attr_level.append(case_targets)

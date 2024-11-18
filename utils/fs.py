@@ -38,7 +38,7 @@ RESULTS_RAW_DIR = os.path.join(ROOT_DIR,'results','raw') # For the model raw err
 EVENTLOG_CACHE_DIR = os.path.join(ROOT_DIR,'eventlogs', 'cache')  # For caching datasets so the event log does not always have to be loaded
 
 class FSSave():
-    def __init__(self, start_time:datetime, run_name, model_name, config, categorical_encoding, numerical_encoding) -> None:
+    def __init__(self, start_time:datetime, run_name, model_name, categorical_encoding, numerical_encoding) -> None:
         self.perspective = 'none'
         self.bucket_size = None
         self.model_name = model_name
@@ -48,15 +48,6 @@ class FSSave():
         self.path = os.path.join(RESULTS_RAW_DIR, run_name, run_path)
         if not os.path.exists(self.path):
             os.makedirs(self.path)
-        
-
-        # Saving the config file
-        serializable_config = {
-            key: (value.value if isinstance(value, Enum) else value) for key, value in config.items()
-        }
-        file_name = self._generate_file_name(['config.json'])
-        with open(os.path.join(self.path, file_name), "w") as f:
-            json.dump(serializable_config, f)
 
     def set_bucket_size(self, bucket_size):
         self.bucket_size = str(bucket_size)
@@ -67,6 +58,14 @@ class FSSave():
 
     def _save(self, file_name, data):
         np.save(file=os.path.join(self.path, file_name), arr=data)
+
+    def save_config(self, config):
+        serializable_config = {
+            key: (value.value if isinstance(value, Enum) else value) for key, value in config.items()
+        }
+        file_name = self._generate_file_name(['config.json'])
+        with open(os.path.join(self.path, file_name), "w") as f:
+            json.dump(serializable_config, f, default=convert_to_serializable, indent=4)
 
     def save_raw_errors(self, errors):
         file_name = self._generate_file_name(['errors', self.model_name, self.bucket_size])
@@ -124,6 +123,15 @@ def split_eventlog_name(name):
         p = None
         id = None
     return model, p, id
+
+def convert_to_serializable(obj):
+    if isinstance(obj, np.integer):
+        return int(obj)
+    if isinstance(obj, np.floating):
+        return float(obj)
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()  # Convert numpy array to list
+    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
 

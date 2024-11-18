@@ -52,7 +52,7 @@ class Anomaly(object):
     @staticmethod
     def targets(event_log:EventLog, targets, event_index, label):
         """Return targets for the anomaly."""
-        return targets, Perspective.NORMAL
+        return targets, None #(Perspective.NORMAL)
 
     @staticmethod
     def pretty_label(label):
@@ -77,7 +77,7 @@ class ReworkAnomaly(Anomaly):
     @staticmethod
     def targets(event_log:EventLog, targets, event_index, label):
         attribute_index = event_log.get_activity_name()
-        targets[event_index, attribute_index, Perspective.ORDER] = 1
+        targets[event_index, attribute_index, Perspective.ORDER] = True
 
         return targets, Perspective.ORDER
 
@@ -99,7 +99,7 @@ class SkipSequenceAnomaly(Anomaly):
     def targets(event_log:EventLog, targets, event_index, label):
         # RCVDB: Length of the skip can be ignored as that will not be present in the existing data
         attribute_index = event_log.get_activity_name()
-        targets[event_index, attribute_index, Perspective.ORDER] = 1
+        targets[event_index, attribute_index, Perspective.ORDER] = True
 
         return targets, Perspective.ORDER
 
@@ -121,7 +121,7 @@ class LateAnomaly(Anomaly):
     def targets(event_log:EventLog, targets, event_index, label):
         # RCVDB: Only the events that are shifted are marked as anomalous, each event will have the anomaly marked seperately
         attribute_index = event_log.get_activity_name()
-        targets[event_index, attribute_index, Perspective.ORDER] = 1
+        targets[event_index, attribute_index, Perspective.ORDER] = True
 
         return targets, Perspective.ORDER
 
@@ -144,7 +144,7 @@ class EarlyAnomaly(Anomaly):
     def targets(event_log:EventLog, targets, event_index, label):
         # RCVDB: Only the events that are shifted are marked as anomalous, each event will have the anomaly marked seperately
         attribute_index = event_log.get_activity_name()
-        targets[event_index, attribute_index, Perspective.ORDER] = 1
+        targets[event_index, attribute_index, Perspective.ORDER] = True
 
         return targets, Perspective.ORDER
 
@@ -169,7 +169,7 @@ class AttributeAnomaly(Anomaly):
         # try:
         for anomalous_attribute in anomalous_attributes:
             attribute_index = event_log.get_attribute_index(anomalous_attribute)
-            targets[event_index, attribute_index, Perspective.ATTRIBUTE] = 1
+            targets[event_index, attribute_index, Perspective.ATTRIBUTE] = True
         # except IndexError as e:
         #     print("INDEX ERROR")
         #     print(attribute_index)
@@ -195,7 +195,7 @@ class InsertAnomaly(Anomaly):
     @staticmethod
     def targets(event_log:EventLog, targets, event_index, label):
         attribute_index = event_log.get_activity_name()
-        targets[event_index, attribute_index, Perspective.ORDER] = 1 #Class.INSERT
+        targets[event_index, attribute_index, Perspective.ORDER] = True #Class.INSERT
         # RCVDB: Insert should not as the attributes in the inserted event are not themselves anomalous by default
         # targets[event_index, 1:, Perspective.ATTRIBUTE] = 1 #Class.ATTRIBUTE     
            
@@ -215,7 +215,7 @@ class ArrivalTimeAnomaly(Anomaly):
     @staticmethod
     def targets(event_log:EventLog, targets, event_index, label):
         attribute_index = event_log.get_attribute_index('arrival_time')
-        targets[event_index, attribute_index, Perspective.ARRIVAL_TIME] = 1
+        targets[event_index, attribute_index, Perspective.ARRIVAL_TIME] = True
         return targets, Perspective.ARRIVAL_TIME
 
     @staticmethod
@@ -236,7 +236,7 @@ class GlobalWorkloadAnomaly(Anomaly):
         # try:
         for workload_timestep in workload_timesteps:
             attribute_index = event_log.get_attribute_index(f'global_workload_{workload_timestep}')
-            targets[event_index, attribute_index, Perspective.WORKLOAD] = 1
+            targets[event_index, attribute_index, Perspective.WORKLOAD] = True
         # except IndexError as e:
         #     print(targets.shape)
         #     print(workload_timestep)
@@ -264,7 +264,7 @@ class LocalWorkloadAnomaly(Anomaly):
         workload_timesteps = label['attr']['timestep']
         for workload_timestep in workload_timesteps:
             attribute_index = event_log.get_attribute_index(f'local_workload_{workload_timestep}')
-            targets[event_index, attribute_index, Perspective.WORKLOAD] = 1
+            targets[event_index, attribute_index, Perspective.WORKLOAD] = True
 
         return targets, Perspective.WORKLOAD
 
@@ -284,10 +284,6 @@ def label_to_targets(event_log, targets, event_index, label):
     if label == 'normal':
         return targets, None
     else:
-        # RCVDB: TODO Check if event_index + 1 is needed as this is done in every anomaly
-        event_index = event_index + 1
-        # print(ANOMALIES)
-        # print(label['anomaly'])
         anomaly:Anomaly = ANOMALIES.get(label['anomaly'])
         return anomaly.targets(event_log, targets, event_index, label)
 
