@@ -2,36 +2,37 @@ import itertools
 from novel.dae.dae import DAE
 from utils.enums import EncodingCategorical, EncodingNumerical
 
-def W2V_gridsearch_vector_window_size():
-    run_name = 'W2V_Gridsearch_v3_batch_8_no_pretrain'
-    vector_sizes = [250,300] #[20,40,60,80,100,150,200]
-    window_sizes = [2,4,6,8,10,12,14]
+def Experiment_Finetuning_W2V_Window_Vector_Sizes(repeats=3):
+    run_name = 'Experiment_Finetuning_W2V_Window_Vector_Sizes'
+    vector_sizes = [10,20,40,80,160]
+    window_sizes = [2,4,8,16]
     pre_train_percentage = [0]
 
     ads = []
     combinations = list(itertools.product(vector_sizes, window_sizes, pre_train_percentage))
-    for combination in combinations:
-        vector_size, window_size, pre_train_percentage = combination
+    for _ in range(repeats):
+        for combination in combinations:
+            vector_size, window_size, pre_train_percentage = combination
 
-        ads.append(dict(ad=DAE, fit_kwargs=dict( 
-            batch_size=8, 
-            prefix=True, 
-            bucket_boundaries = [3,4,5,6,7,8,9],
-            categorical_encoding=EncodingCategorical.WORD_2_VEC_ATC,
-            numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
-            pretrain_percentage=pre_train_percentage,
-            vector_size = vector_size,
-            window_size = window_size)))
-        
-    # ads.append(dict(ad=DAE, fit_kwargs=dict( 
-    #         batch_size=8, 
-    #         prefix=True, 
-    #         bucket_boundaries = [3,4,5,6,7,8,9],
-    #         categorical_encoding=EncodingCategorical.ONE_HOT,
-    #         numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
-    #         pretrain_percentage=0,
-    #         vector_size=0,
-    #         window_size=0)))
+            ads.append(dict(ad=DAE, fit_kwargs=dict( 
+                batch_size=8, 
+                prefix=True, 
+                bucket_boundaries = [3,4,5,6,7,8,9],
+                categorical_encoding=EncodingCategorical.WORD_2_VEC_ATC,
+                numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
+                pretrain_percentage=pre_train_percentage,
+                vector_size = vector_size,
+                window_size = window_size)))
+            
+            ads.append(dict(ad=DAE, fit_kwargs=dict( 
+                batch_size=8, 
+                prefix=True, 
+                bucket_boundaries = [3,4,5,6,7,8,9],
+                categorical_encoding=EncodingCategorical.WORD_2_VEC_C,
+                numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
+                pretrain_percentage=pre_train_percentage,
+                vector_size = vector_size,
+                window_size = window_size)))
     
     return ads,run_name
 

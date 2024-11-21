@@ -9,30 +9,9 @@ from multiprocessing import Process
 import multiprocessing
 
 import numpy as np
-import pandas as pd
-
-from baseline.GAE.gae import GAE
-from baseline.GAMA.gama import GAMA
-from baseline.GRASPED.grasped import GRASPED
-from baseline.LAE.lae import LAE
-from baseline.Sylvio import W2VLOF
-from baseline.VAE.vae import VAE
-from baseline.VAEOCSVM.vaeOCSVM import VAEOCSVM
-from experiments.dea_experiments import DAE_bpic2015, DAE_bpic2015_no_buckets, DAE_debug, DAE_finetuned_embedding, DAE_finetuned_embedding_batch_size_1, DAE_gridsearch_batch_bucketing, DAE_repeatability_experiment
-from experiments.elmo_experiments import ELMo_finetuned
-from experiments.fixed_vector_experiments import Fixed_Vector_gridsearch_vector_sizes
-from experiments.general_experiments import All_original_models_finetuned
-from experiments.report_experiments import Experiment_Anomaly_Percentage, Experiment_Batch_Size, Experiment_Prefix, Experiment_Synthetic_Dataset
-from experiments.t2v_experiments import T2V_finetuned
-from experiments.w2v_experiments import W2V_finetuned, W2V_gridsearch_vector_window_size, W2V_no_averaging, W2V_pretrain
-from novel.dae.dae import DAE
-from baseline.bezerra import SamplingAnomalyDetector, NaiveAnomalyDetector
-from baseline.binet.binet import BINetv3, BINetv2
-from baseline.boehmer import LikelihoodPlusAnomalyDetector
-from baseline.leverage import Leverage
+from experiments.report_experiments import Experiment_Anomaly_Percentage, Experiment_Batch_Size, Experiment_Finetuning_T2V_Window_Vector_Sizes, Experiment_Finetuning_W2V_Window_Vector_Sizes, Experiment_Prefix, Experiment_Finetuning_Fixed_Vector_Vector_Sizes
 from utils.dataset import Dataset
 
-from utils.enums import Perspective, EncodingCategorical, EncodingNumerical
 from utils.eval import cal_best_PRF
 from utils.fs import EVENTLOG_DIR, RESULTS_RAW_DIR, ROOT_DIR, FSSave
 
@@ -66,10 +45,6 @@ def fit_and_eva(dataset_name, run_name, seed, ad, fit_kwargs=None, ad_kwargs=Non
 
     start_time = time.time()
 
-
-    # if bucket_boundaries is not None:
-    #     bucket_boundaries.append(dataset.max_len)
-
     # AD
     ad = ad(**ad_kwargs)
     print(ad.name, dataset_name)
@@ -88,6 +63,11 @@ def fit_and_eva(dataset_name, run_name, seed, ad, fit_kwargs=None, ad_kwargs=Non
                       categorical_encoding=categorical_encoding,
                       numerical_encoding=numerical_encoding,
                       fs_save=fs_save)
+    
+    # if bucket_boundaries is not None:
+    #     step=1
+    #     bucket_boundaries = list(range(3,dataset.max_len,step))
+    #     bucket_boundaries.append(dataset.max_len)
 
     # Run the AD model
     (
@@ -171,6 +151,16 @@ def fit_and_eva(dataset_name, run_name, seed, ad, fit_kwargs=None, ad_kwargs=Non
                 level='attribute',
                 results=attr_level_abnormal_scores[anomaly_perspective])
 
+def execute_runs(dataset_names, ads, run_name, seed):
+    print(f'Starting run: {run_name}')
+    print(f'Total Planned configurations: {len(ads)}')
+    print(f'Total Number of datasets: {len(dataset_names)}')
+    for ad in ads:
+        for d in dataset_names:
+            p = Process(target=fit_and_eva, kwargs={ 'dataset_name' : d,  'run_name' : run_name, 'seed': seed, **ad })
+            p.start()
+            p.join()
+
 if __name__ == '__main__':
     multiprocessing.set_start_method('spawn')
 
@@ -196,7 +186,7 @@ if __name__ == '__main__':
 
     seed=2024
 
-    ads, run_name = Experiment_Batch_Size(repeats=1)
+    # ads, run_name = Experiment_Batch_Size(repeats=1)
 
     # TODO Can be run later
     # ads, run_name = Experiment_Prefix(repeats=1)
@@ -205,13 +195,14 @@ if __name__ == '__main__':
     # run_name = 'Experiment_Anomaly_Percentage_v2'
 
     # ads, run_name = Experiment_Synthetic_Dataset(repeats=1)
-    # run_name = 'Experiment_Synthetic_Dataset_v4'
+    # run_name = 'Experiment_Synthetic_Dataset_v5'
 
+    # Finetuning runs
+    ads, run_name = Experiment_Finetuning_Fixed_Vector_Vector_Sizes(repeats=3)
+    execute_runs(dataset_names, ads, run_name, seed)
 
-    print(f'Total Planned configurations: {len(ads)}')
-    print(f'Total Number of datasets: {len(dataset_names)}')
-    for ad in ads:
-        for d in dataset_names:
-            p = Process(target=fit_and_eva, kwargs={ 'dataset_name' : d,  'run_name' : run_name, 'seed': seed, **ad })
-            p.start()
-            p.join()
+    ads, run_name = Experiment_Finetuning_W2V_Window_Vector_Sizes(repeats=3)
+    execute_runs(dataset_names, ads, run_name, seed)
+
+    ads, run_name = Experiment_Finetuning_T2V_Window_Vector_Sizes(repeats=3)
+    execute_runs(dataset_names, ads, run_name, seed)

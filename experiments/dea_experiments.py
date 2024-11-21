@@ -3,8 +3,8 @@ from utils.enums import EncodingCategorical, EncodingNumerical
 
 def DAE_debug():
     run_name = 'DAE_debug'
-    batch_size = 8
-    bucket = [3,4,5,6,7,8,9]
+    batch_size = 16
+    bucket = [20,30,40,50,60] #[3,4,5,6,7,8,9]
 
     ads = []
     # ads.append(dict(ad=DAE, fit_kwargs=dict( 
@@ -20,7 +20,7 @@ def DAE_debug():
         batch_size=batch_size, 
         prefix=True, 
         bucket_boundaries=bucket,
-        categorical_encoding=EncodingCategorical.WORD_2_VEC_ATC,
+        categorical_encoding=EncodingCategorical.TRACE_2_VEC_ATC,
         numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
         pretrain_percentage=0,
         vector_size=200,
