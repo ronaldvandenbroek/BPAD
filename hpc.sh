@@ -12,6 +12,7 @@
 module purge
 module load Python/3.9.5-GCCcore-10.3.0
 module load Miniconda3/24.1.2-0
+module load GCC/12.2.0
 
 # Activate conda
 eval "$(conda shell.bash activate)"

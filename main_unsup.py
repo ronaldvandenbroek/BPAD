@@ -9,7 +9,7 @@ from multiprocessing import Process
 import multiprocessing
 
 import numpy as np
-from experiments.report_experiments import Experiment_Anomaly_Percentage, Experiment_Batch_Size, Experiment_Finetuning_T2V_Window_Vector_Sizes, Experiment_Finetuning_W2V_Window_Vector_Sizes, Experiment_Prefix, Experiment_Finetuning_Fixed_Vector_Vector_Sizes
+from experiments.report_experiments import Experiment_Anomaly_Percentage, Experiment_Batch_Size, Experiment_Finetuning_T2V_Window_Vector_Sizes, Experiment_Finetuning_W2V_Window_Vector_Sizes, Experiment_Prefix, Experiment_Finetuning_Fixed_Vector_Vector_Sizes, Experiment_Real_World_Debug, Experiment_Synthetic_All_Models, Experiment_Synthetic_All_Models_FV_OH, Experiment_Synthetic_All_Models_T2V, Experiment_Synthetic_All_Models_W2V
 from utils.dataset import Dataset
 
 from utils.eval import cal_best_PRF
@@ -187,8 +187,7 @@ if __name__ == '__main__':
     seed=2024
 
     # ads, run_name = Experiment_Batch_Size(repeats=1)
-
-    # TODO Can be run later
+    
     # ads, run_name = Experiment_Prefix(repeats=1)
 
     # ads, run_name = Experiment_Anomaly_Percentage(repeats=1)
@@ -198,11 +197,18 @@ if __name__ == '__main__':
     # run_name = 'Experiment_Synthetic_Dataset_v5'
 
     # Finetuning runs
-    ads, run_name = Experiment_Finetuning_Fixed_Vector_Vector_Sizes(repeats=3)
-    execute_runs(dataset_names, ads, run_name, seed)
+    # ads, run_name = Experiment_Finetuning_Fixed_Vector_Vector_Sizes(repeats=3)
+    # execute_runs(dataset_names, ads, run_name, seed)
 
-    ads, run_name = Experiment_Finetuning_W2V_Window_Vector_Sizes(repeats=3)
-    execute_runs(dataset_names, ads, run_name, seed)
+    # ads, run_name = Experiment_Finetuning_W2V_Window_Vector_Sizes(repeats=3)
+    # execute_runs(dataset_names, ads, run_name, seed)
 
-    ads, run_name = Experiment_Finetuning_T2V_Window_Vector_Sizes(repeats=3)
+    # ads, run_name = Experiment_Finetuning_T2V_Window_Vector_Sizes(repeats=3)
+    # execute_runs(dataset_names, ads, run_name, seed)
+    # ads, run_name = Experiment_Synthetic_All_Models_FV_OH(repeats=5)
+    # ads, run_name = Experiment_Synthetic_All_Models_W2V(repeats=5)
+    # ads, run_name = Experiment_Synthetic_All_Models_T2V(repeats=5)
+    # ads, run_name = Experiment_Synthetic_All_Models(repeats=5)
+
+    ads, run_name = Experiment_Real_World_Debug(repeats=1)
     execute_runs(dataset_names, ads, run_name, seed)
