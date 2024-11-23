@@ -3,11 +3,12 @@ import numpy as np
 from novel.dae.dae import DAE
 from utils.enums import EncodingCategorical, EncodingNumerical
 
-def Experiment_Real_World_Debug(repeats=1):
+
+def Experiment_Real_World_W2V_ATC(repeats=5):
     bucket = [10,20,30,40,60,80]
     batch_size = 8
     prefix = True
-    run_name = 'Experiment_Real_World_Debug'
+    run_name = 'Experiment_Real_World_W2V_ATC'
 
     ads = []
     for _ in range(repeats):
@@ -15,11 +16,49 @@ def Experiment_Real_World_Debug(repeats=1):
             batch_size=batch_size, 
             prefix=prefix, 
             bucket_boundaries=bucket,
-            categorical_encoding=EncodingCategorical.ONE_HOT,
+            categorical_encoding=EncodingCategorical.WORD_2_VEC_ATC,
             numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
             pretrain_percentage=0,
-            vector_size=0,
-            window_size=0)))
+            vector_size=160,
+            window_size=2)))
+    return ads, run_name
+
+def Experiment_Real_World_T2V_ATC(repeats=5):
+    bucket = [10,20,30,40,60,80]
+    batch_size = 8
+    prefix = True
+    run_name = 'Experiment_Real_World_T2V_ATC'
+
+    ads = []
+    for _ in range(repeats):
+        ads.append(dict(ad=DAE, fit_kwargs=dict( 
+            batch_size=batch_size, 
+            prefix=prefix, 
+            bucket_boundaries=bucket,
+            categorical_encoding=EncodingCategorical.TRACE_2_VEC_ATC,
+            numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
+            pretrain_percentage=0,
+            vector_size=160,
+            window_size=4)))
+    return ads, run_name
+
+def Experiment_Real_World_T2V_C(repeats=5):
+    bucket = [10,20,30,40,60,80]
+    batch_size = 8
+    prefix = True
+    run_name = 'Experiment_Real_World_T2V_C'
+
+    ads = []
+    for _ in range(repeats):
+        ads.append(dict(ad=DAE, fit_kwargs=dict( 
+            batch_size=batch_size, 
+            prefix=prefix, 
+            bucket_boundaries=bucket,
+            categorical_encoding=EncodingCategorical.TRACE_2_VEC_C,
+            numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
+            pretrain_percentage=0,
+            vector_size=20,
+            window_size=2)))
     return ads, run_name
         
 

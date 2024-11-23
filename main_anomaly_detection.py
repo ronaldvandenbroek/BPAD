@@ -1,25 +1,12 @@
 from datetime import datetime
-import itertools
 import os
-import traceback
 import time
-import warnings
-# import mlflow
+import numpy as np
 from multiprocessing import Process
 import multiprocessing
 
-import numpy as np
-from experiments.report_experiments import Experiment_Anomaly_Percentage, Experiment_Batch_Size, Experiment_Finetuning_T2V_Window_Vector_Sizes, Experiment_Finetuning_W2V_Window_Vector_Sizes, Experiment_Prefix, Experiment_Finetuning_Fixed_Vector_Vector_Sizes, Experiment_Real_World_Debug, Experiment_Synthetic_All_Models, Experiment_Synthetic_All_Models_FV_OH, Experiment_Synthetic_All_Models_T2V, Experiment_Synthetic_All_Models_W2V
 from utils.dataset import Dataset
-
-from utils.eval import cal_best_PRF
-from utils.fs import EVENTLOG_DIR, RESULTS_RAW_DIR, ROOT_DIR, FSSave
-
-# RCVDB: Supressing Sklearn LabelEncoder InconsistentVersionWarning as this seems an internal package issue
-from sklearn.exceptions import InconsistentVersionWarning
-warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
-
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+from utils.fs import EVENTLOG_DIR, FSSave
 
 def fit_and_eva(dataset_name, run_name, seed, ad, fit_kwargs=None, ad_kwargs=None):
     print(fit_kwargs, ad_kwargs)
@@ -152,6 +139,8 @@ def fit_and_eva(dataset_name, run_name, seed, ad, fit_kwargs=None, ad_kwargs=Non
                 results=attr_level_abnormal_scores[anomaly_perspective])
 
 def execute_runs(dataset_names, ads, run_name, seed):
+    multiprocessing.set_start_method('spawn')
+
     print(f'Starting run: {run_name}')
     print(f'Total Planned configurations: {len(ads)}')
     print(f'Total Number of datasets: {len(dataset_names)}')
@@ -161,9 +150,7 @@ def execute_runs(dataset_names, ads, run_name, seed):
             p.start()
             p.join()
 
-if __name__ == '__main__':
-    multiprocessing.set_start_method('spawn')
-
+def prepare_datasets():
     dataset_names = os.listdir(EVENTLOG_DIR)
     dataset_names.sort()
     if 'cache' in dataset_names:
@@ -183,32 +170,4 @@ if __name__ == '__main__':
     dataset_names_real = list(set(dataset_names)-set(dataset_names_syn))
     dataset_names_real.sort()
 
-
-    seed=2024
-
-    # ads, run_name = Experiment_Batch_Size(repeats=1)
-    
-    # ads, run_name = Experiment_Prefix(repeats=1)
-
-    # ads, run_name = Experiment_Anomaly_Percentage(repeats=1)
-    # run_name = 'Experiment_Anomaly_Percentage_v2'
-
-    # ads, run_name = Experiment_Synthetic_Dataset(repeats=1)
-    # run_name = 'Experiment_Synthetic_Dataset_v5'
-
-    # Finetuning runs
-    # ads, run_name = Experiment_Finetuning_Fixed_Vector_Vector_Sizes(repeats=3)
-    # execute_runs(dataset_names, ads, run_name, seed)
-
-    # ads, run_name = Experiment_Finetuning_W2V_Window_Vector_Sizes(repeats=3)
-    # execute_runs(dataset_names, ads, run_name, seed)
-
-    # ads, run_name = Experiment_Finetuning_T2V_Window_Vector_Sizes(repeats=3)
-    # execute_runs(dataset_names, ads, run_name, seed)
-    # ads, run_name = Experiment_Synthetic_All_Models_FV_OH(repeats=5)
-    # ads, run_name = Experiment_Synthetic_All_Models_W2V(repeats=5)
-    # ads, run_name = Experiment_Synthetic_All_Models_T2V(repeats=5)
-    # ads, run_name = Experiment_Synthetic_All_Models(repeats=5)
-
-    ads, run_name = Experiment_Real_World_Debug(repeats=1)
-    execute_runs(dataset_names, ads, run_name, seed)
+    return dataset_names
