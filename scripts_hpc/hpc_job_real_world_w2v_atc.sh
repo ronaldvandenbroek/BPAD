@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=real_world_cpu
-#SBATCH --output=test_python-%j.log
+#SBATCH --output=scripts_hpc/log/test_python-%j.log
 #SBATCH --partition=tue.default.q
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -20,4 +20,4 @@ conda activate rcvdb-thesis-bpad
 
 cd $HOME/Thesis/BPAD/
 
-python main_unsup_hpc_job_real_world_cpu.py --experiment "Experiment_Real_World_W2V_ATC" --repeats 3 --experiment_name "Experiment_Real_World_W2V_ATC_HPC_JOB"
+python main.py --experiment "Experiment_Real_World_W2V_ATC" --repeats 3 --experiment_name "Experiment_Real_World_W2V_ATC_HPC_JOB"

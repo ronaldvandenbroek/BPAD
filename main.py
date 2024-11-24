@@ -13,8 +13,8 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Anomaly Detection on Process Streams")
     parser.add_argument('--experiment', type=str, required=False)
-    parser.add_argument('--repeats', type=str, required=False)
-    parser.add_argument('--experiment_name', type=int, required=False)
+    parser.add_argument('--repeats', type=int, required=False)
+    parser.add_argument('--experiment_name', type=str, required=False)
     args = parser.parse_args()
 
     seed=2024
