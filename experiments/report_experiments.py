@@ -266,6 +266,7 @@ def Experiment_Prefix(repeats=3):
     ads_prefix, _ = Experiment_Anomaly_Percentage(repeats=repeats, batch_size=batch_size, bucket=bucket, prefix=True)
     bucket = [3,4,5,6,7,8,9] # Testing the effect of bucketing on prefixes
     ads_prefix_bucket, _ = Experiment_Anomaly_Percentage(repeats=repeats, batch_size=batch_size, bucket=bucket, prefix=True)
+    ads_prefix_bucket, _ = Experiment_Anomaly_Percentage(repeats=repeats, batch_size=batch_size, bucket=bucket, prefix=False)
 
     run_name = 'Experiment_Prefix'
     return ads_no_prefix + ads_prefix + ads_prefix_bucket, run_name
