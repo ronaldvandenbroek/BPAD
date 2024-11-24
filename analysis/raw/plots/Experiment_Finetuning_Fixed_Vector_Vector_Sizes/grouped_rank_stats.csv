@@ -1,0 +1,5 @@
+dataset_short_name,categorical_encoding,level,f1_mean,f1_std,f1_rank
+gigantic/0.45,Fixed Vector,attribute,0.05903196396732147,0.024255873610769457,1.0
+gigantic/0.45,Fixed Vector,event,0.09041682852000485,0.016572921635323215,1.0
+gigantic/0.45,Fixed Vector,trace,0.343469036421362,0.04305059544451006,1.0
+gigantic/0.45,Fixed Vector,combined,0.16430594296956277,0.13105995556880887,1.0

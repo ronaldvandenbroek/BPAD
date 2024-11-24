@@ -1,0 +1,9 @@
+dataset_short_name,categorical_encoding,level,f1_mean,f1_std,f1_rank
+gigantic/0.45,Trace2Vec Average Then Concatinate,attribute,0.07398955380336619,0.017046738060379974,1.0
+gigantic/0.45,Trace2Vec Average Then Concatinate,event,0.12001390879412437,0.04780230668047299,1.0
+gigantic/0.45,Trace2Vec Average Then Concatinate,trace,0.35150158352607724,0.05561177615476068,1.0
+gigantic/0.45,Trace2Vec Concatinate,attribute,0.06507028915782367,0.035192030355729605,2.0
+gigantic/0.45,Trace2Vec Concatinate,event,0.09570259856449978,0.02273167944000822,2.0
+gigantic/0.45,Trace2Vec Concatinate,trace,0.34096177046437126,0.0463302861812499,2.0
+gigantic/0.45,Trace2Vec Average Then Concatinate,combined,0.1818350153745226,0.1290391674435341,1.0
+gigantic/0.45,Trace2Vec Concatinate,combined,0.16724488606223156,0.12869856705663008,2.0

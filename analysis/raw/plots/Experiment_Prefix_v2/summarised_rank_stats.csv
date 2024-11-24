@@ -1,0 +1,9 @@
+categorical_encoding,level,rank_mean,rank_std,f1_mean,f1_std
+Word2Vec Average Then Concatinate,attribute,1.0,0.0,0.06,0.0
+One Hot,attribute,2.0,0.0,0.05,0.0
+Word2Vec Average Then Concatinate,combined,1.0,0.0,0.19,0.0
+One Hot,combined,2.0,0.0,0.17,0.0
+Word2Vec Average Then Concatinate,event,1.0,0.0,0.1,0.0
+One Hot,event,2.0,0.0,0.08,0.0
+Word2Vec Average Then Concatinate,trace,1.0,0.0,0.39,0.0
+One Hot,trace,2.0,0.0,0.39,0.0
