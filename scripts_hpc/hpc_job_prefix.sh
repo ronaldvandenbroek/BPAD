@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH --job-name=real_world_cpu
-#SBATCH --output=test_python-%j.log
+#SBATCH --job-name=synthetic_prefix_cpu
+#SBATCH --output=scripts_hpc/log/test_python-%j.log
 #SBATCH --partition=tue.default.q
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -20,4 +20,4 @@ conda activate rcvdb-thesis-bpad
 
 cd $HOME/Thesis/BPAD/
 
-python main.py --experiment "TEMPLATE_HPC_EXPERIMENT" --repeats 1 --experiment_name "TEMPLATE_HPC_EXPERIMENT" --dataset_folder "TEMPLATE_HPC_EXPERIMENT"
+python main.py --experiment "Experiment_Prefix" --repeats 1 --experiment_name "Experiment_Prefix_v3" --dataset_folder "all_datasets_synthetics"

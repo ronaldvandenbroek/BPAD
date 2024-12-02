@@ -248,6 +248,18 @@ class EncodingCategorical(Enum):
                 'Trace2Vec Average Then Concatinate',
                 'Trace2Vec Concatinate',
                 'ELMo']
+    
+    @staticmethod
+    def values_short():
+        return ['None', 
+                'One-Hot', 
+                'Embedding', 
+                'W2V-ATC', 
+                'W2V-C', 
+                'Fixed-Vector',
+                'T2V-ATC',
+                'T2V-C',
+                'ELMo']
 
     @staticmethod
     def keys():
@@ -264,6 +276,10 @@ class EncodingCategorical(Enum):
     @staticmethod
     def items():
         return dict(zip(EncodingCategorical.keys(), EncodingCategorical.values()))
+    
+    @staticmethod
+    def items_short():
+        return dict(zip(EncodingCategorical.keys(), EncodingCategorical.values_short()))
     
     @staticmethod
     def from_string(value):

@@ -7,6 +7,8 @@ from main_anomaly_detection import execute_runs, prepare_datasets
 
 # RCVDB: Supressing Sklearn LabelEncoder InconsistentVersionWarning as this seems an internal package issue
 from sklearn.exceptions import InconsistentVersionWarning
+
+from utils.fs import FSSave, get_random_id
 warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -15,10 +17,10 @@ if __name__ == '__main__':
     parser.add_argument('--experiment', type=str, required=False)
     parser.add_argument('--repeats', type=int, required=False)
     parser.add_argument('--experiment_name', type=str, required=False)
+    parser.add_argument('--dataset_folder', type=str, required=False)
     args = parser.parse_args()
 
     seed=2024
-    dataset_names = prepare_datasets()
 
     if args.experiment:
         experiment = args.experiment
@@ -30,12 +32,19 @@ if __name__ == '__main__':
     else:
         repeats = 1
 
+    if args.dataset_folder:
+        dataset_folder = args.dataset_folder
+    else:
+        dataset_folder = None
+
     # If running main locally without passing arguments set run_local to true and configure the run manually 
-    run_local=False
+    run_local=True
     if run_local:
-        experiment = "Experiment_Real_World_T2V_C"
-        repeats = 3
-        # run_name = "Custom name"
+        experiment = 'Experiment_Prefix'
+        dataset_folder = 'all_datasets_synthetics'
+        repeats = 1
+
+    dataset_names = prepare_datasets(dataset_folder)
 
     # Configure the experiment based on the provided arguments
     ads = None
@@ -79,5 +88,7 @@ if __name__ == '__main__':
     if args.experiment_name:
         run_name = args.experiment_name
 
+    run_name = f"{run_name}_{get_random_id()}"
+
     if ads is not None and run_name is not None:
-        execute_runs(dataset_names, ads, run_name, seed)
+        execute_runs(dataset_names, ads, run_name, dataset_folder, seed)

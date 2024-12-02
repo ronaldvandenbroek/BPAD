@@ -18,13 +18,14 @@ from enum import Enum
 import os.path
 from pathlib import Path
 
+import random
+import shutil
 import numpy as np
 import matplotlib.pyplot as plt
 import json
 
 from utils.enums import Perspective
-
-
+from utils.enums import EncodingCategorical
 
 # Base
 ROOT_DIR = Path(__file__).parent.parent
@@ -39,13 +40,19 @@ EVENTLOG_CACHE_DIR = os.path.join(ROOT_DIR,'eventlogs', 'cache')  # For caching 
 
 class FSSave():
     def __init__(self, start_time:datetime, run_name, model_name, categorical_encoding, numerical_encoding) -> None:
+        categorical_encoding = EncodingCategorical.items_short()[categorical_encoding]
+
         self.perspective = 'none'
         self.bucket_size = None
         self.model_name = model_name
         start_time_str = str(start_time.strftime('%y-%m-%d-%H-%M'))
-        run_path = f'{start_time_str}_{model_name}_{str(categorical_encoding)}_{str(numerical_encoding)}'
-        print(run_path)
-        self.path = os.path.join(RESULTS_RAW_DIR, run_name, run_path)
+        
+        self.run_path = f'{start_time_str}_{model_name}_{str(categorical_encoding)}_{get_random_id()}'
+        print(self.run_path)
+
+        self.parent = os.path.join(RESULTS_RAW_DIR, run_name)
+        self.path = os.path.join(self.parent, self.run_path)
+
         if not os.path.exists(self.path):
             os.makedirs(self.path)
 
@@ -57,7 +64,7 @@ class FSSave():
         self.perspective = perspective_name
 
     def _save(self, file_name, data):
-        np.save(file=os.path.join(self.path, file_name), arr=data)
+        np.savez_compressed(file=os.path.join(self.path, file_name), data=data)
 
     def save_config(self, config):
         serializable_config = {
@@ -111,7 +118,15 @@ class FSSave():
                 else:
                     name = f'{name}_{item}'
         return name
-        
+
+    def zip_results(self):
+        # Compress the current folder as .zip
+        zip_output_path = os.path.join(self.parent, f"{self.run_path}.zip")
+        shutil.make_archive(zip_output_path.replace('.zip', ''), 'zip', self.path)
+
+        # Remove the original folder to save space
+        shutil.rmtree(self.path)
+
 def split_eventlog_name(name):
     try:
         s = name.split('-')
@@ -133,7 +148,8 @@ def convert_to_serializable(obj):
         return obj.tolist()  # Convert numpy array to list
     raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
-
+def get_random_id():
+    return str(random.randint(10000, 99999))
 
 class File(object):
     ext = None
@@ -160,7 +176,7 @@ class EventLogFile(File):
         if '.json' not in path.suffixes:
             path = Path(str(path) + '.json.gz')
         if not path.is_absolute():
-            path = Path(os.path.join(EVENTLOG_DIR , path.name))
+            path = Path(os.path.join(EVENTLOG_DIR, path))
 
         super(EventLogFile, self).__init__(path)
 

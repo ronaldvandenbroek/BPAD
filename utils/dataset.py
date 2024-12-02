@@ -17,6 +17,7 @@
 from collections import Counter
 import gzip
 import math
+import os
 import pickle as pickle
 
 import numpy as np
@@ -36,7 +37,8 @@ from processmining.log import EventLog
 
 class Dataset(object):
     def __init__(self, 
-                 dataset_name=None, 
+                 dataset_name=None,
+                 dataset_folder=None, 
                  beta=0, 
                  pretrain_percentage = 0,
                  vector_size = 50,
@@ -46,7 +48,11 @@ class Dataset(object):
                  numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
                  fs_save=None):
         # Public properties
-        self.dataset_name = dataset_name
+        if dataset_folder:
+            self.dataset_name = os.path.join(dataset_folder, dataset_name)
+        else:
+            self.dataset_name = dataset_name
+
         self.beta=beta   #used by GAMA
         self.attribute_types = None
         self.attribute_keys = None
@@ -77,7 +83,6 @@ class Dataset(object):
         self._case_lens = None
         self._features = None
         self._event_log = None
-
 
         # Load dataset
         if self.dataset_name is not None:
@@ -111,6 +116,7 @@ class Dataset(object):
             # self._gen_trace_graphs()
             # self._gen_trace_graphs_GAE()
         else:
+            print(el_file.path)
             raise FileNotFoundError()
 
     def _load_dataset_from_cache(self, file):

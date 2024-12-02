@@ -321,8 +321,8 @@ def Experiment_Anomaly_Percentage(repeats=1, batch_size=8, bucket=[3,4,5,6,7,8,9
             categorical_encoding=EncodingCategorical.WORD_2_VEC_ATC,
             numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
             pretrain_percentage=0,
-            vector_size=200,
-            window_size=10)))
+            vector_size=160,
+            window_size=2)))
     
     return ads, run_name 
 

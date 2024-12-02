@@ -8,7 +8,7 @@ import multiprocessing
 from utils.dataset import Dataset
 from utils.fs import EVENTLOG_DIR, FSSave
 
-def fit_and_eva(dataset_name, run_name, seed, ad, fit_kwargs=None, ad_kwargs=None):
+def fit_and_eva(dataset_name, dataset_folder, run_name, seed, ad, fit_kwargs=None, ad_kwargs=None):
     print(fit_kwargs, ad_kwargs)
     if ad_kwargs is None:
         ad_kwargs = {}
@@ -41,7 +41,8 @@ def fit_and_eva(dataset_name, run_name, seed, ad, fit_kwargs=None, ad_kwargs=Non
                      model_name=ad.name, 
                      categorical_encoding=categorical_encoding, 
                      numerical_encoding=numerical_encoding)
-    dataset = Dataset(dataset_name, 
+    dataset = Dataset(dataset_name,
+                      dataset_folder, 
                       beta=0.005, 
                       prefix=prefix,
                       pretrain_percentage=pretrain_percentage,
@@ -84,6 +85,7 @@ def fit_and_eva(dataset_name, run_name, seed, ad, fit_kwargs=None, ad_kwargs=Non
     config = fit_kwargs
     config['model'] = ad.name
     config['dataset'] = dataset_name
+    config['dataset_folder'] = dataset_folder
     config['seed'] = seed
     config['run_name'] = run_name
     config['start_time'] = start_time
@@ -137,8 +139,10 @@ def fit_and_eva(dataset_name, run_name, seed, ad, fit_kwargs=None, ad_kwargs=Non
             fs_save.save_raw_results(
                 level='attribute',
                 results=attr_level_abnormal_scores[anomaly_perspective])
+    
+    fs_save.zip_results()
 
-def execute_runs(dataset_names, ads, run_name, seed):
+def execute_runs(dataset_names, ads, run_name, dataset_folder, seed):
     multiprocessing.set_start_method('spawn')
 
     print(f'Starting run: {run_name}')
@@ -146,12 +150,16 @@ def execute_runs(dataset_names, ads, run_name, seed):
     print(f'Total Number of datasets: {len(dataset_names)}')
     for ad in ads:
         for d in dataset_names:
-            p = Process(target=fit_and_eva, kwargs={ 'dataset_name' : d,  'run_name' : run_name, 'seed': seed, **ad })
+            p = Process(target=fit_and_eva, kwargs={'dataset_name' : d, 'dataset_folder': dataset_folder, 'run_name' : run_name, 'seed': seed, **ad})
             p.start()
             p.join()
 
-def prepare_datasets():
-    dataset_names = os.listdir(EVENTLOG_DIR)
+def prepare_datasets(dataset_folder=None):
+    if dataset_folder:
+        dataset_names = os.listdir(os.path.join(EVENTLOG_DIR,dataset_folder))
+    else:
+        dataset_names = os.listdir(EVENTLOG_DIR)
+
     dataset_names.sort()
     if 'cache' in dataset_names:
         dataset_names.remove('cache')
