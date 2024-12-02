@@ -10,6 +10,7 @@ dependencies:
   - pyg=2.3.0
   - pandas=2.0.3
   - gensim=4.3.0
+  - orange3=3.30.0 #3.37.0 Newest versions depricate needed Critical Difference Fuctions (Source Code https://github.com/biolab/orange3/tree/e2282bbe2cf3d30ba41220ea2df0b79201ca430c)
   - ipykernel
   - pip
   - pip:
