@@ -20,4 +20,4 @@ conda activate rcvdb-thesis-bpad
 
 cd $HOME/Thesis/BPAD/
 
-python main.py --experiment "Experiment_Real_World_W2V_ATC" --repeats 3 --experiment_name "Experiment_Real_World_W2V_ATC_HPC_JOB"
+python main.py --experiment "Experiment_Real_World_W2V_ATC" --repeats 3 --experiment_name "Experiment_Real_World_W2V_ATC_HPC_JOB" --dataset_folder "experiment_real_world_selected_models"

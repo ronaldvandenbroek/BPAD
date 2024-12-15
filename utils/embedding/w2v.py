@@ -170,9 +170,9 @@ class ProcessWord2VecEncoder():
             if feature in numeric_feature_names:
                 feature_index = numeric_feature_names.index(feature)
                 if match_numerical:
-                    reordered_slices.append(transposed_numeric_features[:, :, feature_index:feature_index+1])  # Retain shape (35483, 13, 1)
-                else:
                     reordered_slices.append(transposed_w2v_features[:, :, feature_index, :])  # Shape (35483, 13, 200)
+                else:
+                    reordered_slices.append(transposed_numeric_features[:, :, feature_index:feature_index+1])  # Retain shape (35483, 13, 1)
             elif feature in w2v_feature_names:
                 feature_index = w2v_feature_names.index(feature)
                 reordered_slices.append(transposed_w2v_features[:, :, feature_index, :])  # Shape (35483, 13, 200)

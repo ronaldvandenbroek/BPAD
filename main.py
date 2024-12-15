@@ -38,10 +38,10 @@ if __name__ == '__main__':
         dataset_folder = None
 
     # If running main locally without passing arguments set run_local to true and configure the run manually 
-    run_local=True
+    run_local=False
     if run_local:
-        experiment = 'Experiment_Prefix'
-        dataset_folder = 'all_datasets_synthetics'
+        experiment = 'Experiment_Real_World_T2V_C' #'Experiment_Prefix'
+        dataset_folder = 'experiment_real_world_selected_models' #'all_datasets_synthetics'
         repeats = 1
 
     dataset_names = prepare_datasets(dataset_folder)
