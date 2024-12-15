@@ -4,6 +4,7 @@ import re
 import shutil
 import zipfile
 
+import numpy as np
 import pandas as pd
 from utils.fs import RESULTS_RAW_DIR
 

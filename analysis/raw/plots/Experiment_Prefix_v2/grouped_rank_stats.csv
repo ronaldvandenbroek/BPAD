@@ -1,9 +1,0 @@
-dataset_short_name,categorical_encoding,level,f1_mean,f1_std,f1_rank
-gigantic/0.45,One Hot,attribute,0.05012744327186922,0.017149320618833577,2.0
-gigantic/0.45,One Hot,event,0.08302836538381397,0.03803949982826458,2.0
-gigantic/0.45,One Hot,trace,0.38507502564698554,0.05942418839713791,2.0
-gigantic/0.45,Word2Vec Average Then Concatinate,attribute,0.06484780744953338,0.021805950329760435,1.0
-gigantic/0.45,Word2Vec Average Then Concatinate,event,0.10353446443451186,0.04343689783587609,1.0
-gigantic/0.45,Word2Vec Average Then Concatinate,trace,0.39303688236769335,0.06973814011043335,1.0
-gigantic/0.45,One Hot,combined,0.17274361143422293,0.15689006556630528,2.0
-gigantic/0.45,Word2Vec Average Then Concatinate,combined,0.18713971808391286,0.15482606060878207,1.0
