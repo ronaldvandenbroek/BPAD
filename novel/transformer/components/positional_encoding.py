@@ -26,26 +26,26 @@ class PositionWordEmbeddingLayer(Layer):
 
 # Attention is all you need version
 class PositionWordEmbeddingFixedWeights(Layer):
-    def __init__(self, sequence_length, vocab_size, output_dim, **kwargs):
+    def __init__(self, sequence_length, vocab_size, dim_model, **kwargs):
         super(PositionWordEmbeddingFixedWeights, self).__init__(**kwargs)
-        word_embedding_matrix = self.get_position_encoding(vocab_size, output_dim)   
-        position_embedding_matrix = self.get_position_encoding(sequence_length, output_dim)                                          
+        word_embedding_matrix = self.get_position_encoding(vocab_size, dim_model)   
+        position_embedding_matrix = self.get_position_encoding(sequence_length, dim_model)                                          
         self.word_embedding_layer = Embedding(
-            input_dim=vocab_size, output_dim=output_dim,
+            input_dim=vocab_size, output_dim=dim_model,
             weights=[word_embedding_matrix],
             trainable=False
         )
         self.position_embedding_layer = Embedding(
-            input_dim=sequence_length, output_dim=output_dim,
+            input_dim=sequence_length, output_dim=dim_model,
             weights=[position_embedding_matrix],
             trainable=False
         )
              
-    def get_position_encoding(self, seq_len, d, n=10000):
-        P = np.zeros((seq_len, d))
-        for k in range(seq_len):
-            for i in np.arange(int(d/2)):
-                denominator = np.power(n, 2*i/d)
+    def get_position_encoding(self, sequence_length, dim_model, n=10000):
+        P = np.zeros((sequence_length, dim_model))
+        for k in range(sequence_length):
+            for i in np.arange(int(dim_model/2)):
+                denominator = np.power(n, 2*i/dim_model)
                 P[k, 2*i] = np.sin(k/denominator)
                 P[k, 2*i+1] = np.cos(k/denominator)
         return P
@@ -57,11 +57,11 @@ class PositionWordEmbeddingFixedWeights(Layer):
         return embedded_words + embedded_indices
 
 class PositionEmbeddingLayer(Layer):
-    def __init__(self, sequence_length, output_dim, **kwargs):
+    def __init__(self, sequence_length, dim_model, **kwargs):
         super(PositionEmbeddingLayer, self).__init__(**kwargs)
 
         self.position_embedding_layer = Embedding(
-            input_dim=sequence_length, output_dim=output_dim
+            input_dim=sequence_length, output_dim=dim_model
         )
 
     def call(self, inputs):        
@@ -70,21 +70,21 @@ class PositionEmbeddingLayer(Layer):
         return inputs + embedded_indices
     
 class PositionEmbeddingFixedWeights(Layer):
-    def __init__(self, sequence_length, output_dim, **kwargs):
+    def __init__(self, sequence_length, dim_model, **kwargs):
         super(PositionEmbeddingFixedWeights, self).__init__(**kwargs)  # Correctly calls the parent class
-        position_embedding_matrix = self.get_position_encoding(sequence_length, output_dim)
+        position_embedding_matrix = self.get_position_encoding(sequence_length, dim_model)
         self.position_embedding_layer = Embedding(
             input_dim=sequence_length, 
-            output_dim=output_dim,
+            output_dim=dim_model,
             weights=[position_embedding_matrix],
             trainable=False
         )
 
-    def get_position_encoding(self, seq_len, d, n=10000):
-        P = np.zeros((seq_len, d))
-        for k in range(seq_len):
-            for i in np.arange(int(d / 2)):
-                denominator = np.power(n, 2 * i / d)
+    def get_position_encoding(self, sequence_length, dim_model, n=10000):
+        P = np.zeros((sequence_length, dim_model))
+        for k in range(sequence_length):
+            for i in np.arange(int(dim_model / 2)):
+                denominator = np.power(n, 2 * i / dim_model)
                 P[k, 2 * i] = np.sin(k / denominator)
                 P[k, 2 * i + 1] = np.cos(k / denominator)
         return P

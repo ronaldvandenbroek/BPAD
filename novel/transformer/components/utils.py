@@ -47,8 +47,10 @@ def accuracy_fcn(target, prediction):
     # Compute the mean accuracy over the unmasked values
     return reduce_sum(accuracy) / reduce_sum(padding_mask)
 
-# Defining the accuracy function
+# Defining the likelihood function
 def likelihood_fcn(target, prediction):
+    # print(target.shape, prediction.shape)
+
     # Create a mask so that zero-padding values are not included in the computation of accuracy
     padding_mask = math.logical_not(equal(target, 0))
 
@@ -65,6 +67,6 @@ def likelihood_fcn(target, prediction):
 
     # Compute the mean of the correct class likelihoods, ignoring padding tokens
     padding_mask = cast(padding_mask, float32)
-    accuracy = reduce_sum(correct_class_likelihood) / reduce_sum(padding_mask)
-    
-    return accuracy
+    likelihood = reduce_sum(correct_class_likelihood) / reduce_sum(padding_mask)
+
+    return likelihood

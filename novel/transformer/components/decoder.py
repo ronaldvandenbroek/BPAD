@@ -9,21 +9,21 @@ from novel.transformer.components.encoder import AddNormalization, FeedForward
 
 # Implementing the Decoder Layer
 class DecoderLayer(Layer):
-    def __init__(self, sequence_length, h, d_k, d_v, d_model, d_ff, rate, **kwargs):
+    def __init__(self, sequence_length, num_heads, dim_queries_keys, dim_values, dim_model, dim_feed_forward, dropout_rate, **kwargs):
         super(DecoderLayer, self).__init__(**kwargs)
         # To print out summary:
         self.sequence_length =sequence_length
-        self.d_model=d_model
-        self.build(input_shape=[None, sequence_length, d_model])
+        self.d_model=dim_model
+        self.build(input_shape=[None, sequence_length, dim_model])
 
-        self.multihead_attention1 = MultiHeadAttention(h, d_k, d_v, d_model)
-        self.dropout1 = Dropout(rate)
+        self.multihead_attention1 = MultiHeadAttention(num_heads, dim_queries_keys, dim_values, dim_model)
+        self.dropout1 = Dropout(dropout_rate)
         self.add_norm1 = AddNormalization()
-        self.multihead_attention2 = MultiHeadAttention(h, d_k, d_v, d_model)
-        self.dropout2 = Dropout(rate)
+        self.multihead_attention2 = MultiHeadAttention(num_heads, dim_queries_keys, dim_values, dim_model)
+        self.dropout2 = Dropout(dropout_rate)
         self.add_norm2 = AddNormalization()
-        self.feed_forward = FeedForward(d_ff, d_model)
-        self.dropout3 = Dropout(rate)
+        self.feed_forward = FeedForward(dim_feed_forward, dim_model)
+        self.dropout3 = Dropout(dropout_rate)
         self.add_norm3 = AddNormalization()
 
     def call(self, x, encoder_output, lookahead_mask, padding_mask, training):
@@ -63,14 +63,14 @@ class DecoderLayer(Layer):
 
 # Implementing the Decoder
 class Decoder(Layer):
-    def __init__(self, sequence_length, h, d_k, d_v, d_model, d_ff, n, rate, dec_vocab_size=None, **kwargs):
+    def __init__(self, sequence_length, num_heads, dim_queries_keys, dim_values, dim_model, dim_feed_forward, num_layers, dropout_rate, dec_vocab_size=None, **kwargs):
         super(Decoder, self).__init__(**kwargs)
         if dec_vocab_size is not None:
-            self.pos_encoding = PositionWordEmbeddingFixedWeights(sequence_length, dec_vocab_size, d_model)
+            self.pos_encoding = PositionWordEmbeddingFixedWeights(sequence_length, dec_vocab_size, dim_model)
         else:
-            self.pos_encoding = PositionEmbeddingFixedWeights(sequence_length, d_model)
-        self.dropout = Dropout(rate)
-        self.decoder_layer = [DecoderLayer(sequence_length, h, d_k, d_v, d_model, d_ff, rate) for _ in range(n)]
+            self.pos_encoding = PositionEmbeddingFixedWeights(sequence_length, dim_model)
+        self.dropout = Dropout(dropout_rate)
+        self.decoder_layer = [DecoderLayer(sequence_length, num_heads, dim_queries_keys, dim_values, dim_model, dim_feed_forward, dropout_rate) for _ in range(num_layers)]
 
     def call(self, output_target, encoder_output, lookahead_mask, padding_mask, training):
         # Generate the positional encoding
