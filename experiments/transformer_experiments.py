@@ -2,7 +2,7 @@ from novel.transformer.transformer import Transformer
 from utils.enums import EncodingCategorical, EncodingNumerical
 
 def Experiment_Transformer_Debug(repeats=1):
-    batch_size = 8
+    batch_size = 32 #8
     prefix = True
     run_name = 'Experiment_Transformer_Debug'
 
@@ -12,7 +12,7 @@ def Experiment_Transformer_Debug(repeats=1):
             batch_size=batch_size, 
             prefix=prefix, 
             bucket_boundaries=None,
-            categorical_encoding=EncodingCategorical.ONE_HOT,
+            categorical_encoding=EncodingCategorical.TOKENIZER,
             numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
             pretrain_percentage=0,
             vector_size=0,

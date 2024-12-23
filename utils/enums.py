@@ -233,9 +233,10 @@ class EncodingCategorical(Enum):
     WORD_2_VEC_ATC = 'Word2Vec Average Then Concatinate'
     WORD_2_VEC_C = 'Word2Vec Concatinate'
     FIXED_VECTOR = 'Fixed Vector'
-    TRACE_2_VEC_ATC = 'Trace2Vec Average Then Concatinate' # Untested
-    TRACE_2_VEC_C = 'Trace2Vec Concatinate' # Untested
+    TRACE_2_VEC_ATC = 'Trace2Vec Average Then Concatinate'
+    TRACE_2_VEC_C = 'Trace2Vec Concatinate'
     ELMO = 'ELMo' #Not Implemented
+    TOKENIZER = 'Tokenizer'
 
     @staticmethod
     def values():
@@ -247,7 +248,8 @@ class EncodingCategorical(Enum):
                 'Fixed Vector',
                 'Trace2Vec Average Then Concatinate',
                 'Trace2Vec Concatinate',
-                'ELMo']
+                'ELMo',
+                'Tokenizer']
     
     @staticmethod
     def values_short():
@@ -259,7 +261,8 @@ class EncodingCategorical(Enum):
                 'Fixed-Vector',
                 'T2V-ATC',
                 'T2V-C',
-                'ELMo']
+                'ELMo',
+                'Tokenizer']
 
     @staticmethod
     def keys():
@@ -271,7 +274,8 @@ class EncodingCategorical(Enum):
                 EncodingCategorical.FIXED_VECTOR,
                 EncodingCategorical.TRACE_2_VEC_ATC,
                 EncodingCategorical.TRACE_2_VEC_C,
-                EncodingCategorical.ELMO]
+                EncodingCategorical.ELMO,
+                EncodingCategorical.TOKENIZER]
 
     @staticmethod
     def items():
