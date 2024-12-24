@@ -2,7 +2,7 @@ from keras.layers import LayerNormalization, Layer, Dense, ReLU, Dropout, Input
 from keras import Model
 
 from novel.transformer.components.attention import MultiHeadAttention
-from novel.transformer.components.positional_encoding import PositionEmbeddingFixedWeights, PositionWordEmbeddingFixedWeights
+from novel.transformer.components.positional_encoding import PositionEmbeddingFixedWeights, PositionMultiTaskEmbeddingLayer, PositionWordEmbeddingFixedWeights
 
 # https://machinelearningmastery.com/implementing-the-transformer-encoder-from-scratch-in-tensorflow-and-keras/
 
@@ -38,7 +38,7 @@ class EncoderLayer(Layer):
     def __init__(self, sequence_length, num_heads, dim_queries_keys, dim_values, dim_model, dim_feed_forward, dropout_rate, **kwargs):
         super(EncoderLayer, self).__init__(**kwargs)
         # To print out summary:
-        self.sequence_length =sequence_length
+        self.sequence_length = sequence_length
         self.d_model=dim_model
         self.build(input_shape=[None, sequence_length, dim_model])
 
@@ -77,12 +77,19 @@ class EncoderLayer(Layer):
 
 # Implementing the Encoder
 class Encoder(Layer):
-    def __init__(self, sequence_length, num_heads, dim_queries_keys, dim_values, dim_model, dim_feed_forward, num_layers, dropout_rate, enc_vocab_size=None, **kwargs):
+    def __init__(self, attribute_type_mask, sequence_length, num_heads, dim_queries_keys, dim_values, dim_model, dim_feed_forward, num_layers, dropout_rate, enc_vocab_size=None, **kwargs):
         super(Encoder, self).__init__(**kwargs)
-        if enc_vocab_size is not None:
-            self.pos_encoding = PositionWordEmbeddingFixedWeights(sequence_length, enc_vocab_size, dim_model)
-        else:
-            self.pos_encoding = PositionEmbeddingFixedWeights(sequence_length, dim_model)
+        self.pos_encoding = PositionMultiTaskEmbeddingLayer(
+            attribute_type_mask=attribute_type_mask, 
+            sequence_length=sequence_length, 
+            vocab_size=enc_vocab_size, 
+            dim_model=dim_model)
+        
+        # if enc_vocab_size is not None:
+        #     self.pos_encoding = PositionWordEmbeddingFixedWeights(sequence_length, enc_vocab_size, dim_model)
+        # else:
+        #     self.pos_encoding = PositionEmbeddingFixedWeights(sequence_length, dim_model)
+
         self.dropout = Dropout(dropout_rate)
         self.encoder_layer = [EncoderLayer(sequence_length, num_heads, dim_queries_keys, dim_values, dim_model, dim_feed_forward, dropout_rate) for _ in range(num_layers)]
 
@@ -90,6 +97,7 @@ class Encoder(Layer):
         # Generate the positional encoding
         pos_encoding_output = self.pos_encoding(input_sentence)
         # Expected output shape = (batch_size, sequence_length, d_model)
+        print(pos_encoding_output.shape, "pos_encoding_output")
 
         # Add in a dropout layer
         x = self.dropout(pos_encoding_output, training=training)

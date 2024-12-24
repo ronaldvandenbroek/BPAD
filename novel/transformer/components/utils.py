@@ -1,7 +1,9 @@
 from tensorflow.keras.optimizers.schedules import LearningRateSchedule
 from tensorflow import math, reduce_sum, cast, equal, argmax, float32, one_hot, reduce_sum, where, zeros_like
-from keras.losses import sparse_categorical_crossentropy
+from keras.losses import sparse_categorical_crossentropy, log_cosh
 from tensorflow import nn
+
+from utils.enums import AttributeType
 
 class LRScheduler(LearningRateSchedule):
     def __init__(self, d_model, warmup_steps=4000, **kwargs):
@@ -19,16 +21,27 @@ class LRScheduler(LearningRateSchedule):
         return (self.d_model ** -0.5) * math.minimum(arg1, arg2)
 
 # Defining the loss function
-def loss_fcn(target, prediction):
+def loss_fcn_categorical(target, prediction):
     # Create mask so that the zero padding values are not included in the computation of loss
-    padding_mask = math.logical_not(equal(target, 0))
-    padding_mask = cast(padding_mask, float32)
+    # padding_mask = math.logical_not(equal(target, 0))
+    # padding_mask = cast(padding_mask, float32)
 
     # Compute a sparse categorical cross-entropy loss on the unmasked values
-    loss = sparse_categorical_crossentropy(target, prediction, from_logits=False) * padding_mask
+    loss = sparse_categorical_crossentropy(target, prediction, from_logits=False) # * padding_mask
 
     # Compute the mean loss over the unmasked values
-    return reduce_sum(loss) / reduce_sum(padding_mask)
+    return reduce_sum(loss) # / reduce_sum(padding_mask)
+
+def loss_fcn_numerical(target, prediction):
+    # Create mask so that the zero padding values are not included in the computation of loss
+    # padding_mask = math.logical_not(equal(target, 0))
+    # padding_mask = cast(padding_mask, float32)
+
+    # Compute the log-cosh loss on the unmasked values
+    loss = log_cosh(target, prediction) # * padding_mask
+
+    # Compute the mean loss over the unmasked values
+    return reduce_sum(loss)  #/ reduce_sum(padding_mask)
 
 
 # Defining the accuracy function

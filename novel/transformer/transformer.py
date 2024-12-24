@@ -1,7 +1,9 @@
+import sys
 import numpy as np
+import tensorflow
 from baseline.binet.core import NNAnomalyDetector
 from novel.transformer.components.transformer import TransformerModel
-from novel.transformer.components.utils import LRScheduler
+from novel.transformer.components.utils import LRScheduler, loss_fcn_categorical, loss_fcn_numerical
 from utils import process_results
 from utils.dataset import Dataset
 from utils.embedding.attribute_dictionary import AttributeDictionary
@@ -12,9 +14,10 @@ from utils.enums import AttributeType
 from keras.optimizers import Adam # type: ignore
 from keras.metrics import Mean # type: ignore
 from tensorflow import data, train, GradientTape, function # type: ignore
+from keras.losses import sparse_categorical_crossentropy, log_cosh
 
 from novel.transformer.components.transformer import TransformerModel
-from novel.transformer.components.utils import LRScheduler, loss_fcn, accuracy_fcn, likelihood_fcn
+from novel.transformer.components.utils import LRScheduler, likelihood_fcn
 
 
 class Transformer(NNAnomalyDetector):
@@ -42,18 +45,6 @@ class Transformer(NNAnomalyDetector):
      ) 
     
     def __init__(self, model=None):
-        """Initialize Trasformer model.
-
-        Size of hidden layers is based on input size. The size can be controlled via the hidden_size_factor parameter.
-        This can be float or a list of floats (where len(hidden_size_factor) == hidden_layers). The input layer size is
-        multiplied by the respective factor to get the hidden layer size.
-
-        :param model: Path to saved model file. Defaults to None.
-        :param hidden_layers: Number of hidden layers. Defaults to 2.
-        :param hidden_size_factor: Size factors for hidden layer base don input layer size.
-        :param epochs: Number of epochs to train.
-        :param batch_size: Mini batch size.
-        """
         super(Transformer, self).__init__(model=model)
 
     @staticmethod
@@ -75,34 +66,59 @@ class Transformer(NNAnomalyDetector):
         # Configuring the dataset
         features = np.array(dataset.features)
         cases = np.transpose(features, (1, 2, 0))
+        
+        # Replace all zeros with a small value to avoid triggering the padding mask
+        cases = np.where(cases == 0, 1e-7, cases)
 
-        # Create a boolean mask for categorical attributes
-        # Categorical filter TODO make sure the transformer model can also handle numerical values via multitask learning
-        categorical_mask = np.array(dataset.attribute_types) == AttributeType.CATEGORICAL
-        print(f"Categorical Mask: {categorical_mask}")
-        num_categorical_features = np.sum(categorical_mask)
-        print(f"Num Categorical Features: {num_categorical_features}")
-        # Use this mask to filter out only the categorical attributes in the last axis
-        categorical_cases = cases[..., categorical_mask]
-
-        attribute_perspectives = np.array(dataset.event_log.event_attribute_perspectives)[categorical_mask]
+        case_length = cases.shape[1]
+        num_features = cases.shape[2]
+        attribute_types = dataset.attribute_types
+        attribute_keys = dataset.event_log.event_attribute_keys
+        attribute_perspectives = dataset.event_log.event_attribute_perspectives
         attribute_dims = np.array([1] * len(attribute_perspectives))
-        print("attribute_dims: ", attribute_dims)
-        print("attribute_perspectives: ", attribute_perspectives)
 
-        zero_event = np.zeros((num_categorical_features))
+        enc_seq_length = (case_length - 1) * num_features
+        dec_seq_length = num_features
+        print(case_length, num_features)
+        print(enc_seq_length, dec_seq_length)
+
+        attribute_types_value = tensorflow.constant([attr.value for attr in attribute_types], dtype=tensorflow.int32)
+        attribute_type_mask = tensorflow.cast(tensorflow.equal(attribute_types_value, 0), dtype=tensorflow.bool)
+        attribute_type_mask = tensorflow.repeat(attribute_type_mask, case_length - 1)
+        attribute_type_mask = tensorflow.reshape(attribute_type_mask, [-1])
+        
+        print(attribute_type_mask)
+        # attribute_types = tensorflow.expand_dims(attribute_types, axis=0)
+        # attribute_types = tensorflow.broadcast_to(attribute_types, [batch_size, len(attribute_types)])  # Match other tensors
+
+
+        # # Create a boolean mask for categorical attributes
+        # # Categorical filter TODO make sure the transformer model can also handle numerical values via multitask learning
+        # categorical_mask = np.array(dataset.attribute_types) == AttributeType.CATEGORICAL
+        # print(f"Categorical Mask: {categorical_mask}")
+        # num_categorical_features = np.sum(categorical_mask)
+        # print(f"Num Categorical Features: {num_categorical_features}")
+        # # Use this mask to filter out only the categorical attributes in the last axis
+        # categorical_cases = cases[..., categorical_mask]
+
+        # attribute_perspectives = np.array(dataset.event_log.event_attribute_perspectives)[categorical_mask]
+        # attribute_dims = np.array([1] * len(attribute_perspectives))
+        # print("attribute_dims: ", attribute_dims)
+        # print("attribute_perspectives: ", attribute_perspectives)
+
+        zero_event = np.zeros((num_features), dtype=np.float64)
         trainX_categorical = []
         trainY_categorical = []
-        for index, (case, case_length) in enumerate(zip(categorical_cases, dataset.case_lens)):
+        for index, (case, case_length) in enumerate(zip(cases, dataset.case_lens)):
             last_event_index = case_length - 1
             trainY_categorical.append(case[last_event_index].copy())
 
-            # Remove the target event from the training data
-            case[last_event_index] = zero_event
+            # Remove the target event from the training data and set the padding for all future events
+            case[last_event_index:] = zero_event
             trainX_categorical.append(case)
 
-        trainX_categorical = np.array(trainX_categorical, dtype=np.int64)
-        trainY_categorical = np.array(trainY_categorical, dtype=np.int64)
+        trainX_categorical = np.array(trainX_categorical, dtype=np.float64)
+        trainY_categorical = np.array(trainY_categorical, dtype=np.float64)
 
         process_results.check_array_properties("trainX_categorical", trainX_categorical)
         process_results.check_array_properties("trainY_categorical", trainY_categorical)
@@ -110,16 +126,22 @@ class Transformer(NNAnomalyDetector):
         dim0, dim1, dim2 = trainX_categorical.shape
         trainX_categorical = np.reshape(trainX_categorical, (dim0, dim1 * dim2))#, order='C')
 
-        enc_seq_length = trainX_categorical.shape[1]
-        dec_seq_length = trainY_categorical.shape[1]
+        # enc_seq_length = trainX_categorical.shape[1]
+        # dec_seq_length = trainY_categorical.shape[1]
         print(trainX_categorical.shape, trainY_categorical.shape)
-        
+
         train_dataset = data.Dataset.from_tensor_slices((trainX_categorical, trainY_categorical))
         train_dataset = train_dataset.batch(kwargs.get('batch_size'))
-            
+
+        # RCVDB TODO: If single task model then attribute type and keys should be looped and the model only passed a single attribute type and key
+        # Then a list of models per attribute should be created
+    
         # Configuring the model
         model = TransformerModel(
             # Dataset variables
+            attribute_type_mask=attribute_type_mask,
+            attribute_types=attribute_types,
+            attribute_keys=attribute_keys,
             enc_vocab_size=vocab_size,
             dec_vocab_size=vocab_size,
             enc_seq_length=enc_seq_length,
@@ -146,16 +168,25 @@ class Transformer(NNAnomalyDetector):
         # ckpt = train.Checkpoint(model=model, optimizer=optimizer)
         # ckpt_manager = train.CheckpointManager(ckpt, "./checkpoints", max_to_keep=3)
 
-        return model, optimizer, train_dataset, num_categorical_features, attribute_dims, attribute_perspectives # , trainY_categorical
+        return model, optimizer, train_dataset, num_features, attribute_dims, attribute_perspectives, attribute_types # , trainY_categorical
     
-    def _train_and_predict(self, model, optimizer, train_dataset, num_categorical_features):
+    def _train_and_predict(self, model, optimizer, train_dataset, num_features, attribute_types, batch_size):
         train_loss = Mean(name='train_loss')
-        # train_accuracy = Mean(name='train_accuracy')
-        train_likelihood = Mean(name='train_likelihood')
+        # train_likelihood = Mean(name='train_likelihood')
 
         predictions = []
         targets = []
         losses = []
+
+        # @function
+        # def compute_loss(inputs):
+        #     prediction, decoder_output, attribute_type = inputs
+        #     loss = tensorflow.cond(
+        #         tensorflow.equal(attribute_type, 0),
+        #         lambda: loss_fcn_categorical(prediction, decoder_output),
+        #         lambda: loss_fcn_numerical(prediction, decoder_output),
+        #     )
+        #     return loss
 
         # Speeding up the training process
         @function
@@ -163,47 +194,96 @@ class Transformer(NNAnomalyDetector):
             with GradientTape() as tape:
                 prediction = model(encoder_input, decoder_input, training=True)
 
-                loss = loss_fcn(decoder_output, prediction)
-                # accuracy = accuracy_fcn(decoder_output, prediction)
-                likelihood = likelihood_fcn(decoder_output, prediction)
+                print(len(prediction), prediction[0].shape, decoder_output.shape)
+
+                losses = []
+                for i, _ in enumerate(prediction):
+                    pred = prediction[i]
+                    true = decoder_output[:, i]
+                    # type = attribute_types[i]
+                    
+                    # print(pred.shape, true.shape, type)
+                    # print(pred.shape[1])
+
+                    if pred.shape[1] == 1:
+                        loss = log_cosh(true, pred)
+                    else:
+                        loss = sparse_categorical_crossentropy(true, pred, from_logits=False)
+
+                    # print(loss.shape)
+                    # RCVDB TODO: Could weight the different attribute by perspective
+                    losses.append(tensorflow.reduce_mean(loss))
+
+                    # Use tf.cond to handle the condition
+                    # loss = tensorflow.cond(
+                    #     tensorflow.equal(pred.shape[1], 1),  # If type == 0 (categorical)
+                    #     lambda: log_cosh(true, pred), # log_cosh(true, pred)
+                    #     lambda: sparse_categorical_crossentropy(true, pred, from_logits=False),
+                    # )
+
+
+                    # if tensorflow.equal(type, 0):
+                    #     print("Categorical")
+                    #     losses.append(loss_fcn_categorical(true, pred))
+                    # else:
+                    #     print("Numerical")
+                    #     losses.append(loss_fcn_numerical(true, pred))
+                    
+                loss = tensorflow.reduce_mean(losses)
+
+                # losses = tensorflow.map_fn(
+                #     compute_loss,
+                #     elems=(prediction, decoder_output, attribute_types),
+                #     fn_output_signature=tensorflow.float64,
+                # )
+                # loss = tensorflow.reduce_sum(losses)
+
+                # attribute_losses = []
+                # for prediction_i, decoder_output_i, attribute_type_i in zip(prediction, decoder_output, attribute_types):
+                #     attribute_losses.append(loss_fcn(decoder_output_i, prediction_i, attribute_type_i))
+
+                # loss = np.sum(attribute_losses)
+                # likelihood = likelihood_fcn(decoder_output, prediction)
 
             gradients = tape.gradient(loss, model.trainable_weights)
             optimizer.apply_gradients(zip(gradients, model.trainable_weights))
 
             train_loss(loss)
-            # train_accuracy(accuracy)
-            train_likelihood(likelihood)
+            # train_likelihood(likelihood)
 
             return loss, prediction
 
         train_loss.reset_states()
-        # train_accuracy.reset_states()
-        train_likelihood.reset_states()
+        # train_likelihood.reset_states()
 
         print(f"\nStart of training in {len(train_dataset)} batches")
 
         for step, (train_batchX, train_batchY) in enumerate(train_dataset):
-            encoder_input = train_batchX[:, num_categorical_features:] #1:] #Skip the start symbol
-            decoder_input =  train_batchY[:, 0:num_categorical_features]    #train_batchY[:, :-1] 
+            encoder_input = train_batchX[:, num_features:] #1:] #Skip the start symbol
+            decoder_input = train_batchY[:, 0:num_features]    #train_batchY[:, :-1] 
             decoder_output = train_batchY[:, :]
 
             # print(encoder_input.shape, "Encoder Input")
             # print(decoder_input.shape, "Decoder Input")
             # print(decoder_output.shape, "Decoder Output")
+            # print("Decoder Output")
+            # print(decoder_output)
+            # print("Decoder Input")
+            # print(decoder_input)
+            # print("Encoder Input")
+            # print(encoder_input)
 
             loss, prediction = train_step(encoder_input, decoder_input, decoder_output)
 
             losses.append(loss.numpy())
-            predictions.append(prediction.numpy())
+            predictions.append(prediction)#)
             targets.append(decoder_output.numpy())
 
             if step % 25 == 0:
-                print(f'Step {step} Loss {train_loss.result():.4f} Likelihood {train_likelihood.result():.4f}') # Accuracy {train_accuracy.result():.4f}
+                print(f'Step {step} Loss {train_loss.result():.4f}') # Likelihood {train_likelihood.result():.4f}')
 
-        # Print epoch number and loss value at the end of every epoch
-        print("Training Loss %.4f, Training Likelihood %.4f" % (train_loss.result(), train_likelihood.result())) # train_accuracy.result(),
-
-        return np.vstack(predictions), np.vstack(losses), np.vstack(targets),
+        return predictions, np.vstack(losses), np.vstack(targets)
+        # return np.vstack(predictions), np.vstack(losses), np.vstack(targets),
 
     def train_and_predict(self, 
                           dataset:Dataset, 
@@ -215,16 +295,16 @@ class Transformer(NNAnomalyDetector):
         if batch_size != None:
             self.config['batch_size'] = batch_size
         
-        model, optimizer, train_dataset, num_categorical_features, attribute_dims, attribute_perspectives = self.model_fn(dataset, **self.config)
-
+        model, optimizer, train_dataset, num_features, attribute_dims, attribute_perspectives, attribute_types = self.model_fn(dataset, **self.config)
+        predictions, losses, targets = self._train_and_predict(model, optimizer, train_dataset, num_features, attribute_types, batch_size)
 
         case_lengths = dataset.case_lens
         # case_max_length = dataset.max_len
         attribute_names = dataset.event_log.event_attribute_keys
 
-        predictions, losses, targets = self._train_and_predict(model, optimizer, train_dataset, num_categorical_features)
-
-        print(predictions.shape, targets.shape)
+        print(len(predictions), targets.shape)
+        for pred in predictions:
+            print(len(pred), pred[0].shape)
         print(targets)
 
         likelihood_errors = np.zeros(targets.shape)
