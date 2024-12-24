@@ -47,6 +47,8 @@ def process_bucket_results(
     else:    
         errors = errors_unmasked
 
+    check_array_properties("errors", errors)
+
     # # RCVDB: Mask empty events if no buckets are used or encoding method is not W2V
     # if not bucketing and categorical_encoding in (EncodingCategorical.WORD_2_VEC_ATC, EncodingCategorical.TRACE_2_VEC_ATC):
     # # Applies a mask to remove the events not present in the trace   
@@ -76,6 +78,9 @@ def process_bucket_results(
     # Get the errors per attribute by splitting said trace
     # (attributes * events, cases, attribute_dimension)
     errors_attr_split = np.split(errors, split_attribute, axis=1)
+
+    print(len(errors_attr_split))
+    check_inhomogeneous_list("errors_attr_split", errors_attr_split)
 
     # Mean the attribute_dimension
     # Scalar attributes are left as is as they have a size of 1
@@ -163,3 +168,79 @@ def process_bucket_results(
         attr_level_abnormal_scores[anomaly_perspective] = error_per_attribute
 
     return trace_level_abnormal_scores, event_level_abnormal_scores, attr_level_abnormal_scores
+
+
+def check_array_properties(name, array):
+    # Handle case where array is None
+    if array is None:
+        print(f"{name}: Array is None")
+        return
+    
+    # Handle case where array is a list
+    if isinstance(array, list):
+        if len(array) == 0:
+            print(f"{name}: List is empty")
+            return
+        array = np.array(array)  # Convert list to NumPy array for consistency
+    
+    # Check if array is empty
+    if array.size == 0:
+        print(f"{name}: Array is empty")
+        return
+
+    # NaN check
+    print(f"{name}:")
+    print(f"  Contains NaNs: {np.isnan(array).any()}")
+    if np.isnan(array).any():
+        print(f"  NaN locations: {np.where(np.isnan(array))}")
+    
+    # Min/Max values
+    finite_values = array[np.isfinite(array)]  # Exclude NaNs or infinities
+    if finite_values.size > 0:
+        print(f"  Min value: {finite_values.min()}")
+        print(f"  Max value: {finite_values.max()}")
+    else:
+        print(f"  No valid (finite) values to compute min/max.")
+
+def check_inhomogeneous_list(name, array):
+    # Check if the input is a list
+    if isinstance(array, list):
+        lengths = [len(item) if isinstance(item, (list, np.ndarray)) else None for item in array]
+        
+        # If any element is not a list or ndarray, it's inconsistent
+        if None in lengths:
+            print(f"{name}: Found non-list or non-ndarray element.")
+            return
+        
+        # Check if all lengths are the same
+        if len(set(lengths)) > 1:
+            print(f"{name}: The list has inconsistent lengths. Lengths: {lengths}")
+        else:
+            print(f"{name}: The list has consistent lengths. All lengths: {lengths[0]}")
+        
+        # Check each element for min, max, and NaN values
+        for i, item in enumerate(array):
+            try:
+                if isinstance(item, (list, np.ndarray)):
+                    # Convert to a NumPy array
+                    item = np.array(item)
+                    
+                    # Check for NaN values
+                    if np.isnan(item).any():
+                        print(f"{name}[{i}]: Contains NaN values.")
+                        print(f"{name}[{i}]: NaN locations: {np.where(np.isnan(item))}")
+                    else:
+                        print(f"{name}[{i}]: No NaN values.")
+
+                    # Check for finite values before calculating min and max
+                    if np.isfinite(item).all():
+                        print(f"{name}[{i}]: Min value = {item.min()}")
+                        print(f"{name}[{i}]: Max value = {item.max()}")
+                    else:
+                        print(f"{name}[{i}]: Contains infinite values, skipping min/max calculation.")
+                else:
+                    print(f"{name}[{i}]: Not a valid list or ndarray, skipping min/max/NaN check.")
+            except Exception as e:
+                print(f"{name}[{i}]: Error processing item. Details: {e}")
+    else:
+        print(f"{name}: The input is not a list.")

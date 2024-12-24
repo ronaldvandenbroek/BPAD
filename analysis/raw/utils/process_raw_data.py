@@ -56,8 +56,16 @@ def extract_number(key):
         return int(key.split('_')[-1])
     except:
         return 0
+    
+# Concatenates only non-empty arrays.
+def concatenate_if_not_empty(*arrays):
+    non_empty_arrays = [arr for arr in arrays if len(arr) > 0]
+    return np.concatenate(non_empty_arrays, axis=0) if non_empty_arrays else np.array([])
 
 def process_attribute_labels(output, values, case_length, perspective, perspective_label_indices):
+    if perspective not in perspective_label_indices:
+        return
+
     # print(values.shape)
 
     perspective_value = values[perspective, :, :, :]
@@ -96,6 +104,8 @@ def reshape_data_for_scoring(results, perspective_label_indices):
     result_DAE_event_Attribute = []
     result_DAE_trace_Attribute = []
 
+    print("results", results.keys())
+
     for (key, value) in results.items():
         # print(key, value.shape)
         try:
@@ -105,7 +115,9 @@ def reshape_data_for_scoring(results, perspective_label_indices):
             if 'attribute' in key or 'event' in key:
                 length = value.shape[1]
             perspective = key.split('_')[-1]
-        
+
+        print("key", key)
+
         if 'losses' in key:
             continue
         elif 'labels' in key:
@@ -199,31 +211,31 @@ def reshape_data_for_scoring(results, perspective_label_indices):
     # print(result_DAE_attribute_Workload.shape)
 
     labels_DAE_attribute = [
-        np.concatenate(labels_DAE_attribute_Order, axis=0),
-        np.concatenate(labels_DAE_attribute_Attribute, axis=0),
-        np.concatenate(labels_DAE_attribute_Arrival_Time, axis=0),
-        np.concatenate(labels_DAE_attribute_Workload, axis=0)
+        concatenate_if_not_empty(*labels_DAE_attribute_Order),
+        concatenate_if_not_empty(*labels_DAE_attribute_Attribute),
+        concatenate_if_not_empty(*labels_DAE_attribute_Arrival_Time),
+        concatenate_if_not_empty(*labels_DAE_attribute_Workload)
     ]
 
     result_DAE_attribute = [
-        np.concatenate(result_DAE_attribute_Order, axis=0),
-        np.concatenate(result_DAE_attribute_Attribute, axis=0),
-        np.concatenate(result_DAE_attribute_Arrival_Time, axis=0),
-        np.concatenate(result_DAE_attribute_Workload, axis=0)
+        concatenate_if_not_empty(*result_DAE_attribute_Order),
+        concatenate_if_not_empty(*result_DAE_attribute_Attribute),
+        concatenate_if_not_empty(*result_DAE_attribute_Arrival_Time),
+        concatenate_if_not_empty(*result_DAE_attribute_Workload)
     ]
 
     result_DAE_event = [
-        np.concatenate(result_DAE_event_Order, axis=0),
-        np.concatenate(result_DAE_event_Attribute, axis=0),
-        np.concatenate(result_DAE_event_Arrival_Time, axis=0),
-        np.concatenate(result_DAE_event_Workload, axis=0)
+        concatenate_if_not_empty(*result_DAE_event_Order),
+        concatenate_if_not_empty(*result_DAE_event_Attribute),
+        concatenate_if_not_empty(*result_DAE_event_Arrival_Time),
+        concatenate_if_not_empty(*result_DAE_event_Workload)
     ]
 
     result_DAE_trace = [
-        np.concatenate(result_DAE_trace_Order, axis=0),
-        np.concatenate(result_DAE_trace_Attribute, axis=0),
-        np.concatenate(result_DAE_trace_Arrival_Time, axis=0),
-        np.concatenate(result_DAE_trace_Workload, axis=0)
+        concatenate_if_not_empty(*result_DAE_trace_Order),
+        concatenate_if_not_empty(*result_DAE_trace_Attribute),
+        concatenate_if_not_empty(*result_DAE_trace_Arrival_Time),
+        concatenate_if_not_empty(*result_DAE_trace_Workload)
     ]
 
     return labels_DAE_attribute, labels_DAE_event, labels_DAE_trace, result_DAE_attribute, result_DAE_event, result_DAE_trace
@@ -236,6 +248,7 @@ def score(run):
 
     sorted_results = dict(sorted(results.items(), key=lambda x: extract_number(x[0])))
     perspective_label_indices = get_indexes_by_value(config['attribute_perspectives_original'])
+    print("perspective_label_indices", perspective_label_indices)
 
     (
         labels_DAE_attribute, 
@@ -284,7 +297,8 @@ def score(run):
                 'vector_size':config['vector_size'],
                 'window_size':config['window_size'] 
             })
-        except:
+        except Exception as e:
             print(level, perspective)
+            print(e)
 
     return pd.DataFrame(scores)
