@@ -1,6 +1,6 @@
 import sys
 import numpy as np
-import tensorflow
+import tensorflow as tf
 from baseline.binet.core import NNAnomalyDetector
 from novel.transformer.components.transformer import TransformerModel
 from novel.transformer.components.utils import LRScheduler, loss_fcn_categorical, loss_fcn_numerical
@@ -82,14 +82,14 @@ class Transformer(NNAnomalyDetector):
         print(case_length, num_features)
         print(enc_seq_length, dec_seq_length)
 
-        attribute_types_value = tensorflow.constant([attr.value for attr in attribute_types], dtype=tensorflow.int32)
-        attribute_type_mask = tensorflow.cast(tensorflow.equal(attribute_types_value, 0), dtype=tensorflow.bool)
-        attribute_type_mask = tensorflow.repeat(attribute_type_mask, case_length - 1)
-        attribute_type_mask = tensorflow.reshape(attribute_type_mask, [-1])
+        attribute_types_value = tf.constant([attr.value for attr in attribute_types], dtype=tf.int32)
+        attribute_type_mask = tf.cast(tf.equal(attribute_types_value, 0), dtype=tf.bool)
+        attribute_type_mask = tf.repeat(attribute_type_mask, case_length - 1)
+        attribute_type_mask = tf.reshape(attribute_type_mask, [-1])
         
         print(attribute_type_mask)
-        # attribute_types = tensorflow.expand_dims(attribute_types, axis=0)
-        # attribute_types = tensorflow.broadcast_to(attribute_types, [batch_size, len(attribute_types)])  # Match other tensors
+        # attribute_types = tf.expand_dims(attribute_types, axis=0)
+        # attribute_types = tf.broadcast_to(attribute_types, [batch_size, len(attribute_types)])  # Match other tensors
 
 
         # # Create a boolean mask for categorical attributes
@@ -181,8 +181,8 @@ class Transformer(NNAnomalyDetector):
         # @function
         # def compute_loss(inputs):
         #     prediction, decoder_output, attribute_type = inputs
-        #     loss = tensorflow.cond(
-        #         tensorflow.equal(attribute_type, 0),
+        #     loss = tf.cond(
+        #         tf.equal(attribute_type, 0),
         #         lambda: loss_fcn_categorical(prediction, decoder_output),
         #         lambda: loss_fcn_numerical(prediction, decoder_output),
         #     )
@@ -201,6 +201,8 @@ class Transformer(NNAnomalyDetector):
                     pred = prediction[i]
                     true = decoder_output[:, i]
                     # type = attribute_types[i]
+
+                    print(pred.shape, true.shape)
                     
                     # print(pred.shape, true.shape, type)
                     # print(pred.shape[1])
@@ -212,38 +214,9 @@ class Transformer(NNAnomalyDetector):
 
                     # print(loss.shape)
                     # RCVDB TODO: Could weight the different attribute by perspective
-                    losses.append(tensorflow.reduce_mean(loss))
+                    losses.append(tf.reduce_mean(loss))
 
-                    # Use tf.cond to handle the condition
-                    # loss = tensorflow.cond(
-                    #     tensorflow.equal(pred.shape[1], 1),  # If type == 0 (categorical)
-                    #     lambda: log_cosh(true, pred), # log_cosh(true, pred)
-                    #     lambda: sparse_categorical_crossentropy(true, pred, from_logits=False),
-                    # )
-
-
-                    # if tensorflow.equal(type, 0):
-                    #     print("Categorical")
-                    #     losses.append(loss_fcn_categorical(true, pred))
-                    # else:
-                    #     print("Numerical")
-                    #     losses.append(loss_fcn_numerical(true, pred))
-                    
-                loss = tensorflow.reduce_mean(losses)
-
-                # losses = tensorflow.map_fn(
-                #     compute_loss,
-                #     elems=(prediction, decoder_output, attribute_types),
-                #     fn_output_signature=tensorflow.float64,
-                # )
-                # loss = tensorflow.reduce_sum(losses)
-
-                # attribute_losses = []
-                # for prediction_i, decoder_output_i, attribute_type_i in zip(prediction, decoder_output, attribute_types):
-                #     attribute_losses.append(loss_fcn(decoder_output_i, prediction_i, attribute_type_i))
-
-                # loss = np.sum(attribute_losses)
-                # likelihood = likelihood_fcn(decoder_output, prediction)
+                loss = tf.reduce_mean(losses)
 
             gradients = tape.gradient(loss, model.trainable_weights)
             optimizer.apply_gradients(zip(gradients, model.trainable_weights))
@@ -296,40 +269,56 @@ class Transformer(NNAnomalyDetector):
             self.config['batch_size'] = batch_size
         
         model, optimizer, train_dataset, num_features, attribute_dims, attribute_perspectives, attribute_types = self.model_fn(dataset, **self.config)
-        predictions, losses, targets = self._train_and_predict(model, optimizer, train_dataset, num_features, attribute_types, batch_size)
+        batch_predictions, losses, targets = self._train_and_predict(model, optimizer, train_dataset, num_features, attribute_types, batch_size)
 
         case_lengths = dataset.case_lens
         # case_max_length = dataset.max_len
         attribute_names = dataset.event_log.event_attribute_keys
 
-        print(len(predictions), targets.shape)
-        for pred in predictions:
-            print(len(pred), pred[0].shape)
-        print(targets)
+        all_attribute_predictions = []
+        for attribute_index in range(len(batch_predictions[0])):
+            attribute_predictions = []  
+            for batch in batch_predictions:
+                event_pred = batch[attribute_index].numpy()
+                for pred in event_pred:
+                    attribute_predictions.append(pred)
 
-        likelihood_errors = np.zeros(targets.shape)
-        for i, (event_pred, event_true) in enumerate(zip(predictions, targets)):
-            for j, (attribute_pred, attribute_true) in enumerate(zip(event_pred, event_true)):
-                likelihood_true = attribute_pred[attribute_true]
-                likelihood_pred = 0
-                for pred in attribute_pred:
-                    if pred > likelihood_true:
-                        likelihood_pred += pred
-                likelihood_errors[i,j] = likelihood_pred
+            all_attribute_predictions.append(attribute_predictions)
 
-        print(likelihood_errors.shape)   
-        # likelihood_errors = np.transpose(likelihood_errors, (1, 0))
-        perspective_likelihood_errors = likelihood_errors.copy()
-        print(perspective_likelihood_errors.shape)
+        # (traces, attributes, predictions)
+        all_attribute_true = targets.T
+        # (attributes, trace, predictions)
+
+        errors = np.zeros(targets.shape)
+        for i, (attribute_pred, attribute_true) in enumerate(zip(all_attribute_predictions, all_attribute_true)):
+            for j, (trace_pred, trace_true) in enumerate(zip(attribute_pred, attribute_true)):
+                if trace_pred.shape[0] == 1: # If the prediction is a numerical value
+                    pred = trace_pred[0]
+                    true = trace_true
+                    errors[j,i] = (pred - true) ** 2 # RCVDB TODO: Potentially don't square the error here as it is done in the process_results.py
+                else: # If the prediction is a categorical value
+                    true = int(trace_true)
+                    likelihood_true = trace_pred[true]
+                    likelihood_pred = 0
+                    for pred in trace_pred:
+                        if pred > likelihood_true:
+                            likelihood_pred += pred
+                    errors[j,i] = likelihood_pred
+
+                # print(j,i,trace_true)
+
+
+        print(errors.shape)   
+        perspective_errors = errors.copy()
+        print(perspective_errors.shape)
 
         # Check predictions, losses, targets, likelihood_errors
-        process_results.check_array_properties("Predictions", predictions)
         process_results.check_array_properties("Losses", losses)
         process_results.check_array_properties("Targets", targets)
-        process_results.check_array_properties("Likelihood Errors", likelihood_errors)
+        process_results.check_array_properties("Likelihood Errors", errors)
 
         trace_level_abnormal_scores, event_level_abnormal_scores, attr_level_abnormal_scores = process_results.process_bucket_results(
-                errors_raw=perspective_likelihood_errors,
+                errors_raw=perspective_errors,
                 categorical_encoding=categorical_encoding,
                 vector_size=None, # As no vector size is used for next event prediction
                 bucketing=False, # As no bucketing is done for the transformer model
@@ -353,7 +342,7 @@ class Transformer(NNAnomalyDetector):
                 {0:case_labels}, 
                 {0:event_labels}, 
                 {0:attr_labels}, 
-                {0:perspective_likelihood_errors},
+                {0:perspective_errors},
                 attribute_perspectives,
                 attribute_perspectives,
                 attribute_names,
