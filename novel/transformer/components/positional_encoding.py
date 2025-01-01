@@ -6,14 +6,30 @@ from keras.layers import Layer, Embedding
 
 # https://machinelearningmastery.com/the-transformer-positional-encoding-layer-in-keras-part-2/
 
+class PositionW2VTraceEmbeddingLayer(Layer):
+    def __init__(self, sequence_length, dim_model, w2v_model, **kwargs):
+        super(PositionW2VTraceEmbeddingLayer, self).__init__(**kwargs)
+        self.w2v_model = w2v_model
+        self.position_embedding_matrix = self.positional_encoding(sequence_length, dim_model)
+        print("position_embedding_matrix")
+        print(self.position_embedding_matrix.shape)
+
+
 class PositionMultiTaskEmbeddingLayer(Layer):
-    def __init__(self, attribute_type_mask, sequence_length, vocab_size, dim_model, **kwargs):
+    def __init__(self, attribute_type_mask, attribute_vocab_sizes, sequence_length, dim_model, **kwargs):
         super(PositionMultiTaskEmbeddingLayer, self).__init__(**kwargs)
         self.categorical_mask = attribute_type_mask
         self.numerical_mask = tf.logical_not(attribute_type_mask)
 
-        self.word_embedding_matrix = self.positional_encoding(vocab_size, dim_model)
+        print("word_embedding_matrices")
+        self.word_embedding_matrices = []
+        for attribute_vocab_size in attribute_vocab_sizes:
+            word_embedding_matrix = self.positional_encoding(attribute_vocab_size, dim_model)
+            print(word_embedding_matrix.shape)
+            self.word_embedding_matrices.append(word_embedding_matrix)
+
         self.position_embedding_matrix = self.positional_encoding(sequence_length, dim_model)
+        print("position_embedding_matrix")
         print(self.position_embedding_matrix.shape)
 
     def call(self, inputs):

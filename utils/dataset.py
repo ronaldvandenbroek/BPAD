@@ -371,9 +371,11 @@ class Dataset(object):
                 feature_columns[key] = encoder.encode_list(feature_columns[key])
                 encoders[key] = encoder
                 
-                # To ensure that every attribute value has an unique token ensure that the starting index starts outside of the buffer
-                # Otherwise with Word2Vec attribute integers will conflict
-                dictionary_starting_index += dictionary_size
+                if self.categorical_encoding != EncodingCategorical.TOKENIZER:
+                    # To ensure that every attribute value has an unique token ensure that the starting index starts outside of the buffer
+                    # Otherwise with Word2Vec attribute integers will conflict
+                    # This is not relevant when using a Tokenizer for the Transformer
+                    dictionary_starting_index += dictionary_size
 
                 # If categorical encoding is none then categorical values are treated as numerical thus can scale
                 if self.categorical_encoding == EncodingCategorical.NONE:# or self.categorical_encoding == EncodingCategorical.FIXED_VECTOR:
@@ -383,7 +385,7 @@ class Dataset(object):
 
             # Normalize numerical data
             elif attribute_type == AttributeType.NUMERICAL:
-                print(self.numerical_encoding, EncodingNumerical.MIN_MAX_SCALING)
+                # print(self.numerical_encoding, EncodingNumerical.MIN_MAX_SCALING)
                 if self.numerical_encoding == EncodingNumerical.MIN_MAX_SCALING:
                     # print('Minmax scaling ' + key)
                     feature_columns[key] = self._min_max_scaling(feature_columns[key])
@@ -479,13 +481,13 @@ class Dataset(object):
         # feature_columns[key] = (f - f.mean()) / f.std()  # 0 mean and 1 std normalization
         f_min = np.min(feature_column)
         f_max = np.max(feature_column)
-        print(f_min, f_max)
+        # print(f_min, f_max)
         if f_max > f_min:
             scaled_feature_column = (feature_column - f_min) / (f_max - f_min)
 
             f_min = np.min(scaled_feature_column)
             f_max = np.max(scaled_feature_column)
-            print(f_min, f_max)
+            # print(f_min, f_max)
             return scaled_feature_column
         else:
             return np.zeros_like(feature_column)

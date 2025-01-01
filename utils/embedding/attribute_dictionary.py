@@ -52,7 +52,10 @@ class AttributeDictionary():
     
     def __str__(self):
         current_size = len(self.encodings_inv.keys())
-        return f"AttributeDictionary (size={current_size}, indexes=[{self.start_index},{current_size + self.start_index}], reserved={self.max_size - self.start_index})"
+        return f"AttributeDictionary (size={current_size}, indexes=[{self.start_index},{current_size + self.start_index}], reserved={self.max_size})"
     
+    def get_current_size(self):
+        return len(self.encodings_inv.keys())
+
     def __repr__(self):
         return self.__str__()

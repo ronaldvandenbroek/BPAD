@@ -2,6 +2,7 @@ from gensim.models import Word2Vec
 import numpy as np
 
 from sklearn.decomposition import PCA
+import tensorflow as tf
 from tqdm import tqdm
 
 from processmining.case import Case
@@ -11,6 +12,180 @@ from utils.embedding.util import fourier_encoding, recalculate_attribute_dimensi
 from utils.enums import AttributeType
 from utils.fs import FSSave
 
+from keras.layers import Layer
+
+class TransformerWord2VecEncoder(Layer):
+    def __init__(self, attribute_keys, sequence_length, encoders, dim_model=50, **kwargs) -> None:
+        super(TransformerWord2VecEncoder, self).__init__(**kwargs)
+
+        self.dim_model = dim_model
+        self.sequence_length = sequence_length
+
+        # Create a dictionary to map attribute keys to their index
+        print("encoders", encoders.keys())
+        attribute_key_dict = {}
+        for i, key in enumerate(encoders.keys()):
+            attribute_key_dict[key] = i
+        print("attribute_key_dict", attribute_key_dict)
+
+        attribute_keys_tensor = tf.constant(list(attribute_key_dict.values()), dtype=tf.int32)
+        print("attribute_keys_tensor", attribute_keys_tensor)
+
+        # Convert attribute keys to integers based on the encoders
+        attribute_keys_event_mask = []
+        attribute_categorical_mask = []
+        for attribute_key in attribute_keys:
+            if attribute_key not in attribute_key_dict:
+                attribute_keys_event_mask.append(-1) # -1 if numerical
+                attribute_categorical_mask.append(False)
+            else:
+                attribute_keys_event_mask.append(attribute_key_dict[attribute_key])
+                attribute_categorical_mask.append(True)
+
+        attribute_keys_event_mask = tf.constant(attribute_keys_event_mask, dtype=tf.int32)
+        print("attribute_keys_event_mask", attribute_keys_event_mask)
+
+
+
+        # Expand the attribute keys to the sequence length
+        case_length = sequence_length / len(attribute_keys)
+        case_length = tf.cast(case_length, tf.int32)
+        print("case_length", case_length)
+        self.attribute_key_trace_mask = tf.tile(attribute_keys_event_mask, multiples=[case_length])
+        self.categorical_mask = tf.tile(attribute_categorical_mask, multiples=[case_length])
+        self.numerical_mask = tf.logical_not(self.categorical_mask)
+        print("attribute_key_trace_mask shape", self.attribute_key_trace_mask.shape, "trace_categorical_mask", self.categorical_mask.shape)
+        # print("attribute_key_trace_mask", self.attribute_key_trace_mask)
+        # print("trace_categorical_mask", self.categorical_mask)
+        
+        # For each categorical attribute, create a Word2Vec model
+        w2v_models = {}
+        for i, (attribute_key, encoder) in enumerate(encoders.items()):
+            encoder:AttributeDictionary
+
+            print(encoder.encoded_attributes())
+            w2v_model:Word2Vec = Word2Vec(
+                sentences=self._convert_to_sentences(range(encoder.max_size + 1)),
+                vector_size=dim_model,
+                window=5, min_count=1, workers=4, sg=1, hs=0, negative=0)
+            w2v_models[i] = w2v_model
+
+        print(w2v_models.keys())
+        for w2v_model in w2v_models.values():
+            print(w2v_model.wv)
+
+        extracted_w2v_models = {}
+        for i, w2v_model in enumerate(w2v_models.values()):
+            extracted_w2v_model = {}
+            for word in w2v_model.wv.index_to_key:
+                extracted_w2v_model[int(word)] = w2v_model.wv.get_vector(word)
+            extracted_w2v_models[i] = extracted_w2v_model
+
+        print("extracted_w2v_models")
+        print(extracted_w2v_models.keys())
+        for key, value in extracted_w2v_models[1].items():
+            print(key, value.shape)
+
+        self.lookup_tables = self._create_lookup_tables(attribute_keys_tensor, extracted_w2v_models)
+        print("lookup_tables", self.lookup_tables.keys())
+
+    def _create_lookup_tables(self, attribute_keys_tensor, extracted_w2v_models):
+        lookup_tables = {}
+        for model_index, model_key in enumerate(attribute_keys_tensor):
+            extracted_w2v_model = extracted_w2v_models[model_index]
+
+            words = list(extracted_w2v_model.keys())
+            vectors = [extracted_w2v_model[word] for word in words]
+
+            keys_tensor = tf.constant(words, dtype=tf.int32)
+            values_tensor = tf.constant(vectors, dtype=tf.float32)
+            zero_vector = tf.zeros_like(values_tensor[0], dtype=tf.float32)
+
+            print("keys_tensor", keys_tensor.shape, "values_tensor", values_tensor.shape, "zero_vector", zero_vector.shape)
+
+            lookup_table = tf.lookup.experimental.DenseHashTable(
+                key_dtype=tf.int32,
+                value_dtype=tf.float32,
+                default_value=zero_vector,
+                empty_key=-1,
+                deleted_key=-2
+            )
+            lookup_table.insert(keys_tensor, values_tensor)
+
+            print("model_key", model_key)
+            print(model_key.ref())
+            lookup_tables[model_key.numpy()] = lookup_table
+
+        return lookup_tables
+
+    def _convert_to_sentences(self, input):
+        return [[str(i)] for i in input]
+
+    def process_attribute(self, inputs):
+        value, key = inputs
+
+        # key = key.numpy() if tf.executing_eagerly() else tf.get_static_value(key)
+
+        if key == -1: # Numerical thus skip
+            # print("encoding_process_attribute_numerical", value, key.numpy)
+            result = tf.zeros([self.dim_model], dtype=tf.float32)
+            
+            # tf.fill([self.dim_model], value)  # Extend value over dim_mode
+        else: # Categorical
+            # print("encoding_process_attribute_categorical", value, key.numpy())
+            # result = tf.fill([self.dim_model], value)  # Extend value over dim_mode
+            # Retrieve the lookup table for the selected w2v model
+            lookup_table = self.lookup_tables[key.numpy()]
+            # Lookup the embedding for the given value
+            # If the value is not found, defaults to a zero vector
+            # result = lookup_table.lookup(tf.cast(value, dtype=tf.int32))
+            result = lookup_table.lookup(value)
+
+        # print("encoding_process_attribute_result", result.shape)
+
+        return result
+        
+    def process_trace(self, trace):
+        # print("encoding_process_trace", trace.shape, self.attribute_key_trace_mask.shape)
+        # TODO: Split categorical and numerical attributes
+        numerical_values = tf.where(self.numerical_mask, trace, tf.zeros_like(trace))
+        categorical_values = tf.where(self.categorical_mask, trace, tf.zeros_like(trace))
+
+
+        # Numerical
+        # Do expansion at once
+        # print("numerical_values", numerical_values.shape)
+        expanded_numerical_values = tf.expand_dims(numerical_values, axis=-1)
+        # print("expanded_numerical_values", expanded_numerical_values.shape)
+        numerical_values_result = tf.tile(expanded_numerical_values, [1, self.dim_model])
+        # print("tiled_expanded_numerical_values", tiled_expanded_numerical_values.shape)
+        # print("tiled_expanded_numerical_values", tiled_expanded_numerical_values)
+
+
+        # Categorical
+        # Cast trace to int32 as a whole to avoid casting each element
+        categorical_values_int = tf.cast(categorical_values, dtype=tf.int32)
+        
+
+        categorical_values_result = tf.map_fn(
+            self.process_attribute,
+            (categorical_values_int, self.attribute_key_trace_mask),
+            fn_output_signature=tf.TensorSpec((self.dim_model,), dtype=tf.float32)
+        )
+        # print("encoding_process_trace_result", result.shape)
+
+        return categorical_values_result + numerical_values_result        
+
+    def call(self, inputs):
+        # print("encoding_call", inputs.shape)
+        result = tf.map_fn(
+            self.process_trace,
+            inputs,
+            fn_output_signature=tf.TensorSpec((self.sequence_length, self.dim_model), dtype=tf.float32)
+        )
+        # print("encoding_call_result", result.shape)
+        return result
+        
 class ProcessWord2VecEncoder():
     def __init__(self,
                  encoders, 

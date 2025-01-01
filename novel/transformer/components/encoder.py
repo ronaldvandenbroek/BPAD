@@ -77,30 +77,15 @@ class EncoderLayer(Layer):
 
 # Implementing the Encoder
 class Encoder(Layer):
-    def __init__(self, attribute_type_mask, sequence_length, num_heads, dim_queries_keys, dim_values, dim_model, dim_feed_forward, num_layers, dropout_rate, enc_vocab_size=None, **kwargs):
+    def __init__(self, sequence_length, num_heads, dim_queries_keys, dim_values, dim_model, dim_feed_forward, num_layers, dropout_rate, **kwargs):
         super(Encoder, self).__init__(**kwargs)
-        self.pos_encoding = PositionMultiTaskEmbeddingLayer(
-            attribute_type_mask=attribute_type_mask, 
-            sequence_length=sequence_length, 
-            vocab_size=enc_vocab_size, 
-            dim_model=dim_model)
-        
-        # if enc_vocab_size is not None:
-        #     self.pos_encoding = PositionWordEmbeddingFixedWeights(sequence_length, enc_vocab_size, dim_model)
-        # else:
-        #     self.pos_encoding = PositionEmbeddingFixedWeights(sequence_length, dim_model)
 
         self.dropout = Dropout(dropout_rate)
         self.encoder_layer = [EncoderLayer(sequence_length, num_heads, dim_queries_keys, dim_values, dim_model, dim_feed_forward, dropout_rate) for _ in range(num_layers)]
 
-    def call(self, input_sentence, padding_mask, training):
-        # Generate the positional encoding
-        pos_encoding_output = self.pos_encoding(input_sentence)
-        # Expected output shape = (batch_size, sequence_length, d_model)
-        print(pos_encoding_output.shape, "pos_encoding_output")
-
+    def call(self, input_trace, padding_mask, training):
         # Add in a dropout layer
-        x = self.dropout(pos_encoding_output, training=training)
+        x = self.dropout(input_trace, training=training)
 
         # Pass on the positional encoded values to each encoder layer
         for i, layer in enumerate(self.encoder_layer):
