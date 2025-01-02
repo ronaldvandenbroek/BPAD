@@ -4,8 +4,7 @@ from keras.layers import Dense, Activation, Flatten
 
 from novel.transformer.components.decoder import Decoder
 from novel.transformer.components.encoder import Encoder
-from novel.transformer.components.positional_encoding import PositionMultiTaskEmbeddingLayer
-from utils.embedding.w2v import TransformerWord2VecEncoder
+from novel.transformer.components.positional_w2v_encoding import TransformerWord2VecEncoder
 from utils.enums import AttributeType
 
 # https://machinelearningmastery.com/joining-the-transformer-encoder-and-decoder-and-masking/
