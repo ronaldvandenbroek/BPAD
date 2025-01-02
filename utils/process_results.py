@@ -131,12 +131,16 @@ def process_bucket_results(
         errors_event_split = np.transpose(errors_event_split, (1,0,2))
     else:
         split_event = np.arange(
-            start=case_max_length, 
+            start=len(attribute_dims), # TODO RCVDB: To split on the events it should be attribute_num not case_max_length
             stop=len(errors_attr_split_summed), 
-            step=case_max_length)
+            step=len(attribute_dims)) # TODO RCVDB: To split on the events it should be attribute_num not case_max_length
         
-        # (attributes, events, cases)
+        # (attributes, events, cases) TODO RCVDB: This is wrong, it should be (events, attributes, cases)
+        # (events, attributes, cases)
         errors_event_split = np.split(errors_attr_split_summed, split_event, axis=0)
+
+        # (attributes, events, cases) TODO RCVDB: To mitigate the issue of the wrong ordering, the transpose should be done after the split
+        errors_event_split = np.transpose(errors_event_split, (1,0,2))
 
     # Split the attributes based on which perspective they belong to
     # (perspective, attributes, events, cases)

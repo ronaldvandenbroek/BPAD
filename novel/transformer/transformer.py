@@ -1,4 +1,3 @@
-import sys
 import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
@@ -115,28 +114,39 @@ class Transformer(NNAnomalyDetector):
         # print(attribute_type_mask)
 
         zero_event = np.zeros((num_features), dtype=np.float64)
-        trainX_categorical = []
-        trainY_categorical = []
+        trainX = []
+        trainY = []
+        trainEventIndices = []
         for index, (case, case_length) in enumerate(zip(cases, dataset.case_lens)):
             last_event_index = case_length - 1
-            trainY_categorical.append(case[last_event_index].copy())
+            trainY.append(case[last_event_index].copy())
+            trainEventIndices.append(last_event_index * num_features)
 
             # Remove the target event from the training data and set the padding for all future events
             case[last_event_index:] = zero_event
-            trainX_categorical.append(case)
+            trainX.append(case)
 
-        trainX_categorical = np.array(trainX_categorical, dtype=np.float64)
-        trainY_categorical = np.array(trainY_categorical, dtype=np.float64)
+        trainX = np.array(trainX, dtype=np.float64)
+        trainY = np.array(trainY, dtype=np.float64)
+        trainEventIndices = np.array(trainEventIndices, dtype=np.int32)
 
-        process_results.check_array_properties("trainX_categorical", trainX_categorical)
-        process_results.check_array_properties("trainY_categorical", trainY_categorical)
+        process_results.check_array_properties("trainX_categorical", trainX)
+        process_results.check_array_properties("trainY_categorical", trainY)
 
-        dim0, dim1, dim2 = trainX_categorical.shape
-        trainX_categorical = np.reshape(trainX_categorical, (dim0, dim1 * dim2))#, order='C')
+        dim0, dim1, dim2 = trainX.shape
+        trainX = np.reshape(trainX, (dim0, dim1 * dim2))#, order='C')
 
-        print(trainX_categorical.shape, trainY_categorical.shape)
+        # RCVDB TODO: Capping the training data to 250 for development purposes
+        limit = 250
+        trainX = trainX[:limit]
+        trainY = trainY[:limit]
+        case_lengths = dataset.case_lens[:limit]
+        case_labels = dataset.case_labels[:limit]
+        event_labels = dataset.event_labels[:limit]
+        attr_labels = dataset.attr_labels[:limit]
+        print("train_shapes after capping", trainX.shape, trainY.shape)
 
-        train_dataset = data.Dataset.from_tensor_slices((trainX_categorical, trainY_categorical))
+        train_dataset = data.Dataset.from_tensor_slices((trainX, trainY))
         train_dataset = train_dataset.batch(kwargs.get('batch_size'))
 
         # RCVDB TODO: If single task model then attribute type and keys should be looped and the model only passed a single attribute type and key
@@ -168,7 +178,7 @@ class Transformer(NNAnomalyDetector):
             epsilon=kwargs.get('epsilon')
         )
 
-        return model, optimizer, train_dataset, num_features, attribute_dims, attribute_perspectives
+        return model, optimizer, train_dataset, num_features, attribute_dims, attribute_perspectives, trainX, trainY, case_lengths, case_labels, event_labels, attr_labels
     
     def _train_and_predict(self, model, optimizer, train_dataset, num_features):
         print(num_features, "Num Features")
@@ -248,7 +258,7 @@ class Transformer(NNAnomalyDetector):
         if batch_size != None:
             self.config['batch_size'] = batch_size
         
-        model, optimizer, train_dataset, num_features, attribute_dims, attribute_perspectives = self.model_fn(dataset, **self.config)
+        model, optimizer, train_dataset, num_features, attribute_dims, attribute_perspectives, trainX, trainY, case_lengths, case_labels, event_labels, attr_labels = self.model_fn(dataset, **self.config)
         predictions, losses, targets = self._train_and_predict(model, optimizer, train_dataset, num_features)
 
         # (traces, attributes, predictions)
@@ -273,7 +283,36 @@ class Transformer(NNAnomalyDetector):
 
                     pbar.update(1)
 
-        print(attribute_errors.shape) 
+        print(attribute_errors.shape)
+        print(trainX.shape, trainY.shape, len(case_lengths))
+
+        prefic_store = {}
+        prefix_attribute_errors = []
+        for prefix, target, target_errors, case_lenth in zip(trainX, trainY, attribute_errors, case_lengths):
+            target_index_start = (case_lenth - 1) * num_features
+            target_index_end = target_index_start + num_features
+
+            current_prefix_key = prefix.tobytes()
+
+            # Add the new event to the prefix
+            prefix[target_index_start:target_index_end] = target
+
+            if current_prefix_key not in prefic_store:
+                # Create a new prefix error array
+                prefix_errors = np.zeros_like(prefix)
+            else:
+                # Load the existing prefix error array
+                prefix_errors = prefic_store[current_prefix_key].copy()
+
+            # Add the new event errors to the prefix errors
+            prefix_errors[target_index_start:target_index_end] = target_errors
+            # Store the new errors or update the existing errors
+            prefic_store[prefix.tobytes()] = prefix_errors
+
+            # Save the target + prefix errors corresponding to the current event
+            prefix_attribute_errors.append(prefix_errors)
+
+        attribute_errors = np.array(prefix_attribute_errors)
 
         # Check if predictions, losses, targets, likelihood_errors are valid
         process_results.check_array_properties("Losses", losses)
@@ -288,18 +327,14 @@ class Transformer(NNAnomalyDetector):
                 attribute_dims=attribute_dims,
                 dataset_mask=None, # dataset.mask, # As only one new event is predicted
                 attribute_types=dataset.attribute_types,
-                case_max_length=1, # As only one new event is predicted
+                case_max_length=dataset.max_len, # As only one new event is predicted
                 anomaly_perspectives=attribute_perspectives,
-                case_lengths=dataset.case_lens,
+                case_lengths=case_lengths,
                 error_power=2
             )
         
-        case_labels = dataset.case_labels
-        event_labels = dataset.event_labels
-        attr_labels = dataset.attr_labels
         attribute_names = dataset.event_log.event_attribute_keys
-        
-        return ({0:trace_level_abnormal_scores}, 
+        results = ({0:trace_level_abnormal_scores}, 
                 {0:event_level_abnormal_scores}, 
                 {0:attr_level_abnormal_scores}, 
                 {0:losses},
@@ -311,4 +346,6 @@ class Transformer(NNAnomalyDetector):
                 attribute_perspectives,
                 attribute_names,
                 attribute_names)
+        
+        return results
     

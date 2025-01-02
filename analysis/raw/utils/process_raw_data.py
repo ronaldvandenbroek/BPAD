@@ -82,7 +82,7 @@ def process_attribute_labels(output, values, case_length, perspective, perspecti
 
     output.append(perspective_attribute_value)
 
-def reshape_data_for_scoring(results, perspective_label_indices):
+def reshape_data_for_scoring(results, perspective_label_indices, buckets):
     labels_DAE_attribute_Arrival_Time = []
     labels_DAE_attribute_Workload = []
     labels_DAE_attribute_Order = []
@@ -104,19 +104,17 @@ def reshape_data_for_scoring(results, perspective_label_indices):
     result_DAE_event_Attribute = []
     result_DAE_trace_Attribute = []
 
-    print("results", results.keys())
+    # print("results", results.keys())
 
     for (key, value) in results.items():
-        # print(key, value.shape)
-        try:
+        print(key, value.shape)
+        if buckets is not None:
             length = int(key.split('_')[-1])
             perspective = key.split('_')[-2]
-        except: # If it fails it mean there is no bucket, then the length of every trace is max length
+        else: # If there is no bucket, then the length of every trace is max event length
             if 'attribute' in key or 'event' in key:
                 length = value.shape[1]
             perspective = key.split('_')[-1]
-
-        print("key", key)
 
         if 'losses' in key:
             continue
@@ -245,10 +243,11 @@ def score(run):
     config = run['config']
     timestamp = run['timestamp']
     index = run['index']
+    buckets = run['buckets']
 
     sorted_results = dict(sorted(results.items(), key=lambda x: extract_number(x[0])))
     perspective_label_indices = get_indexes_by_value(config['attribute_perspectives_original'])
-    print("perspective_label_indices", perspective_label_indices)
+    # print("perspective_label_indices", perspective_label_indices)
 
     (
         labels_DAE_attribute, 
@@ -257,7 +256,15 @@ def score(run):
         result_DAE_attribute, 
         result_DAE_event, 
         result_DAE_trace
-    ) = reshape_data_for_scoring(results=sorted_results, perspective_label_indices=perspective_label_indices)
+    ) = reshape_data_for_scoring(results=sorted_results, perspective_label_indices=perspective_label_indices, buckets=buckets)
+
+    # print("Reshaped data for scoring")
+    print("labels_DAE_attribute", len(labels_DAE_attribute), labels_DAE_attribute[0].shape)
+    print("labels_DAE_event", labels_DAE_event.shape)
+    print("labels_DAE_trace", labels_DAE_trace.shape)
+    print("result_DAE_attribute", len(result_DAE_attribute), result_DAE_attribute[0].shape)
+    print("result_DAE_event", len(result_DAE_event), result_DAE_event[0].shape)
+    print("result_DAE_trace", len(result_DAE_trace), result_DAE_trace[0].shape)
 
     level = ['trace', 'event', 'attribute']
     datasets = [labels_DAE_trace, labels_DAE_event, labels_DAE_attribute]
