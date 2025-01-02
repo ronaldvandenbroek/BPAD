@@ -9,7 +9,7 @@ from utils.embedding.attribute_dictionary import AttributeDictionary
 # https://machinelearningmastery.com/the-transformer-positional-encoding-layer-in-keras-part-2/
 
 class TransformerWord2VecEncoder(Layer):
-    def __init__(self, attribute_keys, sequence_length, encoders, dim_model=50, **kwargs) -> None:
+    def __init__(self, attribute_keys, sequence_length, encoders, dim_model=50, event_encoding=True, **kwargs) -> None:
         super(TransformerWord2VecEncoder, self).__init__(**kwargs)
 
         self.dim_model = dim_model
@@ -20,7 +20,7 @@ class TransformerWord2VecEncoder(Layer):
         self.case_length = tf.cast(case_length, tf.int32)
         print("case_length", self.case_length)
 
-        # Create a dictionary to map attribute keys to their index
+        # Attribute Encoding
         attribute_key_dict, attribute_keys_tensor = TransformerWord2VecEncoder._convert_encoder_keys(encoders)
 
         self.attribute_key_trace_mask, self.categorical_mask, self.numerical_mask, self.attribute_mask = TransformerWord2VecEncoder._create_attribute_masks(
@@ -28,6 +28,18 @@ class TransformerWord2VecEncoder(Layer):
 
         extracted_w2v_models = TransformerWord2VecEncoder._create_w2v_models(encoders, dim_model)
         self.lookup_tables = TransformerWord2VecEncoder._create_lookup_tables(attribute_keys_tensor, extracted_w2v_models)
+
+        # Positional Encoding
+        if event_encoding:
+            # If event encoding, create a positional matrix for each event and repeat it for each attribute 
+            # so that each attribute has the same positional encoding if they share the same event
+            positional_matrix_event = TransformerWord2VecEncoder._positional_encoding(self.case_length, dim_model)
+            self.positional_matrix_trace = tf.repeat(positional_matrix_event, self.num_attributes, axis=1)
+        else:
+            # Else every attribute in the trace sequence has its own positional encoding
+            self.positional_matrix_trace = TransformerWord2VecEncoder._positional_encoding(sequence_length, dim_model)
+
+        print("positional_matrix_trace", self.positional_matrix_trace.shape)
 
     @staticmethod
     def _convert_encoder_keys(encoders):
@@ -135,6 +147,25 @@ class TransformerWord2VecEncoder(Layer):
         print("lookup_tables", lookup_tables.keys())
         return lookup_tables
 
+    @staticmethod
+    def _get_angles(pos, i, dim_model):
+        angle_rates = 1 / np.power(10000, (2 * (i//2)) / np.float32(dim_model))
+        return pos * angle_rates
+
+    @staticmethod
+    def _positional_encoding(sentence_length, dim_model):
+            angle_rads = TransformerWord2VecEncoder._get_angles(np.arange(sentence_length)[:, np.newaxis],
+                                        np.arange(dim_model)[np.newaxis, :],
+                                        dim_model)
+            # apply sin to even indices in the array; 2i
+            angle_rads[:, 0::2] = np.sin(angle_rads[:, 0::2])
+            # apply cos to odd indices in the array; 2i+1
+            angle_rads[:, 1::2] = np.cos(angle_rads[:, 1::2])
+            
+            pos_encoding = angle_rads[np.newaxis, ...]
+            
+            return tf.cast(pos_encoding, dtype=tf.float32)
+
     def reshape_to_attributes_first(self, input_tensor):
         batch_size = tf.shape(input_tensor)[0]
         reshaped = tf.reshape(
@@ -202,4 +233,4 @@ class TransformerWord2VecEncoder(Layer):
         # Step 3: Transform back to `[batch_size, case_length * num_attributes, dim_model]`
         output_tensor = self.reshape_to_batch_first(expanded_tensor, batch_size)
 
-        return output_tensor
+        return output_tensor + self.positional_matrix_trace
