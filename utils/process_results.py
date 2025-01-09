@@ -15,7 +15,8 @@ def process_bucket_results(
         case_max_length,
         anomaly_perspectives,
         case_lengths,
-        error_power
+        error_power,
+        debug_logging=False
     ):
 
     # errors_raw = targets - predictions
@@ -24,7 +25,6 @@ def process_bucket_results(
     # RCVDB: If trace2vec than the first vector_size of outputs can be discarded as it is not relevant for specific perspectives
     if categorical_encoding in (EncodingCategorical.TRACE_2_VEC_ATC, EncodingCategorical.TRACE_2_VEC_C):
         errors_unmasked = errors_unmasked[:, vector_size:]
-
 
     # RCVDB: Generate the mask per bucket
     if categorical_encoding in (EncodingCategorical.WORD_2_VEC_ATC, EncodingCategorical.TRACE_2_VEC_ATC):
@@ -43,24 +43,11 @@ def process_bucket_results(
             mask[:mask_length] = True
 
         errors = errors_unmasked * dataset_mask
-
     else:    
         errors = errors_unmasked
 
-    check_array_properties("errors", errors)
-
-    # # RCVDB: Mask empty events if no buckets are used or encoding method is not W2V
-    # if not bucketing and categorical_encoding in (EncodingCategorical.WORD_2_VEC_ATC, EncodingCategorical.TRACE_2_VEC_ATC):
-    # # Applies a mask to remove the events not present in the trace   
-    # # (cases, flattened_errors) --> errors_unmasked
-    # # (cases, num_events) --> dataset.mask (~ inverts mask)
-    # # (cases, num_events, 1) --> expand dimension for broadcasting
-    # # (cases, num_events, attributes_dim) --> expand 2nd axis to size of the attributes
-    # # (cases, num_events * attributes_dim) = (cases, flattened_mask) --> reshape to match flattened error shape
-    #     errors = errors_unmasked * np.expand_dims(~dataset_mask, 2).repeat(attribute_dims.sum(), 2).reshape(
-    #         dataset_mask.shape[0], -1)
-    # else:
-    #     errors = errors_unmasked
+    if debug_logging:
+        check_array_properties("errors", errors)
 
     # If W2V all categorical events are embedded into a single vector
     if categorical_encoding in (EncodingCategorical.WORD_2_VEC_ATC, EncodingCategorical.TRACE_2_VEC_ATC):
@@ -80,7 +67,8 @@ def process_bucket_results(
     errors_attr_split = np.split(errors, split_attribute, axis=1)
 
     print(len(errors_attr_split))
-    check_inhomogeneous_list("errors_attr_split", errors_attr_split)
+    if debug_logging:
+        check_inhomogeneous_list("errors_attr_split", errors_attr_split)
 
     # Mean the attribute_dimension
     # Scalar attributes are left as is as they have a size of 1
@@ -89,12 +77,8 @@ def process_bucket_results(
     # (attributes * events, cases)
     # RCVDB: TODO Sum the errors to amplify the difference between normal and anomalous data
     # Does have the problem that longer traces will always have higher sums
+    # RCVDB: TODO Could also take the max value to amplify the difference between normal and anomalous data
     errors_attr_split_summed = [np.mean(attribute, axis=1) for attribute in errors_attr_split]
-
-    # if categorical_encoding == EncodingCategorical.WORD_2_VEC_ATC or categorical_encoding == EncodingCategorical.TRACE_2_VEC_ATC:
-    #     errors_attr_split_summed = [np.sum(attribute, axis=1) for attribute in errors_attr_split]
-    # else:
-    #     errors_attr_split_summed = [np.mean(attribute, axis=1) for attribute in errors_attr_split]
 
     # Split the attributes based on which event it belongs to
     if categorical_encoding in (EncodingCategorical.WORD_2_VEC_ATC, EncodingCategorical.TRACE_2_VEC_ATC):
@@ -129,22 +113,28 @@ def process_bucket_results(
         # to
         # (attributes, events, cases)
         errors_event_split = np.transpose(errors_event_split, (1,0,2))
-    else:
+    elif categorical_encoding == EncodingCategorical.TOKENIZER:
         split_event = np.arange(
-            start=len(attribute_dims), # TODO RCVDB: To split on the events it should be attribute_num not case_max_length
+            start=len(attribute_dims), # To split on the events it should be attribute_num not case_max_length
             stop=len(errors_attr_split_summed), 
-            step=len(attribute_dims)) # TODO RCVDB: To split on the events it should be attribute_num not case_max_length
+            step=len(attribute_dims)) # To split on the events it should be attribute_num not case_max_length
         
-        # (attributes, events, cases) TODO RCVDB: This is wrong, it should be (events, attributes, cases)
         # (events, attributes, cases)
         errors_event_split = np.split(errors_attr_split_summed, split_event, axis=0)
-
-        # (attributes, events, cases) TODO RCVDB: To mitigate the issue of the wrong ordering, the transpose should be done after the split
-        errors_event_split = np.transpose(errors_event_split, (1,0,2))
+        # (attributes, events, cases)
+        errors_event_split = np.transpose(errors_event_split, (1,0,2))        
+    else:
+        split_event = np.arange(
+            start=case_length, 
+            stop=len(errors_attr_split_summed), 
+            step=case_length)
+        
+        # TODO RCVDB: Check if this is actually correct for the DAE model as it does not work for the Tokenizer Transformer
+        errors_event_split = np.split(errors_attr_split_summed, split_event, axis=0)
 
     # Split the attributes based on which perspective they belong to
     # (perspective, attributes, events, cases)
-    # RCVDB: TODO This splitting does not work if the ordering has changed
+    # Note: This splitting does not work if the ordering has changed, thus the anomaly_perspectives should also be changed beforehand if that is the case
     grouped_error_scores_per_perspective = defaultdict(list)
     for event, anomaly_perspective in zip(errors_event_split, anomaly_perspectives):
         grouped_error_scores_per_perspective[anomaly_perspective].append(event)

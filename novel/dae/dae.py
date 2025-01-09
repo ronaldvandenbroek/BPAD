@@ -46,7 +46,7 @@ class DAE(NNAnomalyDetector):
                   noise=None # 0.5
      ) 
 
-    def __init__(self, model=None):
+    def __init__(self, config):
         """Initialize DAE model.
 
         Size of hidden layers is based on input size. The size can be controlled via the hidden_size_factor parameter.
@@ -59,13 +59,15 @@ class DAE(NNAnomalyDetector):
         :param epochs: Number of epochs to train.
         :param batch_size: Mini batch size.
         """
-        super(DAE, self).__init__(model=model)
+        super(DAE, self).__init__(config)
 
-    @staticmethod
-    def model_fn(dataset:Dataset, bucket_boundaries:list, categorical_encoding, vector_size=None, **kwargs):
-        hidden_layers = kwargs.pop('hidden_layers')
-        hidden_size_factor = kwargs.pop('hidden_size_factor')
-        noise = kwargs.pop('noise')
+        # Update the config with the additional parameters
+        self.config.update(config)
+
+    def model_fn(self, dataset:Dataset, bucket_boundaries:list, categorical_encoding, vector_size=None):
+        hidden_layers = self.config.get('hidden_layers')
+        hidden_size_factor = self.config.get('hidden_size_factor')
+        noise = self.config.get('noise')
 
         if categorical_encoding == EncodingCategorical.ONE_HOT:
             features = dataset.flat_onehot_features_2d
@@ -257,7 +259,12 @@ class DAE(NNAnomalyDetector):
             return total_loss
         return loss
   
-    def train_and_predict(self, dataset:Dataset, batch_size=2, bucket_boundaries=None, categorical_encoding=EncodingCategorical.ONE_HOT, vector_size=None):
+    def train_and_predict(self, dataset:Dataset):
+        bucket_boundaries = self.config.get('bucket_boundaries', None)
+        categorical_encoding = self.config.get('categorical_encoding', EncodingCategorical.ONE_HOT)
+        vector_size = self.config.get('vector_size', None)
+        batch_size = self.config.get('batch_size', 2)
+
         model_buckets, features_buckets, targets_buckets, case_lengths_buckets, bucket_case_labels, bucket_event_labels, bucket_attr_labels = self.model_fn(dataset, bucket_boundaries, categorical_encoding, vector_size, **self.config)
 
         # Parameters

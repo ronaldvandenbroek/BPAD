@@ -8,32 +8,19 @@ import multiprocessing
 from utils.dataset import Dataset
 from utils.fs import EVENTLOG_DIR, FSSave
 
-def fit_and_eva(dataset_name, dataset_folder, run_name, seed, ad, fit_kwargs=None, ad_kwargs=None):
-    print(fit_kwargs, ad_kwargs)
-    if ad_kwargs is None:
-        ad_kwargs = {}
+def fit_and_eva(dataset_name, dataset_folder, run_name, seed, ad, fit_kwargs=None):
+    print(fit_kwargs)
     if fit_kwargs is None:
         fit_kwargs = {}
-
-    batch_size = fit_kwargs['batch_size']
-    prefix = fit_kwargs['prefix']
-    bucket_boundaries = fit_kwargs['bucket_boundaries']
     categorical_encoding = fit_kwargs['categorical_encoding']
     numerical_encoding = fit_kwargs['numerical_encoding']
-    vector_size = fit_kwargs['vector_size']
-    window_size = fit_kwargs['window_size']
-    pretrain_percentage = fit_kwargs['pretrain_percentage']
-    try:
-        repeats = fit_kwargs['repeats']
-    except:
-        repeats = None
-
+ 
     np.random.seed(seed)
 
     start_time = time.time()
 
     # AD
-    ad = ad(**ad_kwargs)
+    ad = ad(fit_kwargs)
     print(ad.name, dataset_name)
 
     fs_save = FSSave(start_time=datetime.now(), 
@@ -44,19 +31,14 @@ def fit_and_eva(dataset_name, dataset_folder, run_name, seed, ad, fit_kwargs=Non
     dataset = Dataset(dataset_name,
                       dataset_folder, 
                       beta=0.005, 
-                      prefix=prefix,
-                      pretrain_percentage=pretrain_percentage,
-                      vector_size=vector_size,
-                      window_size=window_size, 
+                      prefix=fit_kwargs.get('prefix', True),
+                      pretrain_percentage=fit_kwargs.get('pretrain_percentage', 0),
+                      vector_size=fit_kwargs.get('vector_size', 50),
+                      window_size=fit_kwargs.get('window_size', 10),
                       categorical_encoding=categorical_encoding,
                       numerical_encoding=numerical_encoding,
                       fs_save=fs_save)
     
-    # if bucket_boundaries is not None:
-    #     step=1
-    #     bucket_boundaries = list(range(3,dataset.max_len,step))
-    #     bucket_boundaries.append(dataset.max_len)
-
     # Run the AD model
     (
         bucket_trace_level_abnormal_scores, 
@@ -72,13 +54,7 @@ def fit_and_eva(dataset_name, dataset_folder, run_name, seed, ad, fit_kwargs=Non
         attribute_names_original,
         processed_prefixes,
         processed_events
-    ) = ad.train_and_predict(
-        dataset, 
-        batch_size=batch_size, 
-        bucket_boundaries=bucket_boundaries, 
-        categorical_encoding=categorical_encoding,
-        vector_size=vector_size
-    )
+    ) = ad.train_and_predict(dataset)
 
     end_time = time.time()
     run_time=end_time-start_time
@@ -93,7 +69,7 @@ def fit_and_eva(dataset_name, dataset_folder, run_name, seed, ad, fit_kwargs=Non
     config['start_time'] = start_time
     config['end_time'] = end_time
     config['run_time'] = run_time
-    config['repeat'] = repeats
+    config['repeat'] = fit_kwargs.get('repeats', None)
     config['attribute_perspectives'] = list(attribute_perspectives)
     config['attribute_perspectives_original'] = list(attribute_perspectives_original)
     config['attribute_names'] = list(attribute_names)
@@ -103,6 +79,7 @@ def fit_and_eva(dataset_name, dataset_folder, run_name, seed, ad, fit_kwargs=Non
     fs_save.save_config(config)
 
     # RCVDB: Loop through each bucket size and handle each size seperately
+    bucket_boundaries = fit_kwargs.get('bucket_boundaries', None)
     for i in range(len(bucket_losses)):
         if bucket_boundaries is not None:
             fs_save.set_bucket_size(bucket_boundaries[i])

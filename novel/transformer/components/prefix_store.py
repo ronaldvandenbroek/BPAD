@@ -1,14 +1,16 @@
 import numpy as np
 
 class PrefixStore():
-    def __init__(self, num_attributes, case_start_length=1):
+    def __init__(self, num_attributes, case_start_length=1, use_prefix_errors=True):
+        # For ablation studies, setting use_prefix_errors to False will only store the last event of each prefix
+        self.use_prefix_errors = use_prefix_errors
+
         self.num_attributes = num_attributes
         # Include a start index as there might be a buffer start case
         self.case_start_index = case_start_length * num_attributes
 
         self.prefix_value_store = {}
         self.prefix_length_store = {}
-
         self.prefix_case_values = []
 
     def add_prefix(self, prefix, event, event_value):
@@ -19,9 +21,14 @@ class PrefixStore():
             prefix_value = np.zeros_like(prefix)
             event_index_start = self.case_start_index
         else:
-            # Load the existing prefix value array
-            prefix_value = self.prefix_value_store[current_prefix_key].copy()
-            event_index_start = self.prefix_length_store[current_prefix_key]
+            if not self.use_prefix_errors:
+                # Create a new prefix value array but do load the current prefix length
+                prefix_value = np.zeros_like(prefix)
+                event_index_start = self.prefix_length_store[current_prefix_key]
+            else:
+                # Load the existing prefix value array
+                prefix_value = self.prefix_value_store[current_prefix_key].copy()
+                event_index_start = self.prefix_length_store[current_prefix_key]
 
         event_index_end = event_index_start + self.num_attributes
 
