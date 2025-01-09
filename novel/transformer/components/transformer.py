@@ -107,10 +107,10 @@ class TransformerModel(Model):
 
         # RCVDV TODO: Add the positional encoding layer definitions here as each task will have a different encoding
         # Generate the positional encoding
-        print("encoding_start", input_trace.shape)
+        # print("encoding_start", input_trace.shape)
         encoding_output = self.input_encoding(input_trace)
         # Expected output shape = (batch_size, sequence_length, d_model)
-        print("encoding_output", encoding_output.shape)
+        # print("encoding_output", encoding_output.shape)
 
         # Feed the input into the encoder
         encoder_output = self.encoder(encoding_output, enc_padding_mask, training)

@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 from baseline.binet.core import NNAnomalyDetector
+from novel.transformer.components.prefix_store import PrefixStore
 from novel.transformer.components.transformer import TransformerModel
 from novel.transformer.components.utils import LRScheduler, loss_fcn_categorical, loss_fcn_numerical
 from utils import process_results
@@ -136,15 +137,20 @@ class Transformer(NNAnomalyDetector):
         dim0, dim1, dim2 = trainX.shape
         trainX = np.reshape(trainX, (dim0, dim1 * dim2))#, order='C')
 
+        case_lengths = dataset.case_lens
+        case_labels = dataset.case_labels
+        event_labels = dataset.event_labels
+        attr_labels = dataset.attr_labels
+
         # RCVDB TODO: Capping the training data to 250 for development purposes
-        limit = 250
-        trainX = trainX[:limit]
-        trainY = trainY[:limit]
-        case_lengths = dataset.case_lens[:limit]
-        case_labels = dataset.case_labels[:limit]
-        event_labels = dataset.event_labels[:limit]
-        attr_labels = dataset.attr_labels[:limit]
-        print("train_shapes after capping", trainX.shape, trainY.shape)
+        # limit = 250
+        # trainX = trainX[:limit]
+        # trainY = trainY[:limit]
+        # case_lengths = case_lengths[:limit]
+        # case_labels = case_labels[:limit]
+        # event_labels = event_labels[:limit]
+        # attr_labels = attr_labels[:limit]
+        # print("train_shapes after capping", trainX.shape, trainY.shape)
 
         train_dataset = data.Dataset.from_tensor_slices((trainX, trainY))
         train_dataset = train_dataset.batch(kwargs.get('batch_size'))
@@ -229,7 +235,7 @@ class Transformer(NNAnomalyDetector):
             model_input = train_batchX[:, num_features:] # Skip the starting event as it is always the same
             model_target = train_batchY[:, :]
 
-            print("Model Input Shape: " , model_input.shape, " Model Output Shape: ", model_target.shape)
+            # print("Model Input Shape: " , model_input.shape, " Model Output Shape: ", model_target.shape)
 
             loss_train_step, predictions_train_step = train_step(model_input, model_target)
 
@@ -265,6 +271,8 @@ class Transformer(NNAnomalyDetector):
         all_attribute_true = targets.T
         # (attributes, trace, predictions)
 
+        # Convert categorical predictions into likelihoods
+        # Convert numerical predictions into errors
         total_iterations = targets.shape[0] * targets.shape[1]
         attribute_errors = np.zeros(targets.shape)
         with tqdm(total=total_iterations, desc="Calculating Errors") as pbar:
@@ -286,33 +294,10 @@ class Transformer(NNAnomalyDetector):
         print(attribute_errors.shape)
         print(trainX.shape, trainY.shape, len(case_lengths))
 
-        prefic_store = {}
-        prefix_attribute_errors = []
-        for prefix, target, target_errors, case_lenth in zip(trainX, trainY, attribute_errors, case_lengths):
-            target_index_start = (case_lenth - 1) * num_features
-            target_index_end = target_index_start + num_features
-
-            current_prefix_key = prefix.tobytes()
-
-            # Add the new event to the prefix
-            prefix[target_index_start:target_index_end] = target
-
-            if current_prefix_key not in prefic_store:
-                # Create a new prefix error array
-                prefix_errors = np.zeros_like(prefix)
-            else:
-                # Load the existing prefix error array
-                prefix_errors = prefic_store[current_prefix_key].copy()
-
-            # Add the new event errors to the prefix errors
-            prefix_errors[target_index_start:target_index_end] = target_errors
-            # Store the new errors or update the existing errors
-            prefic_store[prefix.tobytes()] = prefix_errors
-
-            # Save the target + prefix errors corresponding to the current event
-            prefix_attribute_errors.append(prefix_errors)
-
-        attribute_errors = np.array(prefix_attribute_errors)
+        # Convert the next event prediction errors into prefix errors
+        prefix_store = PrefixStore(num_attributes=num_features, case_start_length=1)
+        prefix_store.add_prefixes(trainX, trainY, attribute_errors)
+        attribute_errors = prefix_store.get_prefix_case_values()
 
         # Check if predictions, losses, targets, likelihood_errors are valid
         process_results.check_array_properties("Losses", losses)
@@ -345,7 +330,9 @@ class Transformer(NNAnomalyDetector):
                 attribute_perspectives,
                 attribute_perspectives,
                 attribute_names,
-                attribute_names)
+                attribute_names,
+                trainX,
+                trainY)
         
         return results
     

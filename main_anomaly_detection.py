@@ -69,8 +69,10 @@ def fit_and_eva(dataset_name, dataset_folder, run_name, seed, ad, fit_kwargs=Non
         attribute_perspectives,
         attribute_perspectives_original, 
         attribute_names, 
-        attribute_names_original
-     ) = ad.train_and_predict(
+        attribute_names_original,
+        processed_prefixes,
+        processed_events
+    ) = ad.train_and_predict(
         dataset, 
         batch_size=batch_size, 
         bucket_boundaries=bucket_boundaries, 
@@ -96,6 +98,8 @@ def fit_and_eva(dataset_name, dataset_folder, run_name, seed, ad, fit_kwargs=Non
     config['attribute_perspectives_original'] = list(attribute_perspectives_original)
     config['attribute_names'] = list(attribute_names)
     config['attribute_names_original'] = list(attribute_names_original)
+    # config['processed_prefixes'] = list(processed_prefixes)
+    # config['processed_events'] = list(processed_events)
     fs_save.save_config(config)
 
     # RCVDB: Loop through each bucket size and handle each size seperately

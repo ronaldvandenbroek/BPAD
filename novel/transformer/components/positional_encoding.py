@@ -11,8 +11,8 @@ class PositionW2VTraceEmbeddingLayer(Layer):
         super(PositionW2VTraceEmbeddingLayer, self).__init__(**kwargs)
         self.w2v_model = w2v_model
         self.position_embedding_matrix = self.positional_encoding(sequence_length, dim_model)
-        print("position_embedding_matrix")
-        print(self.position_embedding_matrix.shape)
+        # print("position_embedding_matrix")
+        # print(self.position_embedding_matrix.shape)
 
 
 class PositionMultiTaskEmbeddingLayer(Layer):
@@ -21,16 +21,16 @@ class PositionMultiTaskEmbeddingLayer(Layer):
         self.categorical_mask = attribute_type_mask
         self.numerical_mask = tf.logical_not(attribute_type_mask)
 
-        print("word_embedding_matrices")
+        # print("word_embedding_matrices")
         self.word_embedding_matrices = []
         for attribute_vocab_size in attribute_vocab_sizes:
             word_embedding_matrix = self.positional_encoding(attribute_vocab_size, dim_model)
-            print(word_embedding_matrix.shape)
+            # print(word_embedding_matrix.shape)
             self.word_embedding_matrices.append(word_embedding_matrix)
 
         self.position_embedding_matrix = self.positional_encoding(sequence_length, dim_model)
-        print("position_embedding_matrix")
-        print(self.position_embedding_matrix.shape)
+        # print("position_embedding_matrix")
+        # print(self.position_embedding_matrix.shape)
 
     def call(self, inputs):
         batch_size = inputs.shape[0]
@@ -64,7 +64,7 @@ class PositionMultiTaskEmbeddingLayer(Layer):
         #     numerical_pos_encoding
         # )
 
-        print(combined_pos_encoding.shape, "Combined")
+        # print(combined_pos_encoding.shape, "Combined")
 
         # combined_pos_encoding = tf.where(self.categorical_mask, categorical_pos_encoding, numerical_pos_encoding)
 
@@ -133,7 +133,7 @@ class PositionWordEmbeddingFixedWeights(Layer):
         return P
 
     def call(self, inputs):
-        print(inputs.shape, "Word Input")        
+        # print(inputs.shape, "Word Input")        
         position_indices = tf.range(tf.shape(inputs)[-1])
         embedded_words = self.word_embedding_layer(inputs)
         embedded_indices = self.position_embedding_layer(position_indices)
@@ -176,8 +176,8 @@ class PositionEmbeddingFixedWeights(Layer):
         position_indices = tf.range(tf.shape(inputs)[-2])
         embedded_words = inputs  # Ensure that `inputs` are the word embeddings passed in
         embedded_indices = self.position_embedding_layer(position_indices)
-        print(inputs.shape, "Positional Input")
-        print(embedded_indices.shape, "Positional Encoding")
+        # print(inputs.shape, "Positional Input")
+        # print(embedded_indices.shape, "Positional Encoding")
         return embedded_words + embedded_indices
 
 

@@ -45,7 +45,7 @@ class MultiHeadAttention(Layer):
         self.W_o = Dense(d_model)  # Learned projection matrix for the multi-head output
  
     def reshape_tensor(self, x, heads, flag):
-        print(x.shape, "X Shape", heads, "Heads", flag, "Flag")
+        # print(x.shape, "X Shape", heads, "Heads", flag, "Flag")
         if flag:
             # Tensor shape after reshaping and transposing: (batch_size, heads, seq_length, -1)
             x = reshape(x, shape=(shape(x)[0], shape(x)[1], heads, -1))

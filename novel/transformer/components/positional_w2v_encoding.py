@@ -18,7 +18,7 @@ class TransformerWord2VecEncoder(Layer):
         self.num_attributes = len(attribute_keys)
         case_length = sequence_length / self.num_attributes
         self.case_length = tf.cast(case_length, tf.int32)
-        print("case_length", self.case_length)
+        # print("case_length", self.case_length)
 
         # Attribute Encoding
         attribute_key_dict, attribute_keys_tensor = TransformerWord2VecEncoder._convert_encoder_keys(encoders)
@@ -39,18 +39,18 @@ class TransformerWord2VecEncoder(Layer):
             # Else every attribute in the trace sequence has its own positional encoding
             self.positional_matrix_trace = TransformerWord2VecEncoder._positional_encoding(sequence_length, dim_model)
 
-        print("positional_matrix_trace", self.positional_matrix_trace.shape)
+        # print("positional_matrix_trace", self.positional_matrix_trace.shape)
 
     @staticmethod
     def _convert_encoder_keys(encoders):
-        print("encoders", encoders.keys())
+        # print("encoders", encoders.keys())
         attribute_key_dict = {}
         for i, key in enumerate(encoders.keys()):
             attribute_key_dict[key] = i
-        print("attribute_key_dict", attribute_key_dict)
+        # print("attribute_key_dict", attribute_key_dict)
 
         attribute_keys_tensor = tf.constant(list(attribute_key_dict.values()), dtype=tf.int32)
-        print("attribute_keys_tensor", attribute_keys_tensor)
+        # print("attribute_keys_tensor", attribute_keys_tensor)
 
         return attribute_key_dict, attribute_keys_tensor
 
@@ -68,13 +68,13 @@ class TransformerWord2VecEncoder(Layer):
                 attribute_categorical_mask.append(True)
 
         attribute_keys_event_mask = tf.constant(attribute_keys_event_mask, dtype=tf.int32)
-        print("attribute_keys_event_mask", attribute_keys_event_mask)
+        # print("attribute_keys_event_mask", attribute_keys_event_mask)
 
         # Expand the attribute keys to the sequence length
         attribute_key_trace_mask = tf.tile(attribute_keys_event_mask, multiples=[case_length])
         categorical_mask = tf.tile(attribute_categorical_mask, multiples=[case_length])
         numerical_mask = tf.logical_not(categorical_mask)
-        print("attribute_key_trace_mask shape", attribute_key_trace_mask.shape, "trace_categorical_mask", categorical_mask.shape)
+        # print("attribute_key_trace_mask shape", attribute_key_trace_mask.shape, "trace_categorical_mask", categorical_mask.shape)
         # print("attribute_key_trace_mask", self.attribute_key_trace_mask)
         # print("trace_categorical_mask", self.categorical_mask)
 
@@ -91,16 +91,16 @@ class TransformerWord2VecEncoder(Layer):
         for i, encoder in enumerate(encoders.values()):
             encoder:AttributeDictionary
 
-            print(encoder.encoded_attributes())
+            # print(encoder.encoded_attributes())
             w2v_model:Word2Vec = Word2Vec(
                 sentences=TransformerWord2VecEncoder._convert_to_sentences(range(encoder.max_size + 1)),
                 vector_size=dim_model,
                 window=5, min_count=1, workers=4, sg=1, hs=0, negative=0)
             w2v_models[i] = w2v_model
 
-        print(w2v_models.keys())
-        for w2v_model in w2v_models.values():
-            print(w2v_model.wv)
+        # print(w2v_models.keys())
+        # for w2v_model in w2v_models.values():
+        #     print(w2v_model.wv)
 
         extracted_w2v_models = {}
         for i, w2v_model in enumerate(w2v_models.values()):
@@ -109,10 +109,10 @@ class TransformerWord2VecEncoder(Layer):
                 extracted_w2v_model[int(word)] = w2v_model.wv.get_vector(word)
             extracted_w2v_models[i] = extracted_w2v_model
 
-        print("extracted_w2v_models")
-        print(extracted_w2v_models.keys())
-        for key, value in extracted_w2v_models[1].items():
-            print(key, value.shape)
+        # print("extracted_w2v_models")
+        # print(extracted_w2v_models.keys())
+        # for key, value in extracted_w2v_models[1].items():
+        #     print(key, value.shape)
 
         return extracted_w2v_models       
 
@@ -129,7 +129,7 @@ class TransformerWord2VecEncoder(Layer):
             values_tensor = tf.constant(vectors, dtype=tf.float32)
             zero_vector = tf.zeros_like(values_tensor[0], dtype=tf.float32)
 
-            print("keys_tensor", keys_tensor.shape, "values_tensor", values_tensor.shape, "zero_vector", zero_vector.shape)
+            # print("keys_tensor", keys_tensor.shape, "values_tensor", values_tensor.shape, "zero_vector", zero_vector.shape)
 
             lookup_table = tf.lookup.experimental.DenseHashTable(
                 key_dtype=tf.int32,
@@ -140,11 +140,11 @@ class TransformerWord2VecEncoder(Layer):
             )
             lookup_table.insert(keys_tensor, values_tensor)
 
-            print("model_key", model_key)
-            print(model_key.ref())
+            # print("model_key", model_key)
+            # print(model_key.ref())
             lookup_tables[model_key.numpy()] = lookup_table
 
-        print("lookup_tables", lookup_tables.keys())
+        # print("lookup_tables", lookup_tables.keys())
         return lookup_tables
 
     @staticmethod
