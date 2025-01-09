@@ -20,12 +20,17 @@ def calculate_f1(precision, recall):
         return 0
 
 def calculate_scores(y_trues, pred_probs, perspective):
+    print("Calculating scores for perspective", perspective)
+    print(y_trues[perspective].shape, pred_probs[perspective].shape)
     y_true = y_trues[perspective][:]
     pred_prob = pred_probs[perspective][:]
 
     # ROC-AUC
-    roc_auc = roc_auc_score(y_true, pred_prob)
-
+    try:
+        roc_auc = roc_auc_score(y_true, pred_prob)
+    except:
+        roc_auc = 0
+        
     # PR-AUC
     pr_auc = average_precision_score(y_true, pred_prob)
 
@@ -275,37 +280,38 @@ def score(run):
     for (level, dataset, result), perspective in itertools.product(zip(level, datasets, results), perspectives):
         try:
             roc_auc, pr_auc, f1, precision, recall = calculate_scores(dataset, result, perspective)
-            # print(level, perspective, roc_auc, pr_auc)
-
-            scores.append({
-                # High level differentiatiors
-                'run_name':config['run_name'],
-                'model':config['model'],
-                'dataset':config['dataset'],
-                'timestamp':timestamp,
-                'index':index,
-                # 'repeat':config['repeat'],
-                # Level/Perspectives
-                'level': level,
-                'perspective': Perspective.values()[perspective],
-                # Scores
-                'roc_auc': roc_auc,
-                'pr_auc': pr_auc,
-                'f1': f1,
-                'precision':precision,
-                'recall':recall,
-                'run_time': config['run_time'],
-                # Config
-                'batch_size':config['batch_size'],
-                'prefix':config['prefix'],
-                'buckets':config['bucket_boundaries'],
-                'categorical_encoding':config['categorical_encoding'],
-                'numerical_encoding':config['numerical_encoding'],
-                'vector_size':config['vector_size'],
-                'window_size':config['window_size'] 
-            })
         except Exception as e:
             print(level, perspective)
             print(e)
+            roc_auc, pr_auc, f1, precision, recall = 0, 0, 0, 0, 0
+        
+        scores.append({
+            # High level differentiatiors
+            'run_name':config['run_name'],
+            'model':config['model'],
+            'dataset':config['dataset'],
+            'timestamp':timestamp,
+            'index':index,
+            # 'repeat':config['repeat'],
+            # Level/Perspectives
+            'level': level,
+            'perspective': Perspective.values()[perspective],
+            # Scores
+            'roc_auc': roc_auc,
+            'pr_auc': pr_auc,
+            'f1': f1,
+            'precision':precision,
+            'recall':recall,
+            'run_time': config['run_time'],
+            # Config
+            'batch_size':config['batch_size'],
+            'prefix':config['prefix'],
+            'buckets':config['bucket_boundaries'],
+            'categorical_encoding':config['categorical_encoding'],
+            'numerical_encoding':config['numerical_encoding'],
+            'vector_size':config['vector_size'],
+            'window_size':config['window_size'] 
+        })
+
 
     return pd.DataFrame(scores)
