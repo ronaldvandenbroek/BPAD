@@ -2,14 +2,14 @@ from gensim.models import Word2Vec
 
 import numpy as np
 import tensorflow as tf
-from keras.layers import Layer, Embedding
+from keras.layers import Layer
 
 from utils.embedding.attribute_dictionary import AttributeDictionary
 
 # https://machinelearningmastery.com/the-transformer-positional-encoding-layer-in-keras-part-2/
 
 class TransformerWord2VecEncoder(Layer):
-    def __init__(self, attribute_keys, sequence_length, encoders, dim_model=50, event_encoding=True, **kwargs) -> None:
+    def __init__(self, attribute_keys, sequence_length, encoders, dim_model=50, event_positional_encoding=True, **kwargs) -> None:
         super(TransformerWord2VecEncoder, self).__init__(**kwargs)
 
         self.dim_model = dim_model
@@ -30,7 +30,7 @@ class TransformerWord2VecEncoder(Layer):
         self.lookup_tables = TransformerWord2VecEncoder._create_lookup_tables(attribute_keys_tensor, extracted_w2v_models)
 
         # Positional Encoding
-        if event_encoding:
+        if event_positional_encoding:
             # If event encoding, create a positional matrix for each event and repeat it for each attribute 
             # so that each attribute has the same positional encoding if they share the same event
             positional_matrix_event = TransformerWord2VecEncoder._positional_encoding(self.case_length, dim_model)

@@ -4,13 +4,8 @@ from tqdm import tqdm
 from baseline.binet.core import NNAnomalyDetector
 from novel.transformer.components.prefix_store import PrefixStore
 from novel.transformer.components.transformer import TransformerModel
-from novel.transformer.components.utils import LRScheduler, loss_fcn_categorical, loss_fcn_numerical
 from utils import process_results
 from utils.dataset import Dataset
-from utils.embedding.attribute_dictionary import AttributeDictionary
-from utils.enums import EncodingCategorical
-from utils.settings.settings_multi_task import SettingsMultiTask
-from utils.enums import AttributeType
 
 from keras.optimizers import Adam # type: ignore
 from keras.metrics import Mean # type: ignore
@@ -18,7 +13,6 @@ from tensorflow import data, train, GradientTape, function # type: ignore
 from keras.losses import sparse_categorical_crossentropy, log_cosh
 
 from novel.transformer.components.transformer import TransformerModel
-from novel.transformer.components.utils import LRScheduler, likelihood_fcn
 
 
 class Transformer(NNAnomalyDetector):
@@ -38,6 +32,7 @@ class Transformer(NNAnomalyDetector):
         num_layers = 2, #3, #6,  # Number of layers in the encoder/decoder stack
 
         # Training Parameters
+        learning_rate = 0.001, # 0.0001,
         dropout_rate = 0.1,
         batch_size = 8,
         beta_1 = 0.9,
@@ -134,6 +129,7 @@ class Transformer(NNAnomalyDetector):
             attribute_keys=attribute_keys,
             attribute_vocab_sizes=attribute_vocab_sizes,
             enc_seq_length=enc_seq_length,
+            event_positional_encoding=self.config.get('event_positional_encoding'),
             # Model variables
             num_heads=self.config.get('num_heads'),
             dim_queries_keys=self.config.get('dim_queries_keys'),
@@ -145,11 +141,16 @@ class Transformer(NNAnomalyDetector):
         )
 
         optimizer = Adam(
-            LRScheduler(d_model=self.config.get('dim_model')), 
+            learning_rate=self.config.get('learning_rate'), 
             beta_1=self.config.get('beta_1'), 
             beta_2=self.config.get('beta_2'), 
             epsilon=self.config.get('epsilon')
         )
+
+        if self.config.get('debug_logging', False):
+            print("Model Config", self.config)
+            print(attribute_vocab_sizes, "Vocab Sizes")
+            print(enc_seq_length, "Enc Seq Length")
 
         return model, optimizer, train_dataset, num_features, attribute_dims, attribute_perspectives, trainX, trainY, case_lengths, case_labels, event_labels, attr_labels
     
