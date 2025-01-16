@@ -3,7 +3,7 @@ import warnings
 import argparse
 
 from experiments.report_experiments import Experiment_Anomaly_Percentage, Experiment_Batch_Size, Experiment_Finetuning_Fixed_Vector_Vector_Sizes, Experiment_Finetuning_T2V_Window_Vector_Sizes, Experiment_Finetuning_W2V_Window_Vector_Sizes, Experiment_Prefix, Experiment_Real_World_T2V_ATC, Experiment_Real_World_T2V_C, Experiment_Real_World_W2V_ATC, Experiment_Synthetic_All_Models, Experiment_Synthetic_All_Models_FV_OH, Experiment_Synthetic_All_Models_T2V, Experiment_Synthetic_All_Models_W2V, Experiment_Synthetic_Dataset
-from experiments.transformer_experiments import Experiment_Transformer_Debug
+from experiments.transformer_experiments import Experiment_Transformer_Debug, Experiment_Transformer_Prefix_Store
 from main_anomaly_detection import execute_runs, prepare_datasets
 
 # RCVDB: Supressing Sklearn LabelEncoder InconsistentVersionWarning as this seems an internal package issue
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     # If running main locally without passing arguments set run_local to true and configure the run manually 
     run_local=True
     if run_local:
-        experiment = 'Experiment_Transformer_Debug' #'Experiment_Real_World_T2V_C' #'Experiment_Prefix'
+        experiment = 'Experiment_Transformer_Prefix_Store'#, 'Experiment_Transformer_Debug' #'Experiment_Real_World_T2V_C' #'Experiment_Prefix'
         dataset_folder = 'transformer_debug' #'experiment_real_world_selected_models' #'all_datasets_synthetics'
         repeats = 1
 
@@ -88,6 +88,8 @@ if __name__ == '__main__':
     # Experiments to test transformer components
     elif experiment == "Experiment_Transformer_Debug":
         ads, run_name = Experiment_Transformer_Debug(repeats=repeats)
+    elif experiment == "Experiment_Transformer_Prefix_Store":
+        ads, run_name = Experiment_Transformer_Prefix_Store(repeats=repeats)
 
     # If a custom name is specified
     if args.experiment_name:

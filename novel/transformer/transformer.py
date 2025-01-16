@@ -4,6 +4,7 @@ from tqdm import tqdm
 from baseline.binet.core import NNAnomalyDetector
 from novel.transformer.components.prefix_store import PrefixStore
 from novel.transformer.components.transformer import TransformerModel
+from novel.utils.runtime_tracker import RuntimeTracker
 from utils import process_results
 from utils.dataset import Dataset
 
@@ -13,6 +14,7 @@ from tensorflow import data, train, GradientTape, function # type: ignore
 from keras.losses import sparse_categorical_crossentropy, log_cosh
 
 from novel.transformer.components.transformer import TransformerModel
+from utils.enums import Perspective
 
 
 class Transformer(NNAnomalyDetector):
@@ -21,6 +23,20 @@ class Transformer(NNAnomalyDetector):
     abbreviation = 'transformer'
     name = 'Transformer'
     supports_attributes = True
+
+    #     MTLFormer
+    # implement loss weighting 0.6,2,0.3
+    # batch size 64
+    # 0.002 learning rate with 100 epochs
+
+    # STLFormer
+    # Figure 2, good base to showcase internal architecture
+
+    # output_dim = 1, embed_dim = 36, num_heads = 4, ff_dim = 64
+
+    # Both seem to only use a single TransformerEncoder layer?
+    # In general making the model smaller seems to be a valid option
+
 
     config = dict(        
         # Model Paramerters
@@ -38,7 +54,14 @@ class Transformer(NNAnomalyDetector):
         beta_1 = 0.9,
         beta_2 = 0.98,
         epsilon = 1e-7, #1e-9,
-     ) 
+
+        perspective_weights = {
+            Perspective.ORDER: 1.0,
+            Perspective.ATTRIBUTE: 1.0,
+            Perspective.ARRIVAL_TIME: 1.0,
+            Perspective.WORKLOAD: 1.0,
+        }
+    ) 
     
     def __init__(self, config):
         super(Transformer, self).__init__(config)
@@ -69,6 +92,11 @@ class Transformer(NNAnomalyDetector):
         attribute_types = dataset.attribute_types
         attribute_perspectives = dataset.event_log.event_attribute_perspectives
         attribute_dims = np.array([1] * len(attribute_perspectives))
+
+        perspective_weights_dict = self.config.get('perspective_weights')
+        perspective_weights = [perspective_weights_dict[perspective] for perspective in attribute_perspectives]
+
+        print("Perspective Weights", perspective_weights)
 
         enc_seq_length = (case_length - 1) * num_features
         dec_seq_length = num_features
@@ -152,23 +180,25 @@ class Transformer(NNAnomalyDetector):
             print(attribute_vocab_sizes, "Vocab Sizes")
             print(enc_seq_length, "Enc Seq Length")
 
-        return model, optimizer, train_dataset, num_features, attribute_dims, attribute_perspectives, trainX, trainY, case_lengths, case_labels, event_labels, attr_labels
+        return model, optimizer, train_dataset, num_features, attribute_dims, attribute_perspectives, perspective_weights, trainX, trainY, case_lengths, case_labels, event_labels, attr_labels
     
-    def _train_and_predict(self, model, optimizer, train_dataset, num_features):
+    def _train_and_predict(self, model, optimizer, train_dataset, num_features, perspective_weights):
         print(num_features, "Num Features")
 
         train_loss = Mean(name='train_loss')
         train_loss.reset_states()
 
+        runtime_tracker = RuntimeTracker(batch_size=self.config.get('batch_size'))
+        runtime_tracker_inference = RuntimeTracker(batch_size=self.config.get('batch_size'))
         predictions = {key: [] for key in range(num_features)}
         targets = []
         losses = []
 
-        # Speeding up the training process
-        # @function
         def train_step(encoder_input, decoder_output):
             with GradientTape() as tape:
+                runtime_tracker_inference.start_iteration()
                 prediction_train_step = model(encoder_input, training=True)
+                runtime_tracker_inference.end_iteration()
 
                 # print(len(prediction_train_step), prediction_train_step[0].shape, decoder_output.shape)
 
@@ -179,15 +209,16 @@ class Transformer(NNAnomalyDetector):
 
                     # print(pred.shape, true.shape, pred.shape[1])
 
-                    if pred.shape[1] == 1:
+                    if pred.shape[1] == 1: # If the prediction is a numerical value
                         loss_attribute = log_cosh(true, pred)
-                    else:
+                    else: # If the prediction is a categorical value
                         # from_logits = False as the output layer of the model is softmax 
                         loss_attribute = sparse_categorical_crossentropy(true, pred, from_logits=False)
                     # print(loss_attribute.shape)
 
                     # RCVDB TODO: Could weight the different attribute by perspective
-                    loss_attributes.append(tf.reduce_mean(loss_attribute))
+                    loss_attribute = tf.reduce_mean(loss_attribute) * perspective_weights[i]
+                    loss_attributes.append(loss_attribute)
 
                 loss_train_step = tf.reduce_mean(loss_attributes)
 
@@ -200,6 +231,8 @@ class Transformer(NNAnomalyDetector):
 
         print(f"\nStart of training in {len(train_dataset)} batches")
         for step, (train_batchX, train_batchY) in enumerate(train_dataset):
+            runtime_tracker.start_iteration()
+
             model_input = train_batchX[:, num_features:] # Skip the starting event as it is always the same
             model_target = train_batchY[:, :]
 
@@ -213,20 +246,33 @@ class Transformer(NNAnomalyDetector):
 
             losses.append(loss_train_step.numpy())
             targets.append(model_target.numpy())
+            
+            runtime_tracker.end_iteration()
 
             if step % 25 == 0:
                 print(f'Step {step} Loss {train_loss.result():.4f}')
+        print(f'Step {step} Loss {train_loss.result():.4f}')
+
+        runtime_results_all = runtime_tracker.get_average_std_run_time()
+        runtime_results_inference = runtime_tracker_inference.get_average_std_run_time()
+        runtime_results = {
+            'overall_runtimes': runtime_results_all, 
+            'inference_runtimes': runtime_results_inference
+        }
+
+        print(f"Average runtime per batch: {runtime_results_all}")
+        print(f"Average runtime per model per batch: {runtime_results_inference}")
 
         # vstack the results, predictions are per attribute
         for prediction_key in predictions.keys():
             predictions[prediction_key] = np.vstack(predictions[prediction_key])
-        return predictions, np.vstack(losses), np.vstack(targets)
+        return predictions, np.vstack(losses), np.vstack(targets), runtime_results
 
     def train_and_predict(self, dataset:Dataset):
         debug_logging = self.config.get('debug_logging', False)
 
-        model, optimizer, train_dataset, num_features, attribute_dims, attribute_perspectives, trainX, trainY, case_lengths, case_labels, event_labels, attr_labels = self.model_fn(dataset)
-        predictions, losses, targets = self._train_and_predict(model, optimizer, train_dataset, num_features)
+        model, optimizer, train_dataset, num_features, attribute_dims, attribute_perspectives, perspective_weights, trainX, trainY, case_lengths, case_labels, event_labels, attr_labels = self.model_fn(dataset)
+        predictions, losses, targets, runtime_results = self._train_and_predict(model, optimizer, train_dataset, num_features, perspective_weights)
 
         # (traces, attributes, predictions)
         all_attribute_true = targets.T
@@ -295,7 +341,8 @@ class Transformer(NNAnomalyDetector):
                 attribute_names,
                 attribute_names,
                 trainX,
-                trainY)
+                trainY,
+                runtime_results)
         
         return results
     

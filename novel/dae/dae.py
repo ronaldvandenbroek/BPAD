@@ -375,4 +375,5 @@ class DAE(NNAnomalyDetector):
                 attribute_perspectives,
                 attribute_perspectives_original,
                 attribute_names,
-                attribute_names_original)
+                attribute_names_original,
+                None) # Runtime results are not built into DAE

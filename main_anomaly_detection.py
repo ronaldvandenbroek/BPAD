@@ -53,7 +53,8 @@ def fit_and_eva(dataset_name, dataset_folder, run_name, seed, ad, fit_kwargs=Non
         attribute_names, 
         attribute_names_original,
         processed_prefixes,
-        processed_events
+        processed_events,
+        runtime_results
     ) = ad.train_and_predict(dataset)
 
     end_time = time.time()
@@ -70,10 +71,13 @@ def fit_and_eva(dataset_name, dataset_folder, run_name, seed, ad, fit_kwargs=Non
     config['end_time'] = end_time
     config['run_time'] = run_time
     config['repeat'] = fit_kwargs.get('repeats', None)
+    config['use_prefix_errors'] = fit_kwargs.get('use_prefix_errors', None)
+    config['event_positional_encoding'] = fit_kwargs.get('event_positional_encoding', None)
     config['attribute_perspectives'] = list(attribute_perspectives)
     config['attribute_perspectives_original'] = list(attribute_perspectives_original)
     config['attribute_names'] = list(attribute_names)
     config['attribute_names_original'] = list(attribute_names_original)
+    config['runtime_results'] = runtime_results
     # config['processed_prefixes'] = list(processed_prefixes)
     # config['processed_events'] = list(processed_events)
     fs_save.save_config(config)
