@@ -9,12 +9,12 @@ from utils.enums import AttributeType
 # https://machinelearningmastery.com/joining-the-transformer-encoder-and-decoder-and-masking/
 
 class TransformerModel(Model):
-    def __init__(self, encoders, attribute_types, attribute_keys, attribute_vocab_sizes, event_positional_encoding, enc_seq_length, num_heads, dim_queries_keys, dim_values, dim_model, dim_feed_forward, num_layers, dropout_rate, **kwargs):
+    def __init__(self, encoders, attribute_types, attribute_vocab_sizes, attribute_keys_input, attribute_keys_output, event_positional_encoding, enc_seq_length, num_heads, dim_queries_keys, dim_values, dim_model, dim_feed_forward, num_layers, dropout_rate, **kwargs):
         super(TransformerModel, self).__init__(**kwargs)
 
         # Set up the input encoding
         self.input_encoding = TransformerWord2VecEncoder(
-            attribute_keys=attribute_keys,
+            attribute_keys=attribute_keys_input,
             sequence_length=enc_seq_length,
             encoders=encoders,
             dim_model=dim_model,
@@ -35,9 +35,9 @@ class TransformerModel(Model):
 
         # Set up the multi-task layers
         # Every attribute should be a seperate task
-        print("Multi-Task Outputs:")
+        # print("Multi-Task Outputs:")
         self.multi_task_outputs = []
-        for attribute_type, attribute_key, attribute_vocab_size in zip(attribute_types, attribute_keys, attribute_vocab_sizes):
+        for attribute_type, attribute_key, attribute_vocab_size in zip(attribute_types, attribute_keys_output, attribute_vocab_sizes):
             print(attribute_type, attribute_key, attribute_vocab_size)
             if attribute_type == AttributeType.NUMERICAL:
                 # If numerical: Output a single value

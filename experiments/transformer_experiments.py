@@ -28,15 +28,20 @@ def Experiment_Transformer_Prefix_Store(repeats=1):
     prefix = True
     categorical_encoding = EncodingCategorical.TOKENIZER
     numerical_encoding = EncodingNumerical.MIN_MAX_SCALING
-    event_positional_encoding = True
-    case_limit = 1000 # Capping the training data for development purposes, set to None for full training
-    debug_logging = False
     perspective_weights = {
         Perspective.ORDER: 1.0,
         Perspective.ATTRIBUTE: 1.0,
         Perspective.ARRIVAL_TIME: 0.2,
         Perspective.WORKLOAD: 0.1,
     }
+
+    # Ablation study
+    event_positional_encoding = True
+    multi_task = False
+
+    # Debugging/Development
+    case_limit = 1000 # Capping the training data for development purposes, set to None for full training
+    debug_logging = False
 
     run_name = 'Experiment_Transformer_Prefix_Store'
 
@@ -47,10 +52,11 @@ def Experiment_Transformer_Prefix_Store(repeats=1):
             batch_size=batch_size,
             categorical_encoding=categorical_encoding, # Internally the model uses W2V encoding vector_size is determined by dim_model
             numerical_encoding=numerical_encoding,
+            perspective_weights=perspective_weights,
             # Ablation study
             event_positional_encoding=event_positional_encoding,
+            multi_task=multi_task,
             use_prefix_errors=True,
-            perspective_weights=perspective_weights,
             # Debugging/Development
             case_limit=case_limit, 
             debug_logging=debug_logging,
@@ -61,10 +67,11 @@ def Experiment_Transformer_Prefix_Store(repeats=1):
             batch_size=batch_size,
             categorical_encoding=categorical_encoding, # Internally the model uses W2V encoding vector_size is determined by dim_model
             numerical_encoding=numerical_encoding,
+            perspective_weights=perspective_weights,
             # Ablation study
             event_positional_encoding=event_positional_encoding,
+            multi_task=multi_task,
             use_prefix_errors=False,
-            perspective_weights=perspective_weights,
             # Debugging/Development
             case_limit=case_limit,
             debug_logging=debug_logging,
