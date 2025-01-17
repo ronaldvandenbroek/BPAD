@@ -367,8 +367,10 @@ class Dataset(object):
                                               start_index=dictionary_starting_index,
                                               start_symbol=event_log.start_symbol,
                                               end_symbol=event_log.end_symbol)
-
+                
+                # print(f'Encoding {key} with dictionary size {dictionary_size}')
                 feature_columns[key] = encoder.encode_list(feature_columns[key])
+                # print(encoder.encodings.keys())
                 encoders[key] = encoder
                 
                 if self.categorical_encoding != EncodingCategorical.TOKENIZER:

@@ -41,11 +41,10 @@ if __name__ == '__main__':
     # If running main locally without passing arguments set run_local to true and configure the run manually 
     run_local=True
     if run_local:
-        experiment = 'Experiment_Transformer_Prefix_Store'#, 'Experiment_Transformer_Debug' #'Experiment_Real_World_T2V_C' #'Experiment_Prefix'
-        dataset_folder = 'transformer_debug' #'experiment_real_world_selected_models' #'all_datasets_synthetics'
+        experiment = 'Experiment_Transformer_Debug' #'Experiment_Transformer_Prefix_Store' #, 'Experiment_Transformer_Debug' #'Experiment_Real_World_T2V_C' #'Experiment_Prefix'
+        # dataset_folder = 'transformer_debug_synthetic' #'experiment_real_world_selected_models' #'all_datasets_synthetics'
+        dataset_folder = 'transformer_debug_real_world'
         repeats = 1
-
-    dataset_names = prepare_datasets(dataset_folder)
 
     # Configure the experiment based on the provided arguments
     ads = None
@@ -87,13 +86,17 @@ if __name__ == '__main__':
 
     # Experiments to test transformer components
     elif experiment == "Experiment_Transformer_Debug":
-        ads, run_name = Experiment_Transformer_Debug(repeats=repeats)
+        ads, run_name, dataset_folder = Experiment_Transformer_Debug(repeats=repeats, dataset_folder=dataset_folder)
     elif experiment == "Experiment_Transformer_Prefix_Store":
-        ads, run_name = Experiment_Transformer_Prefix_Store(repeats=repeats)
+        ads, run_name, dataset_folder = Experiment_Transformer_Prefix_Store(repeats=repeats)
 
     # If a custom name is specified
     if args.experiment_name:
         run_name = args.experiment_name
+
+    print(f"Running experiment: {experiment}")
+    print(f'Dataset folder: {dataset_folder}')
+    dataset_names = prepare_datasets(dataset_folder)
 
     run_name = f"{run_name}_{get_random_id()}"
 
