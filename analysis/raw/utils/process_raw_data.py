@@ -19,11 +19,15 @@ def calculate_f1(precision, recall):
     else:
         return 0
 
-def calculate_scores(y_trues, pred_probs, perspective):
-    print("Calculating scores for perspective", perspective)
-    print(y_trues[perspective].shape, pred_probs[perspective].shape)
+def calculate_scores(y_trues, pred_probs, perspective, window_buckets=100):
+
+    # print("Calculating scores for perspective", perspective)
+    # print(y_trues[perspective].shape, pred_probs[perspective].shape)
     y_true = y_trues[perspective][:]
     pred_prob = pred_probs[perspective][:]
+
+    window_size = len(y_true) // window_buckets
+    # print("Window size", window_size)
 
     # ROC-AUC
     try:
@@ -36,14 +40,42 @@ def calculate_scores(y_trues, pred_probs, perspective):
 
     # F1-Score
     precision, recall, thresholds = precision_recall_curve(y_true=y_true, probas_pred=pred_prob)
-    # print(precision.shape)
-    # print(recall.shape)
     f1s=calculate_f1(precision,recall)
     f1s[np.isnan(f1s)] = 0
-    # print(f1s)
     f1_best_index=np.argmax(f1s)
-    # recall_best_index=np.mean(recall)
-    # precision_best_index=np.mean(precision)
+
+    best_f1 = f1s[f1_best_index]
+    best_threshold = thresholds[f1_best_index]
+    best_precision = precision[f1_best_index]
+    best_recall = recall[f1_best_index]
+
+    print(f"Best Overall F1: {best_f1:.3f}, Precision: {best_precision:.3f}, Recall: {best_recall:.3f}, Threshold: {best_threshold:.3f}")
+
+    overall_window_f1s = []
+    overall_window_thresholds = []
+    overall_window_precisions = []
+    overall_window_recalls = []
+    for i in range(0, len(y_true), window_size):
+        window_y_true = y_true[i:i+window_size]
+        window_pred_prob = pred_prob[i:i+window_size]
+
+        window_precision, window_recall, window_thresholds = precision_recall_curve(y_true=window_y_true, probas_pred=window_pred_prob)
+        window_f1s=calculate_f1(window_precision, window_recall)
+        window_f1s[np.isnan(window_f1s)] = 0
+        window_f1_best_index=np.argmax(window_f1s)
+
+        overall_window_f1s.append(window_f1s[window_f1_best_index])
+        overall_window_thresholds.append(window_thresholds[window_f1_best_index])
+        overall_window_precisions.append(window_precision[window_f1_best_index])
+        overall_window_recalls.append(window_recall[window_f1_best_index])
+
+    mean_window_f1 = np.mean(overall_window_f1s)
+    mean_window_precision = np.mean(overall_window_precisions)
+    mean_window_recall = np.mean(overall_window_recalls)
+
+    print(f"Mean Window  F1: {mean_window_f1:.3f}, Precision: {mean_window_precision:.3f}, Recall: {mean_window_recall:.3f}", "Min Threshold:", min(overall_window_thresholds), "Max Threshold:", max(overall_window_thresholds))
+    # rounded_window_thresholds = [f"{threshold:.3f}" for threshold in overall_window_thresholds]
+    # print("Window Thresholds:", ', '.join(rounded_window_thresholds))
 
     return roc_auc, pr_auc, f1s[f1_best_index], np.mean(precision), np.mean(recall)
 
@@ -244,13 +276,13 @@ def reshape_data_for_scoring(results, perspective_label_indices, buckets):
     return labels_DAE_attribute, labels_DAE_event, labels_DAE_trace, result_DAE_attribute, result_DAE_event, result_DAE_trace
 
 def score(run):
-    results = run['results']
+    pred_probs_levels = run['results']
     config = run['config']
     timestamp = run['timestamp']
     index = run['index']
     buckets = run['buckets']
 
-    sorted_results = dict(sorted(results.items(), key=lambda x: extract_number(x[0])))
+    sorted_results = dict(sorted(pred_probs_levels.items(), key=lambda x: extract_number(x[0])))
     perspective_label_indices = get_indexes_by_value(config['attribute_perspectives_original'])
     # print("perspective_label_indices", perspective_label_indices)
 
@@ -272,14 +304,18 @@ def score(run):
     print("result_DAE_trace", len(result_DAE_trace), result_DAE_trace[0].shape)
 
     level = ['trace', 'event', 'attribute']
-    datasets = [labels_DAE_trace, labels_DAE_event, labels_DAE_attribute]
-    results = [result_DAE_trace, result_DAE_event, result_DAE_attribute]
+    y_true_levels = [labels_DAE_trace, labels_DAE_event, labels_DAE_attribute]
+    pred_probs_levels = [result_DAE_trace, result_DAE_event, result_DAE_attribute]
     perspectives = Perspective.keys()
-
+    
+    # RCVDB: TODO calculate f1 score for each level over all perspectives
+    # RCVDB: also for event and attribute levels the irrelevant events and attributes should be removed
+    # RCVDB: Rework reshape_data_for_scoring as it is hardcoded for DAE
     scores = []
-    for (level, dataset, result), perspective in itertools.product(zip(level, datasets, results), perspectives):
+    for (level, y_trues, pred_probs), perspective in itertools.product(zip(level, y_true_levels, pred_probs_levels), perspectives):
+        print("Calculating scores for: Level: ", level, " Perspective: ", perspective)
         try:
-            roc_auc, pr_auc, f1, precision, recall = calculate_scores(dataset, result, perspective)
+            roc_auc, pr_auc, f1, precision, recall = calculate_scores(y_trues, pred_probs, perspective)
         except Exception as e:
             print(level, perspective)
             print(e)
