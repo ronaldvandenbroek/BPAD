@@ -37,17 +37,18 @@ def Experiment_Transformer_Prefix_Store(repeats=1):
 
     # Ablation study
     event_positional_encoding = True
-    multi_task = False
+    multi_task = True
 
     # Debugging/Development
-    case_limit = 1000 # Capping the training data for development purposes, set to None for full training
+    case_limit = None # Capping the training data for development purposes, set to None for full training
     debug_logging = False
 
     run_name = 'Experiment_Transformer_Prefix_Store'
 
     ads = []
     for _ in range(repeats):
-        ads.append(dict(ad=Transformer, fit_kwargs=dict( 
+        ads.append(dict(ad=Transformer, fit_kwargs=dict(
+            model_name='transformer_prefix_store_true', 
             prefix=prefix,
             batch_size=batch_size,
             categorical_encoding=categorical_encoding, # Internally the model uses W2V encoding vector_size is determined by dim_model
@@ -62,7 +63,8 @@ def Experiment_Transformer_Prefix_Store(repeats=1):
             debug_logging=debug_logging,
             )))
     for _ in range(repeats):
-        ads.append(dict(ad=Transformer, fit_kwargs=dict( 
+        ads.append(dict(ad=Transformer, fit_kwargs=dict(
+            model_name='transformer_prefix_store_false',  
             prefix=prefix,
             batch_size=batch_size,
             categorical_encoding=categorical_encoding, # Internally the model uses W2V encoding vector_size is determined by dim_model

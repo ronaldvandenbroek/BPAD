@@ -62,7 +62,7 @@ def fit_and_eva(dataset_name, dataset_folder, run_name, seed, ad, fit_kwargs=Non
     print(f'Runtime: {run_time}')
 
     config = fit_kwargs
-    config['model'] = ad.name
+    config['model'] = fit_kwargs.get('model_name',  ad.name)
     config['dataset'] = dataset_name
     config['dataset_folder'] = dataset_folder
     config['seed'] = seed

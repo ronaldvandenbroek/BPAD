@@ -304,13 +304,13 @@ def score(run):
             'recall':recall,
             'run_time': config['run_time'],
             # Config
-            'batch_size':config['batch_size'],
-            'prefix':config['prefix'],
-            'buckets':config['bucket_boundaries'],
-            'categorical_encoding':config['categorical_encoding'],
-            'numerical_encoding':config['numerical_encoding'],
-            'vector_size':config['vector_size'],
-            'window_size':config['window_size'] 
+            'batch_size': config['batch_size'],
+            'prefix': config['prefix'],
+            'buckets': config.get('bucket_boundaries', None),
+            'categorical_encoding': config.get('categorical_encoding', 'None'),
+            'numerical_encoding': config.get('numerical_encoding', 'None'),
+            'vector_size': config.get('vector_size', 'None'),
+            'window_size': config.get('window_size', 'None'),
         })
 
 
