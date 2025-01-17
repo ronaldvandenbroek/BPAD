@@ -24,33 +24,20 @@ class Transformer(NNAnomalyDetector):
     name = 'Transformer'
     supports_attributes = True
 
-    #     MTLFormer
-    # implement loss weighting 0.6,2,0.3
-    # batch size 64
-    # 0.002 learning rate with 100 epochs
-
-    # STLFormer
-    # Figure 2, good base to showcase internal architecture
-
-    # output_dim = 1, embed_dim = 36, num_heads = 4, ff_dim = 64
-
-    # Both seem to only use a single TransformerEncoder layer?
-    # In general making the model smaller seems to be a valid option
-
-
-    config = dict(        
+    # MTLFormer + STLFormer taken as baseline hyperparameter configuration
+    config = dict(         
         # Model Paramerters
-        num_heads = 8,  # Number of self-attention heads
-        dim_queries_keys = 32, #64,  # Dimensionality of the linearly projected queries and keys
-        dim_values = 32, #64,  # Dimensionality of the linearly projected values
-        dim_model = 256, #512,  # Dimensionality of model layers' outputs
-        dim_feed_forward = 512, #2048,  # Dimensionality of the inner fully connected layer
-        num_layers = 2, #3, #6,  # Number of layers in the encoder/decoder stack
+        num_heads = 4, # 8,             # Number of self-attention heads
+        dim_queries_keys = 36, #64,     # Dimensionality of the linearly projected queries and keys
+        dim_values = 36, #64,           # Dimensionality of the linearly projected values
+        dim_model = 128, #256,          # Dimensionality of model layers' outputs
+        dim_feed_forward = 64, #256       # Dimensionality of the inner fully connected layer
+        num_layers = 1, #2,             # Number of layers in the encoder/decoder stack
+        dropout_rate = 0.1,             # Dropout rate
 
         # Training Parameters
-        learning_rate = 0.001, # 0.0001,
-        dropout_rate = 0.1,
-        batch_size = 8,
+        learning_rate = 0.002, # Learning rate based on 100 epochs thus for 1 epoch it might need to change.
+        batch_size = 64,
         beta_1 = 0.9,
         beta_2 = 0.98,
         epsilon = 1e-7, #1e-9,
