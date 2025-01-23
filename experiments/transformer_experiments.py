@@ -263,7 +263,7 @@ def Experiment_Transformer_Event_Multi_Task(repeats=1, dataset_folder = 'transfo
             )))
     return ads, run_name, dataset_folder
 
-def Experiment_Transformer_Perspective_Weigths(repeats=1, dataset_folder = 'transformer_debug_synthetic'):
+def Experiment_Transformer_Perspective_Weights(repeats=1, dataset_folder = 'transformer_debug_synthetic'):
     # Static configuration
     batch_size = 32 #8
     prefix = True
@@ -279,7 +279,7 @@ def Experiment_Transformer_Perspective_Weigths(repeats=1, dataset_folder = 'tran
     case_limit = None # Capping the training data for development purposes, set to None for full training
     debug_logging = False
 
-    run_name = 'Experiment_Transformer_Perspective_Weigths'
+    run_name = 'Experiment_Transformer_Perspective_Weights'
     
     ads = []
     for _ in range(repeats):

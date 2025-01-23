@@ -3,7 +3,7 @@ import warnings
 import argparse
 
 from experiments.report_experiments import Experiment_Anomaly_Percentage, Experiment_Batch_Size, Experiment_Finetuning_Fixed_Vector_Vector_Sizes, Experiment_Finetuning_T2V_Window_Vector_Sizes, Experiment_Finetuning_W2V_Window_Vector_Sizes, Experiment_Prefix, Experiment_Real_World_T2V_ATC, Experiment_Real_World_T2V_C, Experiment_Real_World_W2V_ATC, Experiment_Synthetic_All_Models, Experiment_Synthetic_All_Models_FV_OH, Experiment_Synthetic_All_Models_T2V, Experiment_Synthetic_All_Models_W2V, Experiment_Synthetic_Dataset
-from experiments.transformer_experiments import Experiment_Synthetic_Transformer, Experiment_Transformer_Debug, Experiment_Transformer_Event_Multi_Task, Experiment_Transformer_Event_Positional_Encoding, Experiment_Transformer_Perspective_Weigths, Experiment_Transformer_Prefix_Store
+from experiments.transformer_experiments import Experiment_Synthetic_Transformer, Experiment_Transformer_Debug, Experiment_Transformer_Event_Multi_Task, Experiment_Transformer_Event_Positional_Encoding, Experiment_Transformer_Perspective_Weights, Experiment_Transformer_Prefix_Store
 from main_anomaly_detection import execute_runs, prepare_datasets
 
 # RCVDB: Supressing Sklearn LabelEncoder InconsistentVersionWarning as this seems an internal package issue
@@ -95,8 +95,8 @@ if __name__ == '__main__':
         ads, run_name, dataset_folder = Experiment_Transformer_Event_Positional_Encoding(repeats=repeats, dataset_folder=dataset_folder)
     elif experiment == "Experiment_Transformer_Event_Multi_Task":
         ads, run_name, dataset_folder = Experiment_Transformer_Event_Multi_Task(repeats=repeats, dataset_folder=dataset_folder)
-    elif experiment == "Experiment_Transformer_Perspective_Weigths":
-        ads, run_name, dataset_folder = Experiment_Transformer_Perspective_Weigths(repeats=repeats, dataset_folder=dataset_folder)
+    elif experiment == "Experiment_Transformer_Perspective_Weights":
+        ads, run_name, dataset_folder = Experiment_Transformer_Perspective_Weights(repeats=repeats, dataset_folder=dataset_folder)
     # Full Dataset Runs
     elif experiment == "Experiment_Synthetic_Transformer":
         ads, run_name, dataset_folder = Experiment_Synthetic_Transformer(repeats=repeats, dataset_folder=dataset_folder)

@@ -323,18 +323,18 @@ class Transformer(NNAnomalyDetector):
             predictions = {key: [] for key in range(num_features)}
             losses = []
             targets = []
-            attribute_runtime_results = []
+            attribute_runtime_results_list = []
             for i, (attribute_model, attribute_optimizer, attribute_train_dataset) in enumerate(zip(model, optimizer, train_dataset)):
                 attribute_predictions, attribute_losses, attribute_targets, attribute_runtime_results = self._train_and_predict(attribute_model, attribute_optimizer, attribute_train_dataset, num_features, perspective_weights, multi_task)
                 predictions[i] = attribute_predictions
                 losses.append(attribute_losses)
                 targets.append(attribute_targets)
-                attribute_runtime_results.append(attribute_runtime_results)
+                attribute_runtime_results_list.append(attribute_runtime_results)
 
             losses = np.vstack(losses)
             targets = np.vstack(targets)
             targets = targets.T
-            runtime_results = RuntimeTracker.sequentially_merge_runtimes(attribute_runtime_results)
+            runtime_results = RuntimeTracker.sequentially_merge_runtimes(attribute_runtime_results_list)
 
         # (traces, attributes, predictions)
         all_attribute_true = targets.T

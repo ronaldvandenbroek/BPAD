@@ -23,4 +23,4 @@ conda activate rcvdb-thesis-bpad
 
 cd $HOME/Thesis/BPAD/
 
-python main.py --experiment "Experiment_Transformer_Perspective_Weigths" --repeats 1 --experiment_name "Experiment_Transformer_Perspective_Weigths_HPC_JOB" --dataset_folder "experiment_synthetic_dataset"
+python main.py --experiment "Experiment_Transformer_Perspective_Weights" --repeats 1 --experiment_name "Experiment_Transformer_Perspective_Weights_HPC_JOB" --dataset_folder "experiment_synthetic_dataset"
