@@ -1,0 +1,9 @@
+model,level,rank_mean,rank_std,f1_mean,f1_std
+transformer_event_pos_enc_false,attribute,1.0,0.0,0.09,0.01
+transformer_event_pos_enc_true,attribute,2.0,0.0,0.09,0.01
+transformer_event_pos_enc_false,combined,1.0,0.0,0.21,0.02
+transformer_event_pos_enc_true,combined,2.0,0.0,0.21,0.02
+transformer_event_pos_enc_false,event,1.0,0.0,0.13,0.01
+transformer_event_pos_enc_true,event,2.0,0.0,0.13,0.01
+transformer_event_pos_enc_false,trace,1.0,0.0,0.42,0.03
+transformer_event_pos_enc_true,trace,2.0,0.0,0.42,0.03

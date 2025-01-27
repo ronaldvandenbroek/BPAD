@@ -5,6 +5,19 @@ from sklearn.metrics import average_precision_score, precision_recall_curve, roc
 
 from utils.enums import Perspective
 
+def largest_false_streak(boolean_array):
+    max_streak = 0
+    current_streak = 0
+    
+    for value in boolean_array:
+        if not value:
+            current_streak += 1
+            max_streak = max(max_streak, current_streak)
+        else:
+            current_streak = 0
+            
+    return max_streak
+
 def normalize(array):
     array = np.array(array)
     return np.interp(array, (array.min(), array.max()), (0, 1))
@@ -19,15 +32,19 @@ def calculate_f1(precision, recall):
     else:
         return 0
 
-def calculate_scores(y_trues, pred_probs, perspective, window_buckets=100):
+def calculate_scores(y_trues, pred_probs, perspective, window_buckets=59):
 
     # print("Calculating scores for perspective", perspective)
     # print(y_trues[perspective].shape, pred_probs[perspective].shape)
     y_true = y_trues[perspective][:]
     pred_prob = pred_probs[perspective][:]
-
+    # RCVDB TODO: If synthetic then a window bucket amount of 59 is used as it cleanly divides the 56227 traces
     window_size = len(y_true) // window_buckets
-    # print("Window size", window_size)
+    # window_size = len(y_true) // window_buckets
+    #overlap = int(window_size * 0.1)
+    #rest = window_size % overlap
+
+    #print("Largest length of Falses: ", largest_false_streak(y_true), "Window Size: ", window_size, "Overlap: ", overlap, "Rest: ", rest)
 
     # ROC-AUC
     try:
@@ -51,29 +68,32 @@ def calculate_scores(y_trues, pred_probs, perspective, window_buckets=100):
 
     print(f"Best Overall F1: {best_f1:.3f}, Precision: {best_precision:.3f}, Recall: {best_recall:.3f}, Threshold: {best_threshold:.3f}")
 
-    overall_window_f1s = []
-    overall_window_thresholds = []
-    overall_window_precisions = []
-    overall_window_recalls = []
-    for i in range(0, len(y_true), window_size):
-        window_y_true = y_true[i:i+window_size]
-        window_pred_prob = pred_prob[i:i+window_size]
+    # overall_window_f1s = []
+    # overall_window_thresholds = []
+    # overall_window_precisions = []
+    # overall_window_recalls = []
+    # for i in range(0, len(y_true), window_size):
+    #     window_y_true = y_true[i:i+window_size]
+    #     window_pred_prob = pred_prob[i:i+window_size]
+        
+    #     # if len(window_y_true) != window_size:
+    #     #     print(len(window_y_true))
 
-        window_precision, window_recall, window_thresholds = precision_recall_curve(y_true=window_y_true, probas_pred=window_pred_prob)
-        window_f1s=calculate_f1(window_precision, window_recall)
-        window_f1s[np.isnan(window_f1s)] = 0
-        window_f1_best_index=np.argmax(window_f1s)
+    #     window_precision, window_recall, window_thresholds = precision_recall_curve(y_true=window_y_true, probas_pred=window_pred_prob)
+    #     window_f1s=calculate_f1(window_precision, window_recall)
+    #     window_f1s[np.isnan(window_f1s)] = 0
+    #     window_f1_best_index=np.argmax(window_f1s)
 
-        overall_window_f1s.append(window_f1s[window_f1_best_index])
-        overall_window_thresholds.append(window_thresholds[window_f1_best_index])
-        overall_window_precisions.append(window_precision[window_f1_best_index])
-        overall_window_recalls.append(window_recall[window_f1_best_index])
+    #     overall_window_f1s.append(window_f1s[window_f1_best_index])
+    #     overall_window_thresholds.append(window_thresholds[window_f1_best_index])
+    #     overall_window_precisions.append(window_precision[window_f1_best_index])
+    #     overall_window_recalls.append(window_recall[window_f1_best_index])
 
-    mean_window_f1 = np.mean(overall_window_f1s)
-    mean_window_precision = np.mean(overall_window_precisions)
-    mean_window_recall = np.mean(overall_window_recalls)
+    # mean_window_f1 = np.mean(overall_window_f1s)
+    # mean_window_precision = np.mean(overall_window_precisions)
+    # mean_window_recall = np.mean(overall_window_recalls)
 
-    print(f"Mean Window  F1: {mean_window_f1:.3f}, Precision: {mean_window_precision:.3f}, Recall: {mean_window_recall:.3f}", "Min Threshold:", min(overall_window_thresholds), "Max Threshold:", max(overall_window_thresholds))
+    # print(f"Mean Window  F1: {mean_window_f1:.3f}, Precision: {mean_window_precision:.3f}, Recall: {mean_window_recall:.3f}, Min Threshold: {min(overall_window_thresholds):.3f}, Max Threshold: {max(overall_window_thresholds):.3f}")
     # rounded_window_thresholds = [f"{threshold:.3f}" for threshold in overall_window_thresholds]
     # print("Window Thresholds:", ', '.join(rounded_window_thresholds))
 

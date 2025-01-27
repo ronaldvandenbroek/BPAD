@@ -1,0 +1,5 @@
+dataset_short_name,categorical_encoding,level,f1_mean,f1_std,f1_rank
+large/0.25,Tokenizer,attribute,0.055033228773004476,0.04800067930599427,1.0
+large/0.25,Tokenizer,event,0.07954964613325269,0.05279608590258709,1.0
+large/0.25,Tokenizer,trace,0.27364430906107795,0.1427239179117263,1.0
+large/0.25,Tokenizer,combined,0.13607572798911172,0.131818615861107,1.0
