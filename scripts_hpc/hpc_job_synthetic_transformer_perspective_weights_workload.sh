@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=synthetic_transformer_perspective_weights
+#SBATCH --job-name=synthetic_transformer_perspective_weights_workload
 #SBATCH --output=scripts_hpc/log/test_python-%j.log
 #SBATCH --partition=tue.gpu.q         
 #SBATCH --time=4:00:00
@@ -23,4 +23,4 @@ conda activate rcvdb-thesis-bpad
 
 cd $HOME/Thesis/BPAD/
 
-python main.py --experiment "Experiment_Transformer_Perspective_Weights" --repeats 1 --experiment_name "Experiment_Transformer_Perspective_Weights_HPC_JOB" --dataset_folder "experiment_synthetic_dataset"
+python main.py --experiment "Experiment_Transformer_Perspective_Weights_Workload" --repeats 1 --experiment_name "Experiment_Transformer_Perspective_Weights_Workload" --dataset_folder "experiment_synthetic_dataset"

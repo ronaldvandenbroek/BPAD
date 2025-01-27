@@ -263,7 +263,8 @@ def Experiment_Transformer_Event_Multi_Task(repeats=1, dataset_folder = 'transfo
             )))
     return ads, run_name, dataset_folder
 
-def Experiment_Transformer_Perspective_Weights(repeats=1, dataset_folder = 'transformer_debug_synthetic'):
+
+def Experiment_Transformer_Perspective_Weights_Order(repeats=1, dataset_folder = 'transformer_debug_synthetic'):
     # Static configuration
     batch_size = 32 #8
     prefix = True
@@ -279,21 +280,21 @@ def Experiment_Transformer_Perspective_Weights(repeats=1, dataset_folder = 'tran
     case_limit = None # Capping the training data for development purposes, set to None for full training
     debug_logging = False
 
-    run_name = 'Experiment_Transformer_Perspective_Weights'
+    run_name = 'Experiment_Transformer_Perspective_Weights_v2'
     
     ads = []
     for _ in range(repeats):
         ads.append(dict(ad=Transformer, fit_kwargs=dict(
-            model_name='transformer_order_1', 
+            model_name='transformer_order_only', 
             prefix=prefix,
             batch_size=batch_size,
             categorical_encoding=categorical_encoding, # Internally the model uses W2V encoding vector_size is determined by dim_model
             numerical_encoding=numerical_encoding,
             perspective_weights = {
                 Perspective.ORDER: 1.0,
-                Perspective.ATTRIBUTE: 1.0,
-                Perspective.ARRIVAL_TIME: 1.0,
-                Perspective.WORKLOAD: 1.0,
+                Perspective.ATTRIBUTE: 0,
+                Perspective.ARRIVAL_TIME: 0,
+                Perspective.WORKLOAD: 0,
             },
             # Ablation study
             event_positional_encoding=event_positional_encoding,
@@ -357,6 +358,321 @@ def Experiment_Transformer_Perspective_Weights(repeats=1, dataset_folder = 'tran
                 Perspective.ATTRIBUTE: 1.0,
                 Perspective.ARRIVAL_TIME: 1.0,
                 Perspective.WORKLOAD: 1.0,
+            },
+            # Ablation study
+            event_positional_encoding=event_positional_encoding,
+            multi_task=multi_task,
+            use_prefix_errors=use_prefix_errors,
+            # Debugging/Development
+            case_limit=case_limit, 
+            debug_logging=debug_logging,
+            )))
+    return ads, run_name, dataset_folder
+
+def Experiment_Transformer_Perspective_Weights_Attribute(repeats=1, dataset_folder = 'transformer_debug_synthetic'):
+    # Static configuration
+    batch_size = 32 #8
+    prefix = True
+    categorical_encoding = EncodingCategorical.TOKENIZER
+    numerical_encoding = EncodingNumerical.MIN_MAX_SCALING
+    
+    # Ablation study
+    event_positional_encoding = True
+    use_prefix_errors = True
+    multi_task=True
+
+    # Debugging/Development
+    case_limit = None # Capping the training data for development purposes, set to None for full training
+    debug_logging = False
+
+    run_name = 'Experiment_Transformer_Perspective_Weights_v2'
+    
+    ads = []
+    for _ in range(repeats):
+        ads.append(dict(ad=Transformer, fit_kwargs=dict(
+            model_name='transformer_attribute_only', 
+            prefix=prefix,
+            batch_size=batch_size,
+            categorical_encoding=categorical_encoding, # Internally the model uses W2V encoding vector_size is determined by dim_model
+            numerical_encoding=numerical_encoding,
+            perspective_weights = {
+                Perspective.ORDER: 0,
+                Perspective.ATTRIBUTE: 1.0,
+                Perspective.ARRIVAL_TIME: 0,
+                Perspective.WORKLOAD: 0,
+            },
+            # Ablation study
+            event_positional_encoding=event_positional_encoding,
+            multi_task=multi_task,
+            use_prefix_errors=use_prefix_errors,
+            # Debugging/Development
+            case_limit=case_limit, 
+            debug_logging=debug_logging,
+            )))
+    for _ in range(repeats):
+        ads.append(dict(ad=Transformer, fit_kwargs=dict(
+            model_name='transformer_attribute_2', 
+            prefix=prefix,
+            batch_size=batch_size,
+            categorical_encoding=categorical_encoding, # Internally the model uses W2V encoding vector_size is determined by dim_model
+            numerical_encoding=numerical_encoding,
+            perspective_weights = {
+                Perspective.ORDER: 1.0,
+                Perspective.ATTRIBUTE: 2.0,
+                Perspective.ARRIVAL_TIME: 1.0,
+                Perspective.WORKLOAD: 1.0,
+            },
+            # Ablation study
+            event_positional_encoding=event_positional_encoding,
+            multi_task=multi_task,
+            use_prefix_errors=use_prefix_errors,
+            # Debugging/Development
+            case_limit=case_limit, 
+            debug_logging=debug_logging,
+            )))
+    for _ in range(repeats):
+        ads.append(dict(ad=Transformer, fit_kwargs=dict(
+            model_name='transformer_attribute_4', 
+            prefix=prefix,
+            batch_size=batch_size,
+            categorical_encoding=categorical_encoding, # Internally the model uses W2V encoding vector_size is determined by dim_model
+            numerical_encoding=numerical_encoding,
+            perspective_weights = {
+                Perspective.ORDER: 1.0,
+                Perspective.ATTRIBUTE: 4.0,
+                Perspective.ARRIVAL_TIME: 1.0,
+                Perspective.WORKLOAD: 1.0,
+            },
+            # Ablation study
+            event_positional_encoding=event_positional_encoding,
+            multi_task=multi_task,
+            use_prefix_errors=use_prefix_errors,
+            # Debugging/Development
+            case_limit=case_limit, 
+            debug_logging=debug_logging,
+            )))
+    for _ in range(repeats):
+        ads.append(dict(ad=Transformer, fit_kwargs=dict(
+            model_name='transformer_attribute_8', 
+            prefix=prefix,
+            batch_size=batch_size,
+            categorical_encoding=categorical_encoding, # Internally the model uses W2V encoding vector_size is determined by dim_model
+            numerical_encoding=numerical_encoding,
+            perspective_weights = {
+                Perspective.ORDER: 1.0,
+                Perspective.ATTRIBUTE: 8.0,
+                Perspective.ARRIVAL_TIME: 1.0,
+                Perspective.WORKLOAD: 1.0,
+            },
+            # Ablation study
+            event_positional_encoding=event_positional_encoding,
+            multi_task=multi_task,
+            use_prefix_errors=use_prefix_errors,
+            # Debugging/Development
+            case_limit=case_limit, 
+            debug_logging=debug_logging,
+            )))
+    return ads, run_name, dataset_folder
+
+def Experiment_Transformer_Perspective_Weights_Arrival_Time(repeats=1, dataset_folder = 'transformer_debug_synthetic'):
+    # Static configuration
+    batch_size = 32 #8
+    prefix = True
+    categorical_encoding = EncodingCategorical.TOKENIZER
+    numerical_encoding = EncodingNumerical.MIN_MAX_SCALING
+    
+    # Ablation study
+    event_positional_encoding = True
+    use_prefix_errors = True
+    multi_task=True
+
+    # Debugging/Development
+    case_limit = None # Capping the training data for development purposes, set to None for full training
+    debug_logging = False
+
+    run_name = 'Experiment_Transformer_Perspective_Weights_v2'
+    
+    ads = []
+    for _ in range(repeats):
+        ads.append(dict(ad=Transformer, fit_kwargs=dict(
+            model_name='transformer_arrival_time_only', 
+            prefix=prefix,
+            batch_size=batch_size,
+            categorical_encoding=categorical_encoding, # Internally the model uses W2V encoding vector_size is determined by dim_model
+            numerical_encoding=numerical_encoding,
+            perspective_weights = {
+                Perspective.ORDER: 0,
+                Perspective.ATTRIBUTE: 0,
+                Perspective.ARRIVAL_TIME: 1.0,
+                Perspective.WORKLOAD: 0,
+            },
+            # Ablation study
+            event_positional_encoding=event_positional_encoding,
+            multi_task=multi_task,
+            use_prefix_errors=use_prefix_errors,
+            # Debugging/Development
+            case_limit=case_limit, 
+            debug_logging=debug_logging,
+            )))
+    for _ in range(repeats):
+        ads.append(dict(ad=Transformer, fit_kwargs=dict(
+            model_name='transformer_arrival_time_2', 
+            prefix=prefix,
+            batch_size=batch_size,
+            categorical_encoding=categorical_encoding, # Internally the model uses W2V encoding vector_size is determined by dim_model
+            numerical_encoding=numerical_encoding,
+            perspective_weights = {
+                Perspective.ORDER: 1.0,
+                Perspective.ATTRIBUTE: 1.0,
+                Perspective.ARRIVAL_TIME: 2.0,
+                Perspective.WORKLOAD: 1.0,
+            },
+            # Ablation study
+            event_positional_encoding=event_positional_encoding,
+            multi_task=multi_task,
+            use_prefix_errors=use_prefix_errors,
+            # Debugging/Development
+            case_limit=case_limit, 
+            debug_logging=debug_logging,
+            )))
+    for _ in range(repeats):
+        ads.append(dict(ad=Transformer, fit_kwargs=dict(
+            model_name='transformer_arrival_time_4', 
+            prefix=prefix,
+            batch_size=batch_size,
+            categorical_encoding=categorical_encoding, # Internally the model uses W2V encoding vector_size is determined by dim_model
+            numerical_encoding=numerical_encoding,
+            perspective_weights = {
+                Perspective.ORDER: 1.0,
+                Perspective.ATTRIBUTE: 1.0,
+                Perspective.ARRIVAL_TIME: 4.0,
+                Perspective.WORKLOAD: 1.0,
+            },
+            # Ablation study
+            event_positional_encoding=event_positional_encoding,
+            multi_task=multi_task,
+            use_prefix_errors=use_prefix_errors,
+            # Debugging/Development
+            case_limit=case_limit, 
+            debug_logging=debug_logging,
+            )))
+    for _ in range(repeats):
+        ads.append(dict(ad=Transformer, fit_kwargs=dict(
+            model_name='transformer_attribute_8', 
+            prefix=prefix,
+            batch_size=batch_size,
+            categorical_encoding=categorical_encoding, # Internally the model uses W2V encoding vector_size is determined by dim_model
+            numerical_encoding=numerical_encoding,
+            perspective_weights = {
+                Perspective.ORDER: 1.0,
+                Perspective.ATTRIBUTE: 1.0,
+                Perspective.ARRIVAL_TIME: 8.0,
+                Perspective.WORKLOAD: 1.0,
+            },
+            # Ablation study
+            event_positional_encoding=event_positional_encoding,
+            multi_task=multi_task,
+            use_prefix_errors=use_prefix_errors,
+            # Debugging/Development
+            case_limit=case_limit, 
+            debug_logging=debug_logging,
+            )))
+    return ads, run_name, dataset_folder
+
+def Experiment_Transformer_Perspective_Weights_Workload(repeats=1, dataset_folder = 'transformer_debug_synthetic'):
+    # Static configuration
+    batch_size = 32 #8
+    prefix = True
+    categorical_encoding = EncodingCategorical.TOKENIZER
+    numerical_encoding = EncodingNumerical.MIN_MAX_SCALING
+    
+    # Ablation study
+    event_positional_encoding = True
+    use_prefix_errors = True
+    multi_task = True
+
+    # Debugging/Development
+    case_limit = None # Capping the training data for development purposes, set to None for full training
+    debug_logging = False
+
+    run_name = 'Experiment_Transformer_Perspective_Weights_v2'
+    
+    ads = []
+    for _ in range(repeats):
+        ads.append(dict(ad=Transformer, fit_kwargs=dict(
+            model_name='transformer_workload_only',
+            prefix=prefix,
+            batch_size=batch_size,
+            categorical_encoding=categorical_encoding, # Internally the model uses W2V encoding vector_size is determined by dim_model
+            numerical_encoding=numerical_encoding,
+            perspective_weights = {
+                Perspective.ORDER: 0,
+                Perspective.ATTRIBUTE: 0,
+                Perspective.ARRIVAL_TIME: 0,
+                Perspective.WORKLOAD: 1.0,
+            },
+            # Ablation study
+            event_positional_encoding=event_positional_encoding,
+            multi_task=multi_task,
+            use_prefix_errors=use_prefix_errors,
+            # Debugging/Development
+            case_limit=case_limit, 
+            debug_logging=debug_logging,
+            )))
+    for _ in range(repeats):
+        ads.append(dict(ad=Transformer, fit_kwargs=dict(
+            model_name='transformer_workload_2', 
+            prefix=prefix,
+            batch_size=batch_size,
+            categorical_encoding=categorical_encoding, # Internally the model uses W2V encoding vector_size is determined by dim_model
+            numerical_encoding=numerical_encoding,
+            perspective_weights = {
+                Perspective.ORDER: 1.0,
+                Perspective.ATTRIBUTE: 1.0,
+                Perspective.ARRIVAL_TIME: 1.0,
+                Perspective.WORKLOAD: 2.0,
+            },
+            # Ablation study
+            event_positional_encoding=event_positional_encoding,
+            multi_task=multi_task,
+            use_prefix_errors=use_prefix_errors,
+            # Debugging/Development
+            case_limit=case_limit, 
+            debug_logging=debug_logging,
+            )))
+    for _ in range(repeats):
+        ads.append(dict(ad=Transformer, fit_kwargs=dict(
+            model_name='transformer_workload_4', 
+            prefix=prefix,
+            batch_size=batch_size,
+            categorical_encoding=categorical_encoding, # Internally the model uses W2V encoding vector_size is determined by dim_model
+            numerical_encoding=numerical_encoding,
+            perspective_weights = {
+                Perspective.ORDER: 1.0,
+                Perspective.ATTRIBUTE: 1.0,
+                Perspective.ARRIVAL_TIME: 1.0,
+                Perspective.WORKLOAD: 4.0,
+            },
+            # Ablation study
+            event_positional_encoding=event_positional_encoding,
+            multi_task=multi_task,
+            use_prefix_errors=use_prefix_errors,
+            # Debugging/Development
+            case_limit=case_limit, 
+            debug_logging=debug_logging,
+            )))
+    for _ in range(repeats):
+        ads.append(dict(ad=Transformer, fit_kwargs=dict(
+            model_name='transformer_workload_8', 
+            prefix=prefix,
+            batch_size=batch_size,
+            categorical_encoding=categorical_encoding, # Internally the model uses W2V encoding vector_size is determined by dim_model
+            numerical_encoding=numerical_encoding,
+            perspective_weights = {
+                Perspective.ORDER: 1.0,
+                Perspective.ATTRIBUTE: 1.0,
+                Perspective.ARRIVAL_TIME: 1.0,
+                Perspective.WORKLOAD: 8.0,
             },
             # Ablation study
             event_positional_encoding=event_positional_encoding,
