@@ -5,6 +5,7 @@ import numpy as np
 from multiprocessing import Process
 import multiprocessing
 
+from novel.utils.component_runtime_tracker import ComponentRuntimeTracker
 from utils.dataset import Dataset
 from utils.fs import EVENTLOG_DIR, FSSave
 
@@ -18,9 +19,15 @@ def fit_and_eva(dataset_name, dataset_folder, run_name, seed, ad, fit_kwargs=Non
     np.random.seed(seed)
 
     start_time = time.time()
+    component_runtime_tracker = ComponentRuntimeTracker()
+    fit_kwargs['component_runtime_tracker'] = component_runtime_tracker
+    component_runtime_tracker.start_component('all')
 
     # AD
+    component_runtime_tracker.start_component('load_model')
     ad = ad(fit_kwargs)
+    component_runtime_tracker.end_component('load_model')
+
     print(ad.name, dataset_name)
 
     fs_save = FSSave(start_time=datetime.now(), 
@@ -28,6 +35,8 @@ def fit_and_eva(dataset_name, dataset_folder, run_name, seed, ad, fit_kwargs=Non
                      model_name=ad.name, 
                      categorical_encoding=categorical_encoding, 
                      numerical_encoding=numerical_encoding)
+    
+    component_runtime_tracker.start_component('load_data')
     dataset = Dataset(dataset_name,
                       dataset_folder, 
                       beta=0.005, 
@@ -38,13 +47,14 @@ def fit_and_eva(dataset_name, dataset_folder, run_name, seed, ad, fit_kwargs=Non
                       categorical_encoding=categorical_encoding,
                       numerical_encoding=numerical_encoding,
                       fs_save=fs_save)
+    component_runtime_tracker.end_component('load_data')
     
     # Run the AD model
     (
         bucket_trace_level_abnormal_scores, 
         bucket_event_level_abnormal_scores, 
         bucket_attr_level_abnormal_scores, 
-        bucket_losses, bucket_case_labels, 
+        bucket_losses, bucket_case_labels,
         bucket_event_labels, 
         bucket_attr_labels,
         bucket_errors_raw, 
@@ -57,6 +67,8 @@ def fit_and_eva(dataset_name, dataset_folder, run_name, seed, ad, fit_kwargs=Non
         runtime_results
     ) = ad.train_and_predict(dataset)
 
+
+    component_runtime_tracker.start_component('save_results')
     end_time = time.time()
     run_time=end_time-start_time
     print(f'Runtime: {run_time}')
@@ -80,7 +92,7 @@ def fit_and_eva(dataset_name, dataset_folder, run_name, seed, ad, fit_kwargs=Non
     config['runtime_results'] = runtime_results
     # config['processed_prefixes'] = list(processed_prefixes)
     # config['processed_events'] = list(processed_events)
-    fs_save.save_config(config)
+    
 
     # RCVDB: Loop through each bucket size and handle each size seperately
     bucket_boundaries = fit_kwargs.get('bucket_boundaries', None)
@@ -125,7 +137,15 @@ def fit_and_eva(dataset_name, dataset_folder, run_name, seed, ad, fit_kwargs=Non
                 level='attribute',
                 results=attr_level_abnormal_scores[anomaly_perspective])
     
+    component_runtime_tracker.end_component('save_results')
+    component_runtime_tracker.end_component('all')
+
+    config['component_runtime_tracker'] = component_runtime_tracker.component_final_times
+
+    fs_save.save_config(config)
+
     fs_save.zip_results()
+
 
 def execute_runs(dataset_names, ads, run_name, dataset_folder, seed):
     multiprocessing.set_start_method('spawn')

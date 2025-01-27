@@ -2,7 +2,7 @@ import time
 
 import numpy as np
 
-class RuntimeTracker():
+class IterationRuntimeTracker():
     def __init__(self, batch_size=32):
         self.batch_size = batch_size
 

@@ -19,6 +19,8 @@ import tensorflow as tf
 from tqdm import tqdm
 
 from baseline.binet.core import NNAnomalyDetector
+from novel.utils.component_runtime_tracker import ComponentRuntimeTracker
+from novel.utils.iteration_runtime_tracker import IterationRuntimeTracker
 from utils import process_results
 from utils.dataset import Dataset
 from utils.enums import AttributeType, EncodingCategorical, Heuristic, Strategy, Mode, Base
@@ -65,6 +67,9 @@ class DAE(NNAnomalyDetector):
         self.config.update(config)
 
     def model_fn(self, dataset:Dataset, bucket_boundaries:list, categorical_encoding, vector_size=None):
+        component_runtime_tracker:ComponentRuntimeTracker = self.config.get('component_runtime_tracker', None)
+        component_runtime_tracker.start_component('prepare_data')
+
         hidden_layers = self.config.get('hidden_layers')
         hidden_size_factor = self.config.get('hidden_size_factor')
         noise = self.config.get('noise')
@@ -92,6 +97,10 @@ class DAE(NNAnomalyDetector):
         case_labels = dataset.case_labels
         event_labels = dataset.event_labels
         attr_labels = dataset.attr_labels
+
+        component_runtime_tracker.end_component('prepare_data')
+
+        component_runtime_tracker.start_component('build_model')
 
         if bucket_boundaries is None:
             input_size = features.shape[1]
@@ -158,6 +167,7 @@ class DAE(NNAnomalyDetector):
                 bucket_event_labels[bucket_id] = np.array(bucket_event_labels[bucket_id])
                 bucket_attr_labels[bucket_id] = np.array(bucket_attr_labels[bucket_id])
 
+            component_runtime_tracker.end_component('build_model')
             print('Finished generating models')
             return bucket_models, bucket_features, bucket_features, bucket_case_lengths, bucket_case_labels, bucket_event_labels, bucket_attr_labels
 
@@ -264,8 +274,9 @@ class DAE(NNAnomalyDetector):
         categorical_encoding = self.config.get('categorical_encoding', EncodingCategorical.ONE_HOT)
         vector_size = self.config.get('vector_size', None)
         batch_size = self.config.get('batch_size', 2)
+        component_runtime_tracker:ComponentRuntimeTracker = self.config.get('component_runtime_tracker', None)
 
-        model_buckets, features_buckets, targets_buckets, case_lengths_buckets, bucket_case_labels, bucket_event_labels, bucket_attr_labels = self.model_fn(dataset, bucket_boundaries, categorical_encoding, vector_size, **self.config)
+        model_buckets, features_buckets, targets_buckets, case_lengths_buckets, bucket_case_labels, bucket_event_labels, bucket_attr_labels = self.model_fn(dataset, bucket_boundaries, categorical_encoding, vector_size)
 
         # Parameters
         attribute_dims = dataset.attribute_dims
@@ -287,6 +298,11 @@ class DAE(NNAnomalyDetector):
             attribute_names = sorted_names
 
             # self._attribute_dims = np.array([self.vector_size] * len(self.attribute_dims))
+
+        runtime_tracker = IterationRuntimeTracker(batch_size=self.config.get('batch_size'))
+        runtime_tracker_inference = IterationRuntimeTracker(batch_size=self.config.get('batch_size'))
+        runtime_tracker_train = IterationRuntimeTracker(batch_size=self.config.get('batch_size'))
+        runtime_tracker_save_results = IterationRuntimeTracker(batch_size=self.config.get('batch_size'))
         
         bucket_trace_level_abnormal_scores = []
         bucket_event_level_abnormal_scores = [] 
@@ -294,6 +310,8 @@ class DAE(NNAnomalyDetector):
         bucket_errors_raw = []
         bucket_losses = []
         for i in range(len(model_buckets)):
+            component_runtime_tracker.start_component('train_predict_model')
+
             model = model_buckets[i]
             features = features_buckets[i]
             targets = targets_buckets[i]
@@ -315,6 +333,8 @@ class DAE(NNAnomalyDetector):
             predictions=[]
             pbar = tqdm(enumerate(feature_target_tf), total=total_steps)
             for i, (x_batch, y_batch) in pbar:
+                runtime_tracker.start_iteration()
+
                 # RCVDB: Sanity check to see if the batches are valid:
                 if len(x_batch) == 0 or len(y_batch) == 0:
                     print("Empty batch encountered!")
@@ -325,9 +345,15 @@ class DAE(NNAnomalyDetector):
                 # RCVDB: TODO: Tensorflow seems to throw optimisation warnings, suggesting that the code can be optimized. 
 
                 # RCVDB: Goal is reconstruction, thus x and y are the same
+                runtime_tracker_train.start_iteration()
                 loss = model.train_on_batch(x_batch, y_batch)
-                prediction_batch = model.predict_on_batch(x_batch)
+                runtime_tracker_train.end_iteration()
 
+                runtime_tracker_inference.start_iteration()
+                prediction_batch = model.predict_on_batch(x_batch)
+                runtime_tracker_inference.end_iteration()
+
+                runtime_tracker_save_results.start_iteration()
                 # RCVDB: Sanity check to see if the loss includes NanN
                 if tf.reduce_any(tf.math.is_nan(loss)):
                     print("NaN detected in loss!")
@@ -336,9 +362,15 @@ class DAE(NNAnomalyDetector):
                 losses.append(loss)
                 for prediction in prediction_batch:
                     predictions.append(prediction)
+                runtime_tracker_save_results.end_iteration()
+
+                runtime_tracker.end_iteration()
 
                 if (i+1) % 100 == 0 or i == 0:
                     pbar.set_postfix({'loss': loss})
+
+            component_runtime_tracker.end_component('train_predict_model')
+            component_runtime_tracker.start_component('post_process_results')
 
             # (cases, events * flattened_attributes)
             errors_raw = targets - predictions
@@ -364,6 +396,22 @@ class DAE(NNAnomalyDetector):
             bucket_event_level_abnormal_scores.append(event_level_abnormal_scores)
             bucket_attr_level_abnormal_scores.append(attr_level_abnormal_scores)
 
+            component_runtime_tracker.end_component('post_process_results')
+
+        
+        runtime_results_all = runtime_tracker.get_average_std_run_time()
+        runtime_results_inference = runtime_tracker_inference.get_average_std_run_time()
+        # runtime_results_loss = runtime_tracker_loss.get_average_std_run_time()
+        runtime_results_train = runtime_tracker_train.get_average_std_run_time()
+        runtime_tracker_save_results = runtime_tracker_save_results.get_average_std_run_time()
+        runtime_results = {
+            'overall_runtimes': runtime_results_all, 
+            'inference_runtimes': runtime_results_inference,
+            'loss_runtimes': None,
+            'train_runtimes': runtime_results_train,
+            'save_results_runtimes': runtime_tracker_save_results
+        }
+
         return (bucket_trace_level_abnormal_scores, 
                 bucket_event_level_abnormal_scores, 
                 bucket_attr_level_abnormal_scores, 
@@ -376,4 +424,6 @@ class DAE(NNAnomalyDetector):
                 attribute_perspectives_original,
                 attribute_names,
                 attribute_names_original,
-                None) # Runtime results are not built into DAE
+                None,
+                None,
+                runtime_results)

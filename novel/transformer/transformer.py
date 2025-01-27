@@ -4,7 +4,8 @@ from tqdm import tqdm
 from baseline.binet.core import NNAnomalyDetector
 from novel.transformer.components.prefix_store import PrefixStore
 from novel.transformer.components.transformer import TransformerModel
-from novel.utils.runtime_tracker import RuntimeTracker
+from novel.utils.component_runtime_tracker import ComponentRuntimeTracker
+from novel.utils.iteration_runtime_tracker import IterationRuntimeTracker
 from utils import process_results
 from utils.dataset import Dataset
 
@@ -57,6 +58,9 @@ class Transformer(NNAnomalyDetector):
         self.config.update(config)
 
     def model_fn(self, dataset:Dataset):
+        component_runtime_tracker:ComponentRuntimeTracker = self.config.get('component_runtime_tracker', None)
+        component_runtime_tracker.start_component('prepare_data')
+
         attribute_vocab_sizes = []
         attribute_keys = dataset.event_log.event_attribute_keys
         for attribute_key in attribute_keys:
@@ -131,7 +135,10 @@ class Transformer(NNAnomalyDetector):
 
         train_dataset = data.Dataset.from_tensor_slices((trainX, trainY))
         train_dataset = train_dataset.batch(self.config.get('batch_size'))
- 
+
+        component_runtime_tracker.end_component('prepare_data')
+
+        component_runtime_tracker.start_component('build_model')
         # Configuring the model
         if self.config.get('multi_task', True): # Multi-task model
             train_dataset = data.Dataset.from_tensor_slices((trainX, trainY))
@@ -208,14 +215,19 @@ class Transformer(NNAnomalyDetector):
             print(attribute_vocab_sizes, "Vocab Sizes")
             print(enc_seq_length, "Enc Seq Length")
 
+        component_runtime_tracker.end_component('build_model')
+
         return model, optimizer, train_dataset, num_features, attribute_dims, attribute_perspectives, perspective_weights, trainX, trainY, case_lengths, case_labels, event_labels, attr_labels
     
     def _train_and_predict(self, model, optimizer, train_dataset, num_features, perspective_weights, multi_task):
         train_loss = Mean(name='train_loss')
         train_loss.reset_states()
 
-        runtime_tracker = RuntimeTracker(batch_size=self.config.get('batch_size'))
-        runtime_tracker_inference = RuntimeTracker(batch_size=self.config.get('batch_size'))
+        runtime_tracker = IterationRuntimeTracker(batch_size=self.config.get('batch_size'))
+        runtime_tracker_inference = IterationRuntimeTracker(batch_size=self.config.get('batch_size'))
+        runtime_tracker_loss = IterationRuntimeTracker(batch_size=self.config.get('batch_size'))
+        runtime_tracker_train = IterationRuntimeTracker(batch_size=self.config.get('batch_size'))
+        runtime_tracker_save_results = IterationRuntimeTracker(batch_size=self.config.get('batch_size'))
         if multi_task:
             predictions = {key: [] for key in range(num_features)}
         else:
@@ -231,6 +243,7 @@ class Transformer(NNAnomalyDetector):
 
                 # print(len(prediction_train_step), prediction_train_step[0].shape, decoder_output.shape)
 
+                runtime_tracker_loss.start_iteration()
                 loss_attributes = []
                 for i, _ in enumerate(prediction_train_step):
                     pred = prediction_train_step[i]
@@ -256,9 +269,12 @@ class Transformer(NNAnomalyDetector):
                     loss_attributes.append(loss_attribute)
 
                 loss_train_step = tf.reduce_mean(loss_attributes)
+                runtime_tracker_loss.end_iteration()
 
+            runtime_tracker_train.start_iteration()
             gradients = tape.gradient(loss_train_step, model.trainable_weights)
             optimizer.apply_gradients(zip(gradients, model.trainable_weights))
+            runtime_tracker_train.end_iteration()
 
             train_loss(loss_train_step)
 
@@ -278,13 +294,20 @@ class Transformer(NNAnomalyDetector):
 
             loss_train_step, predictions_train_step = train_step(model_input, model_target)
 
-            for i, _ in enumerate(predictions_train_step):
-                for j, _ in enumerate(predictions_train_step[i]):
-                    predictions[i].append(predictions_train_step[i][j].numpy())
+            runtime_tracker_save_results.start_iteration()
+            
+            predictions_train_step_np = [batch.numpy() for batch in predictions_train_step]
+            for i, batch in enumerate(predictions_train_step_np):
+                predictions[i].extend(batch)
+
+            # for i, _ in enumerate(predictions_train_step):
+            #     for j, _ in enumerate(predictions_train_step[i]):
+            #         predictions[i].append(predictions_train_step[i][j].numpy())
 
             losses.append(loss_train_step.numpy())
             targets.append(model_target.numpy())
             
+            runtime_tracker_save_results.end_iteration()
             runtime_tracker.end_iteration()
 
             if step % 25 == 0:
@@ -293,13 +316,22 @@ class Transformer(NNAnomalyDetector):
 
         runtime_results_all = runtime_tracker.get_average_std_run_time()
         runtime_results_inference = runtime_tracker_inference.get_average_std_run_time()
+        runtime_results_loss = runtime_tracker_loss.get_average_std_run_time()
+        runtime_results_train = runtime_tracker_train.get_average_std_run_time()
+        runtime_tracker_save_results = runtime_tracker_save_results.get_average_std_run_time()
         runtime_results = {
             'overall_runtimes': runtime_results_all, 
-            'inference_runtimes': runtime_results_inference
+            'inference_runtimes': runtime_results_inference,
+            'loss_runtimes': runtime_results_loss,
+            'train_runtimes': runtime_results_train,
+            'save_results_runtimes': runtime_tracker_save_results
         }
 
         print(f"Average runtime per batch: {runtime_results_all}")
         print(f"Average runtime per model per batch: {runtime_results_inference}")
+        print(f"Average runtime per loss calculation per batch: {runtime_results_loss}")
+        print(f"Average runtime per training step per batch: {runtime_results_train}")
+        print(f'Average runtime per saving results per batch: {runtime_tracker_save_results}')
 
         if multi_task:
             # vstack the results, predictions are per attribute
@@ -315,8 +347,11 @@ class Transformer(NNAnomalyDetector):
     def train_and_predict(self, dataset:Dataset):
         debug_logging = self.config.get('debug_logging', False)
         multi_task = self.config.get('multi_task', True)
+        component_runtime_tracker:ComponentRuntimeTracker = self.config.get('component_runtime_tracker', None)
 
         model, optimizer, train_dataset, num_features, attribute_dims, attribute_perspectives, perspective_weights, trainX, trainY, case_lengths, case_labels, event_labels, attr_labels = self.model_fn(dataset)
+
+        component_runtime_tracker.start_component('train_predict_model')
         if multi_task: # Train a single multi-task model
             predictions, losses, targets, runtime_results = self._train_and_predict(model, optimizer, train_dataset, num_features, perspective_weights, multi_task)
         else: # Train all single-task models
@@ -334,7 +369,11 @@ class Transformer(NNAnomalyDetector):
             losses = np.vstack(losses)
             targets = np.vstack(targets)
             targets = targets.T
-            runtime_results = RuntimeTracker.sequentially_merge_runtimes(attribute_runtime_results_list)
+            runtime_results = IterationRuntimeTracker.sequentially_merge_runtimes(attribute_runtime_results_list)
+
+        component_runtime_tracker.end_component('train_predict_model')
+
+        component_runtime_tracker.start_component('post_process_results')
 
         # (traces, attributes, predictions)
         all_attribute_true = targets.T
@@ -388,6 +427,8 @@ class Transformer(NNAnomalyDetector):
                 error_power=2,
                 debug_logging=debug_logging
             )
+        
+        component_runtime_tracker.end_component('post_process_results')
         
         attribute_names = dataset.event_log.event_attribute_keys
         results = ({0:trace_level_abnormal_scores}, 
