@@ -107,7 +107,7 @@ class Perspective(object):
 
     @staticmethod
     def color(key):
-        return dict(zip(Class.keys(), Class.colors())).get(key)
+        return dict(zip(Perspective.keys(), Perspective.colors())).get(key)
 
     @staticmethod
     def keys():
@@ -115,7 +115,7 @@ class Perspective(object):
 
     @staticmethod
     def items():
-        return dict(zip(Class.keys(), Class.values()))
+        return dict(zip(Perspective.keys(), Perspective.values()))
 
 class PadMode(object):
     PRE = 'pre'

@@ -66,7 +66,7 @@ def calculate_scores(y_trues, pred_probs, perspective, window_buckets=59):
     best_precision = precision[f1_best_index]
     best_recall = recall[f1_best_index]
 
-    print(f"Best Overall F1: {best_f1:.3f}, Precision: {best_precision:.3f}, Recall: {best_recall:.3f}, Threshold: {best_threshold:.3f}")
+    # print(f"Best Overall F1: {best_f1:.3f}, Precision: {best_precision:.3f}, Recall: {best_recall:.3f}, Threshold: {best_threshold:.3f}")
 
     # overall_window_f1s = []
     # overall_window_thresholds = []
@@ -115,7 +115,9 @@ def extract_number(key):
         return 0
     
 # Concatenates only non-empty arrays.
-def concatenate_if_not_empty(*arrays):
+def concatenate_if_not_empty(*arrays, reshape=False):
+    if reshape:
+        arrays = [arr.reshape(-1) for arr in arrays]
     non_empty_arrays = [arr for arr in arrays if len(arr) > 0]
     return np.concatenate(non_empty_arrays, axis=0) if non_empty_arrays else np.array([])
 
@@ -138,33 +140,41 @@ def process_attribute_labels(output, values, case_length, perspective, perspecti
     # print(perspective_attribute_value.shape)
 
     output.append(perspective_attribute_value)
+    # output.append(perspective_indexed)
+
+    return perspective_indexed
+
 
 def reshape_data_for_scoring(results, perspective_label_indices, buckets):
-    labels_DAE_attribute_Arrival_Time = []
-    labels_DAE_attribute_Workload = []
-    labels_DAE_attribute_Order = []
-    labels_DAE_attribute_Attribute  = []
+    print(perspective_label_indices)
+    print(Perspective.items())
+    labels_attribute_Arrival_Time = []
+    labels_attribute_Workload = []
+    labels_attribute_Order = []
+    labels_attribute_Attribute  = []
+    labels_attribute_All = []
+    label_attribute_OA = []
 
-    labels_DAE_event = []
-    labels_DAE_trace = []
+    labels_event = []
+    labels_trace = []
 
-    result_DAE_attribute_Arrival_Time = []
-    result_DAE_event_Arrival_Time = []
-    result_DAE_trace_Arrival_Time = []
-    result_DAE_attribute_Workload = []
-    result_DAE_event_Workload = []
-    result_DAE_trace_Workload = []
-    result_DAE_attribute_Order = []
-    result_DAE_event_Order = []
-    result_DAE_trace_Order = []
-    result_DAE_attribute_Attribute = []
-    result_DAE_event_Attribute = []
-    result_DAE_trace_Attribute = []
+    result_attribute_Arrival_Time = []
+    result_event_Arrival_Time = []
+    result_trace_Arrival_Time = []
+    result_attribute_Workload = []
+    result_event_Workload = []
+    result_trace_Workload = []
+    result_attribute_Order = []
+    result_event_Order = []
+    result_trace_Order = []
+    result_attribute_Attribute = []
+    result_event_Attribute = []
+    result_trace_Attribute = []
 
     # print("results", results.keys())
 
     for (key, value) in results.items():
-        print(key, value.shape)
+        # print(key, value.shape)
         if buckets is not None:
             length = int(key.split('_')[-1])
             perspective = key.split('_')[-2]
@@ -178,31 +188,37 @@ def reshape_data_for_scoring(results, perspective_label_indices, buckets):
         elif 'labels' in key:
             if 'attribute' in key:
                 transposed_value = np.transpose(value, (3,0,1,2))# [:, :, :length, :]
+                # print(transposed_value.shape)
 
-                process_attribute_labels(
-                    output=labels_DAE_attribute_Arrival_Time,
-                    values=transposed_value, 
-                    case_length=length, 
-                    perspective=Perspective.ARRIVAL_TIME,
-                    perspective_label_indices=perspective_label_indices)
-                process_attribute_labels(
-                    output=labels_DAE_attribute_Attribute,
-                    values=transposed_value, 
-                    case_length=length, 
-                    perspective=Perspective.ATTRIBUTE,
-                    perspective_label_indices=perspective_label_indices)
-                process_attribute_labels(
-                    output=labels_DAE_attribute_Order,
+                l_a_o_index = process_attribute_labels(
+                    output=labels_attribute_Order,
                     values=transposed_value, 
                     case_length=length, 
                     perspective=Perspective.ORDER,
                     perspective_label_indices=perspective_label_indices)
-                process_attribute_labels(
-                    output=labels_DAE_attribute_Workload,
+                l_a_a_index = process_attribute_labels(
+                    output=labels_attribute_Attribute,
+                    values=transposed_value, 
+                    case_length=length, 
+                    perspective=Perspective.ATTRIBUTE,
+                    perspective_label_indices=perspective_label_indices)
+                l_a_at_index = process_attribute_labels(
+                    output=labels_attribute_Arrival_Time,
+                    values=transposed_value, 
+                    case_length=length, 
+                    perspective=Perspective.ARRIVAL_TIME,
+                    perspective_label_indices=perspective_label_indices)
+                l_a_wl_index = process_attribute_labels(
+                    output=labels_attribute_Workload,
                     values=transposed_value, 
                     case_length=length, 
                     perspective=Perspective.WORKLOAD,
                     perspective_label_indices=perspective_label_indices)
+                
+                label_attribute_all = np.concatenate((l_a_o_index, l_a_a_index, l_a_at_index, l_a_wl_index), axis=-1)#.reshape(-1)
+                labels_attribute_All.append(label_attribute_all)
+                label_attribute_oa = np.concatenate((l_a_o_index, l_a_a_index), axis=-1)#.reshape(-1)
+                label_attribute_OA.append(label_attribute_oa)
 
                 # # print(perspective_value.shape)
                 # perspective_value = perspective_value.reshape(perspective_value.shape[0], -1)
@@ -211,89 +227,172 @@ def reshape_data_for_scoring(results, perspective_label_indices, buckets):
             elif 'event' in key:
                 perspective_value = np.transpose(value, (2,0,1))[:, :, :length]
                 perspective_value = perspective_value.reshape(perspective_value.shape[0], -1)
-                labels_DAE_event.append(perspective_value)
+                labels_event.append(perspective_value)
             elif 'trace' in key:
                 perspective_value = np.transpose(value, (1,0))
-                # print(perspective_value.shape)
-                labels_DAE_trace.append(perspective_value)
+                labels_trace.append(perspective_value)
         elif 'result' in key:
             if 'attribute' in key:
                 # print(value.shape)
                 # value_max = np.max(value, axis=2)
                 # print(value.shape, normalize(value.reshape(-1)).shape, perspective)
                 # print(value.shape)
-                value = normalize(value.reshape(-1))
+                value = normalize(value)# .reshape(-1)
                 # print(value.shape)
-                if 'Arrival Time' in perspective:
-                    result_DAE_attribute_Arrival_Time.append(value)
-                elif 'Order' in perspective:
-                    result_DAE_attribute_Order.append(value)
-                elif 'Workload' in perspective:
-                    result_DAE_attribute_Workload.append(value)
+                if 'Order' in perspective:
+                    result_attribute_Order.append(value)
                 elif 'Attribute' in perspective:
-                    result_DAE_attribute_Attribute.append(value)
+                    result_attribute_Attribute.append(value)
+                elif 'Arrival Time' in perspective:
+                    result_attribute_Arrival_Time.append(value)
+                elif 'Workload' in perspective:
+                    result_attribute_Workload.append(value)
             if 'event' in key:
                 value = normalize(value.reshape(-1))
-                if 'Arrival Time' in perspective:
-                    result_DAE_event_Arrival_Time.append(value)
-                elif 'Order' in perspective:
-                    result_DAE_event_Order.append(value)
-                elif 'Workload' in perspective:
-                    result_DAE_event_Workload.append(value)
+                if 'Order' in perspective:
+                    result_event_Order.append(value)
                 elif 'Attribute' in perspective:
-                    result_DAE_event_Attribute.append(value)
+                    result_event_Attribute.append(value)
+                elif 'Arrival Time' in perspective:
+                    result_event_Arrival_Time.append(value)
+                elif 'Workload' in perspective:
+                    result_event_Workload.append(value)
             elif 'trace' in key:
                 value = normalize(value)
-                if 'Arrival Time' in perspective:
-                    result_DAE_trace_Arrival_Time.append(value)
-                elif 'Order' in perspective:
-                    result_DAE_trace_Order.append(value)
-                elif 'Workload' in perspective:
-                    result_DAE_trace_Workload.append(value)
+                if 'Order' in perspective:
+                    result_trace_Order.append(value)
                 elif 'Attribute' in perspective:
-                    result_DAE_trace_Attribute.append(value)
+                    result_trace_Attribute.append(value)
+                elif 'Arrival Time' in perspective:
+                    result_trace_Arrival_Time.append(value)
+                elif 'Workload' in perspective:
+                    result_trace_Workload.append(value)
+
+    # for l_trace in labels_trace:
+    #     print("Label Trace Shapes:", l_trace.shape)
+    # for r_trace in result_trace_Arrival_Time:
+    #     print("AT Trace Shapes:", r_trace.shape)
+    # for r_trace in result_trace_Order:
+    #     print("Order Trace Shapes:", r_trace.shape)
+    # for r_trace in result_trace_Workload:    
+    #     print("Workload Trace Shapes:", r_trace.shape)
+    # for r_trace in result_trace_Attribute:
+    #     print("Attribute Trace Shapes:", r_trace.shape)
+    labels_trace = np.concatenate(labels_trace, axis=1)
+    labels_trace_single_perspective = np.any(labels_trace, axis=0)
+    labels_trace_single_perspective_OA = np.any(labels_trace[:2,:], axis=0)
+    labels_trace = np.vstack([labels_trace, labels_trace_single_perspective, labels_trace_single_perspective_OA])
+
+    result_trace = [
+        concatenate_if_not_empty(*result_trace_Order),
+        concatenate_if_not_empty(*result_trace_Attribute),
+        concatenate_if_not_empty(*result_trace_Arrival_Time),
+        concatenate_if_not_empty(*result_trace_Workload)
+    ]
+    result_trace_OA = [
+        concatenate_if_not_empty(*result_trace_Order),
+        concatenate_if_not_empty(*result_trace_Attribute)
+    ]
+    results_trace_single_perspective = element_wise_max(*result_trace)
+    results_trace_single_perspective_OA = element_wise_max(*result_trace_OA)
+    result_trace.append(results_trace_single_perspective)
+    result_trace.append(results_trace_single_perspective_OA)
+    result_trace = np.vstack(result_trace)
+
+    # print("Label Trace Shapes:", labels_trace.shape)
+    # print("Result Trace Shapes:", result_trace.shape)
+    # for r_trace in result_trace:
+    #     print("Result Trace Shapes:", r_trace.shape)
+    
+    # for l_event in labels_event:
+    #     print("Event Shapes:", l_event.shape)
+    # for r_event in result_event_Arrival_Time:
+    #     print("AT Event Shapes:", r_event.shape)
+    # for r_event in result_event_Order:
+    #     print("Order Event Shapes:", r_event.shape)
+    # for r_event in result_event_Workload:
+    #     print("Workload Event Shapes:", r_event.shape)
+    # for r_event in result_event_Attribute:
+    #     print("Attribute Event Shapes:", r_event.shape)
 
 
-    # labels_DAE_attribute = np.concatenate(labels_DAE_attribute, axis=1)
-    labels_DAE_event = np.concatenate(labels_DAE_event, axis=1)    
-    labels_DAE_trace = np.concatenate(labels_DAE_trace, axis=1)
+    labels_event = np.concatenate(labels_event, axis=1)
+    labels_event_single_perspective = np.any(labels_event, axis=0)
+    labels_event_single_perspective_OA = np.any(labels_event[:2,:], axis=0)
+    labels_event = np.vstack([labels_event, labels_event_single_perspective, labels_event_single_perspective_OA])
 
-    # print(labels_DAE_attribute.shape)
+    result_event = [
+        concatenate_if_not_empty(*result_event_Order),
+        concatenate_if_not_empty(*result_event_Attribute),
+        concatenate_if_not_empty(*result_event_Arrival_Time),
+        concatenate_if_not_empty(*result_event_Workload)
+    ]
+    result_event_OA = [
+        concatenate_if_not_empty(*result_event_Order),
+        concatenate_if_not_empty(*result_event_Attribute)
+    ]
+    results_event_single_perspective = element_wise_max(*result_event)
+    results_event_single_perspective_OA = element_wise_max(*result_event_OA)
+    result_event.append(results_event_single_perspective)
+    result_event.append(results_event_single_perspective_OA)
+    result_event = np.vstack(result_event)
 
-    # print(np.concatenate(result_DAE_event_Order, axis=0).shape)
-    # print(result_DAE_attribute_Attribute.shape)
-    # print(result_DAE_attribute_Arrival_Time.shape)
-    # print(result_DAE_attribute_Workload.shape)
+    # print("Label Event Shapes:", labels_event.shape)
+    # print("Result Event Shapes:", result_event.shape)
 
-    labels_DAE_attribute = [
-        concatenate_if_not_empty(*labels_DAE_attribute_Order),
-        concatenate_if_not_empty(*labels_DAE_attribute_Attribute),
-        concatenate_if_not_empty(*labels_DAE_attribute_Arrival_Time),
-        concatenate_if_not_empty(*labels_DAE_attribute_Workload)
+
+
+    labels_attribute = [
+        concatenate_if_not_empty(*labels_attribute_Order),
+        concatenate_if_not_empty(*labels_attribute_Attribute),
+        concatenate_if_not_empty(*labels_attribute_Arrival_Time),
+        concatenate_if_not_empty(*labels_attribute_Workload)
+    ]
+    result_attribute = [
+        concatenate_if_not_empty(*result_attribute_Order, reshape=True),
+        concatenate_if_not_empty(*result_attribute_Attribute, reshape=True),
+        concatenate_if_not_empty(*result_attribute_Arrival_Time, reshape=True),
+        concatenate_if_not_empty(*result_attribute_Workload, reshape=True)
     ]
 
-    result_DAE_attribute = [
-        concatenate_if_not_empty(*result_DAE_attribute_Order),
-        concatenate_if_not_empty(*result_DAE_attribute_Attribute),
-        concatenate_if_not_empty(*result_DAE_attribute_Arrival_Time),
-        concatenate_if_not_empty(*result_DAE_attribute_Workload)
-    ]
+    # results_attribute_single_perspective = element_wise_max(*result_attribute, attribute_level=True)
+    # result_attribute.append(results_attribute_single_perspective)
+    results_attribute_All = []
+    results_attribute_OA = []
+    for r_a_o_index, r_a_a_index, r_a_at_index, r_a_wl_index in zip(result_attribute_Order, result_attribute_Attribute, result_attribute_Arrival_Time, result_attribute_Workload):
+        results_attribute_All.append(np.concatenate((r_a_o_index, r_a_a_index, r_a_at_index, r_a_wl_index), axis=-1))
+        results_attribute_OA.append(np.concatenate((r_a_o_index, r_a_a_index), axis=-1))
 
-    result_DAE_event = [
-        concatenate_if_not_empty(*result_DAE_event_Order),
-        concatenate_if_not_empty(*result_DAE_event_Attribute),
-        concatenate_if_not_empty(*result_DAE_event_Arrival_Time),
-        concatenate_if_not_empty(*result_DAE_event_Workload)
-    ]
+    # for l_attr, r_attr in zip(labels_attribute_All,results_attribute_All):
+    #     print("Label Attribute Shapes:", l_attr.shape, "Result Attribute Shapes:", r_attr.shape)
+    
+    labels_attribute.append(concatenate_if_not_empty(*labels_attribute_All, reshape=True))
+    labels_attribute.append(concatenate_if_not_empty(*label_attribute_OA, reshape=True))
 
-    result_DAE_trace = [
-        concatenate_if_not_empty(*result_DAE_trace_Order),
-        concatenate_if_not_empty(*result_DAE_trace_Attribute),
-        concatenate_if_not_empty(*result_DAE_trace_Arrival_Time),
-        concatenate_if_not_empty(*result_DAE_trace_Workload)
-    ]
+    result_attribute.append(concatenate_if_not_empty(*results_attribute_All, reshape=True))
+    result_attribute.append(concatenate_if_not_empty(*results_attribute_OA, reshape=True))
 
-    return labels_DAE_attribute, labels_DAE_event, labels_DAE_trace, result_DAE_attribute, result_DAE_event, result_DAE_trace
+    # for l_attr in labels_attribute:
+    #     print("Label Attribute Shapes:", l_attr.shape)
+    # for r_attr in result_attribute:
+    #     print("Result Attribute Shapes:", r_attr.shape)
+
+    return labels_attribute, labels_event, labels_trace, result_attribute, result_event, result_trace
+
+def element_wise_max(*arrays, attribute_level=False):
+    valid_arrays = [arr for arr in arrays if arr.size > 0]
+
+    if not valid_arrays:
+        return np.array([])  
+    
+    if attribute_level:
+        for arr in valid_arrays:
+            print(arr.shape)
+
+        valid_arrays = np.concatenate(valid_arrays, axis=0)
+        print(valid_arrays.shape)
+        
+    return np.maximum.reduce(valid_arrays)
 
 def score(run):
     pred_probs_levels = run['results']
@@ -307,35 +406,35 @@ def score(run):
     # print("perspective_label_indices", perspective_label_indices)
 
     (
-        labels_DAE_attribute, 
-        labels_DAE_event, 
-        labels_DAE_trace, 
-        result_DAE_attribute, 
-        result_DAE_event, 
-        result_DAE_trace
+        labels_attribute, 
+        labels_event, 
+        labels_trace, 
+        result_attribute, 
+        result_event, 
+        result_trace
     ) = reshape_data_for_scoring(results=sorted_results, perspective_label_indices=perspective_label_indices, buckets=buckets)
 
     # print("Reshaped data for scoring")
-    print("labels_DAE_attribute", len(labels_DAE_attribute), labels_DAE_attribute[0].shape)
-    print("labels_DAE_event", labels_DAE_event.shape)
-    print("labels_DAE_trace", labels_DAE_trace.shape)
-    print("result_DAE_attribute", len(result_DAE_attribute), result_DAE_attribute[0].shape)
-    print("result_DAE_event", len(result_DAE_event), result_DAE_event[0].shape)
-    print("result_DAE_trace", len(result_DAE_trace), result_DAE_trace[0].shape)
+    # print("labels_attribute", len(labels_attribute), labels_attribute[0].shape)
+    # print("labels_event", labels_event.shape)
+    # print("labels_trace", labels_trace.shape)
+    # print("result_attribute", len(result_attribute), result_attribute[0].shape)
+    # print("result_event", len(result_event), result_event[0].shape)
+    # print("result_trace", len(result_trace), result_trace[0].shape)
 
     level = ['trace', 'event', 'attribute']
-    y_true_levels = [labels_DAE_trace, labels_DAE_event, labels_DAE_attribute]
-    pred_probs_levels = [result_DAE_trace, result_DAE_event, result_DAE_attribute]
-    perspectives = Perspective.keys()
+    y_true_levels = [labels_trace, labels_event, labels_attribute]
+    pred_probs_levels = [result_trace, result_event, result_attribute]
+    perspective_keys = Perspective.keys() + [4, 5] # + [4] is for the single perspective trace + [5] is for the single perspective only order and attribute
+    perspective_labels = Perspective.values() + ['Single', 'Single_OA']
     
-    # RCVDB: TODO calculate f1 score for each level over all perspectives
-    # RCVDB: also for event and attribute levels the irrelevant events and attributes should be removed
-    # RCVDB: Rework reshape_data_for_scoring as it is hardcoded for DAE
+    # Calculate the F1 score for each level and perspective
     scores = []
-    for (level, y_trues, pred_probs), perspective in itertools.product(zip(level, y_true_levels, pred_probs_levels), perspectives):
+    for (level, y_trues, pred_probs), perspective in itertools.product(zip(level, y_true_levels, pred_probs_levels), perspective_keys):
         print("Calculating scores for: Level: ", level, " Perspective: ", perspective)
         try:
             roc_auc, pr_auc, f1, precision, recall = calculate_scores(y_trues, pred_probs, perspective)
+            print(perspective, f1)
         except Exception as e:
             print(level, perspective)
             print(e)
@@ -351,7 +450,7 @@ def score(run):
             # 'repeat':config['repeat'],
             # Level/Perspectives
             'level': level,
-            'perspective': Perspective.values()[perspective],
+            'perspective': perspective_labels[perspective],
             # Scores
             'roc_auc': roc_auc,
             'pr_auc': pr_auc,

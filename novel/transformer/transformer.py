@@ -217,9 +217,14 @@ class Transformer(NNAnomalyDetector):
 
         component_runtime_tracker.end_component('build_model')
 
+        # model.build(input_shape=(None, enc_seq_length))
+        # model.summary()
+
         return model, optimizer, train_dataset, num_features, attribute_dims, attribute_perspectives, perspective_weights, trainX, trainY, case_lengths, case_labels, event_labels, attr_labels
     
     def _train_and_predict(self, model, optimizer, train_dataset, num_features, perspective_weights, multi_task):
+        online_training = self.config.get('online_training', True)
+
         train_loss = Mean(name='train_loss')
         train_loss.reset_states()
 
@@ -235,10 +240,10 @@ class Transformer(NNAnomalyDetector):
         targets = []
         losses = []
 
-        def train_step(encoder_input, decoder_output):
+        def train_step(encoder_input, decoder_output, training=True):
             with GradientTape() as tape:
                 runtime_tracker_inference.start_iteration()
-                prediction_train_step = model(encoder_input, training=True)
+                prediction_train_step = model(encoder_input, training=training)
                 runtime_tracker_inference.end_iteration()
 
                 # print(len(prediction_train_step), prediction_train_step[0].shape, decoder_output.shape)
@@ -292,26 +297,51 @@ class Transformer(NNAnomalyDetector):
 
             # print("Model Input Shape: " , model_input.shape, " Model Output Shape: ", model_target.shape)
 
-            loss_train_step, predictions_train_step = train_step(model_input, model_target)
-
-            runtime_tracker_save_results.start_iteration()
-            
-            predictions_train_step_np = [batch.numpy() for batch in predictions_train_step]
-            for i, batch in enumerate(predictions_train_step_np):
-                predictions[i].extend(batch)
-
-            # for i, _ in enumerate(predictions_train_step):
-            #     for j, _ in enumerate(predictions_train_step[i]):
-            #         predictions[i].append(predictions_train_step[i][j].numpy())
-
+            loss_train_step, predictions_train_step = train_step(model_input, model_target, training=True)
             losses.append(loss_train_step.numpy())
-            targets.append(model_target.numpy())
+
             
-            runtime_tracker_save_results.end_iteration()
+            if online_training:
+                runtime_tracker_save_results.start_iteration()
+                predictions_train_step_np = [batch.numpy() for batch in predictions_train_step]
+                for i, batch in enumerate(predictions_train_step_np):
+                    predictions[i].extend(batch)
+
+                targets.append(model_target.numpy())
+                runtime_tracker_save_results.end_iteration()
+            
             runtime_tracker.end_iteration()
 
             if step % 25 == 0:
                 print(f'Step {step} Loss {train_loss.result():.4f}')
+
+        
+        if not online_training:
+            print(f"\nStart of inference in {len(train_dataset)} batches")
+            for step, (train_batchX, train_batchY) in enumerate(train_dataset):
+                runtime_tracker.start_iteration()
+
+                model_input = train_batchX[:, num_features:] # Skip the starting event as it is always the same
+                if multi_task:
+                    model_target = train_batchY[:, :]
+                else:
+                    model_target = train_batchY[:]
+
+                _, predictions_train_step = train_step(model_input, model_target, training=False)  
+
+                runtime_tracker_save_results.start_iteration()
+                predictions_train_step_np = [batch.numpy() for batch in predictions_train_step]
+                for i, batch in enumerate(predictions_train_step_np):
+                    predictions[i].extend(batch)
+
+                targets.append(model_target.numpy())
+                runtime_tracker_save_results.end_iteration()
+
+                runtime_tracker.end_iteration()
+
+                if step % 25 == 0:
+                    print(f'Step {step}')
+
         print(f'Step {step} Loss {train_loss.result():.4f}')
 
         runtime_results_all = runtime_tracker.get_average_std_run_time()

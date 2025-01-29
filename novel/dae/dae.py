@@ -274,6 +274,7 @@ class DAE(NNAnomalyDetector):
         categorical_encoding = self.config.get('categorical_encoding', EncodingCategorical.ONE_HOT)
         vector_size = self.config.get('vector_size', None)
         batch_size = self.config.get('batch_size', 2)
+        online_training = self.config.get('online_training', True)
         component_runtime_tracker:ComponentRuntimeTracker = self.config.get('component_runtime_tracker', None)
 
         model_buckets, features_buckets, targets_buckets, case_lengths_buckets, bucket_case_labels, bucket_event_labels, bucket_attr_labels = self.model_fn(dataset, bucket_boundaries, categorical_encoding, vector_size)
@@ -349,25 +350,38 @@ class DAE(NNAnomalyDetector):
                 loss = model.train_on_batch(x_batch, y_batch)
                 runtime_tracker_train.end_iteration()
 
-                runtime_tracker_inference.start_iteration()
-                prediction_batch = model.predict_on_batch(x_batch)
-                runtime_tracker_inference.end_iteration()
+                if online_training:
+                    runtime_tracker_inference.start_iteration()
+                    prediction_batch = model.predict_on_batch(x_batch)
+                    runtime_tracker_inference.end_iteration()
 
-                runtime_tracker_save_results.start_iteration()
+                    runtime_tracker_save_results.start_iteration()
+                    for prediction in prediction_batch:
+                        predictions.append(prediction)
+                    runtime_tracker_save_results.end_iteration()
+
+                runtime_tracker.end_iteration()
+
                 # RCVDB: Sanity check to see if the loss includes NanN
                 if tf.reduce_any(tf.math.is_nan(loss)):
                     print("NaN detected in loss!")
                     raise ValueError("NaN detected in loss, stopping training!")
-
                 losses.append(loss)
-                for prediction in prediction_batch:
-                    predictions.append(prediction)
-                runtime_tracker_save_results.end_iteration()
-
-                runtime_tracker.end_iteration()
 
                 if (i+1) % 100 == 0 or i == 0:
                     pbar.set_postfix({'loss': loss})
+
+            if not online_training:
+                pbar = tqdm(enumerate(feature_target_tf), total=total_steps)
+                for i, (x_batch, y_batch) in pbar:
+                    runtime_tracker_inference.start_iteration()
+                    prediction_batch = model.predict_on_batch(x_batch)
+                    runtime_tracker_inference.end_iteration()
+                    
+                    runtime_tracker_save_results.start_iteration()
+                    for prediction in prediction_batch:
+                        predictions.append(prediction)
+                    runtime_tracker_save_results.end_iteration()
 
             component_runtime_tracker.end_component('train_predict_model')
             component_runtime_tracker.start_component('post_process_results')
