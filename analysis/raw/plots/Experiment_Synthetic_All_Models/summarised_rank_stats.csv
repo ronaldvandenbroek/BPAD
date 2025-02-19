@@ -1,25 +1,5 @@
-categorical_encoding,level,rank_mean,rank_std,f1_mean,f1_std
-Trace2Vec Average Then Concatinate,attribute,2.06,1.16,0.04,0.02
-Word2Vec Average Then Concatinate,attribute,2.44,1.04,0.04,0.02
-Trace2Vec Concatinate,attribute,3.11,1.64,0.03,0.02
-One Hot,attribute,4.11,1.81,0.03,0.02
-Fixed Vector,attribute,4.61,1.2,0.03,0.02
-Word2Vec Concatinate,attribute,4.67,1.41,0.03,0.02
-Word2Vec Average Then Concatinate,combined,2.17,0.99,0.11,0.04
-Trace2Vec Concatinate,combined,2.5,1.42,0.11,0.05
-Trace2Vec Average Then Concatinate,combined,2.56,1.46,0.11,0.05
-One Hot,combined,4.33,1.64,0.11,0.04
-Fixed Vector,combined,4.56,1.15,0.1,0.04
-Word2Vec Concatinate,combined,4.89,1.23,0.1,0.04
-Trace2Vec Average Then Concatinate,event,1.44,0.7,0.06,0.03
-Word2Vec Average Then Concatinate,event,1.78,0.55,0.06,0.03
-One Hot,event,3.33,1.24,0.06,0.02
-Trace2Vec Concatinate,event,4.06,0.64,0.05,0.02
-Word2Vec Concatinate,event,4.94,1.06,0.05,0.02
-Fixed Vector,event,5.44,0.7,0.05,0.02
-Trace2Vec Concatinate,trace,1.72,1.18,0.24,0.1
-Word2Vec Average Then Concatinate,trace,2.78,1.7,0.23,0.09
-Trace2Vec Average Then Concatinate,trace,3.61,1.38,0.23,0.09
-Fixed Vector,trace,3.94,1.51,0.22,0.1
-One Hot,trace,4.44,1.38,0.23,0.09
-Word2Vec Concatinate,trace,4.5,1.42,0.22,0.1
+model,level,rank_mean,rank_std,f1_mean,f1_std
+DAE,attribute,1.0,0.0,0.03,0.02
+DAE,combined,1.0,0.0,0.12,0.05
+DAE,event,1.0,0.0,0.07,0.03
+DAE,trace,1.0,0.0,0.27,0.1
