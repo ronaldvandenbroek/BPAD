@@ -27,6 +27,9 @@ class Case(object):
         else:
             self.events = events
         self.attributes = dict(kwargs)
+        
+        # RCVDB: Determine if the trace is complete or a prefix of a complete trace
+        self.complete_trace = True
 
     def __eq__(self, other):
         if len(self) != len(other):
@@ -73,6 +76,21 @@ class Case(object):
     def add_event(self, event):
         self.events.append(event)
 
+    def get_attributes_by_type(self, attribute_key):
+        attribute_values = []
+        for event in self.events:
+            event:Event
+            if attribute_key in event.attributes:
+                attribute_values.append(event.attributes[attribute_key])
+            elif attribute_key == 'name':
+                attribute_values.append(event.name)
+        return attribute_values
+
+    # RCVDB: For sorting the prefixes on the last event arrival, which is the timestamp of the last event in events
+    @property
+    def last_event_arrival(self):
+        return self.events[-1].timestamp
+
     @property
     def num_events(self):
         return len(self.events)
@@ -94,3 +112,7 @@ class Case(object):
     def clone(trace):
         events = [Event.clone(event) for event in trace.events]
         return Case(id=trace.id, events=events, **dict(trace.attributes))
+    
+    @staticmethod
+    def get_last_event_time(case):
+        return case.last_event_arrival

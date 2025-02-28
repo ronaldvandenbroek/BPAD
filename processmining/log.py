@@ -23,7 +23,7 @@ import numpy as np
 import pandas as pd
 from lxml import etree
 
-from utils.enums import AttributeType
+from utils.enums import AttributeType, Perspective
 from utils.fs import EVENTLOG_CACHE_DIR
 from utils.fs import EVENTLOG_DIR
 from processmining.case import Case
@@ -60,17 +60,53 @@ class EventLog(object):
     @property
     def event_attribute_keys(self):
         attributes = ['name']
+        # print(f'Attributes: {self.attributes.keys()}')
         if 'global_attributes' in self.attributes.keys() and 'event' in self.attributes['global_attributes'].keys():
+            # print(f"Global Attributes: {self.attributes['global_attributes'].keys()}")
+            # RCVDB: Ignore event level label
             ignored = ['concept:name', 'time:timestamp', 'lifecycle:transition', 'EventID', 'activityNameEN',
                        'activityNameNL', 'dateFinished', 'question', 'product', 'EventOrigin', 'Action',
-                       'organization involved', 'impact','concept:instance']
+                       'organization involved', 'impact','concept:instance', '_label']
 
             attributes += sorted(
                 [key for key in self.attributes['global_attributes']['event'].keys() if key not in ignored])
         else:
+            ignored = ['action_code', 'activityNameEN', 'activityNameNL',
+                       'dateFinished', 'dueDate', 'lifecycle:transition',
+                       'monitoringResource','planned','question',
+                       'concept:name', 'time:timestamp']
+
+            # RCVDB: Ignore event level label
             attributes += sorted(
-                [key for key in list(self.cases[0].events[0].attributes.keys()) if not key.startswith('_')])
+                [key for key in list(self.cases[0].events[0].attributes.keys()) if not(key.startswith('_')) and key not in ignored])
         return attributes
+    
+    def get_activity_name(self):
+        return self.get_attribute_index('name')
+    
+    # RCVDB: Determine the index of a certain attribute
+    def get_attribute_index(self, atrribute_name):
+        attributes = self.event_attribute_keys
+        if atrribute_name in attributes:
+            return attributes.index(atrribute_name)
+        return None   
+    
+    # RCVDB: Determine the perspectives a certain attribute belongs to
+    @property
+    def event_attribute_perspectives(self):
+        perspectives = []
+        attributes = self.event_attribute_keys
+        for attribute in attributes:
+            if 'name' in attribute:
+                perspectives.append(Perspective.ORDER)
+            elif 'arrival_time' in attribute:
+                perspectives.append(Perspective.ARRIVAL_TIME)
+            elif 'workload' in attribute:
+                perspectives.append(Perspective.WORKLOAD)
+            else:
+                perspectives.append(Perspective.ATTRIBUTE)
+
+        return perspectives
 
     @property
     def num_event_attributes(self):
@@ -149,7 +185,7 @@ class EventLog(object):
         return counts
 
     @staticmethod
-    def load(eventlog_name):
+    def load(eventlog_name, prefix):
         """
         Load event log from file system.
 
@@ -163,23 +199,12 @@ class EventLog(object):
         if eventlog_name.name.endswith('.xes') or eventlog_name.name.endswith('.xes.gz'):
             return EventLog.from_xes(eventlog_name)
         elif eventlog_name.name.endswith('.json') or eventlog_name.name.endswith('.json.gz'):
-            return EventLog.from_json(eventlog_name)
+            return EventLog.from_json(eventlog_name, prefix)
         else:
-            return EventLog.from_json(str(eventlog_name) + '.json.gz')
+            return EventLog.from_json(str(eventlog_name) + '.json.gz', prefix)
 
     @staticmethod
-    def from_dict(log):
-        event_log = EventLog(**log['attributes'])
-        for case in log['cases']:
-            _case = Case(id=case['id'], **case['attributes'])
-            for e in case['events']:
-                event = Event(name=e['name'], timestamp=e['timestamp'], **e['attributes'])
-                _case.add_event(event)
-            event_log.add_case(_case)
-        return event_log
-
-    @staticmethod
-    def from_json(file_path):
+    def from_json(file_path, prefix):
         """
         Parse event log from JSON.
 
@@ -209,6 +234,45 @@ class EventLog(object):
 
         for case in log[case_key]:
             _case = Case(id=case['id'], **case['attributes'])
+            events = case['events']
+            num_events = len(events)
+
+            for i, e in enumerate(events):
+                event = Event(name=e['name'], timestamp=e['timestamp'], **e['attributes'])
+                _case.add_event(event)
+
+                # RCVDB: If the event_log is prefix based add a clone of each case to the log after every added event
+                # This simulates that each 'new' event loads the corresponding prefix of the case.
+                if prefix:
+                    cloned_case = Case.clone(_case)
+
+                    # Mark if the event is a prefix or a complete trace
+                    is_last_event = (i == num_events - 1)
+                    if not is_last_event:
+                        cloned_case.complete_trace = False
+
+                    event_log.add_case(cloned_case)
+
+            # RCVDB: If the event_log is not prefix based add only the complete traces to the log
+            # If it is prefix based then add a final 'complete' case to the trace
+            # if not prefix:
+            _case.complete_trace = True
+            event_log.add_case(_case)
+
+        # RCVDB: Sort the event_log so the prefixes are ordered by the order the last event arrived
+        if prefix:
+            event_log.cases = sorted(event_log.cases, key=Case.get_last_event_time, reverse=False)    
+
+        return event_log
+    
+    @staticmethod
+    def from_dict(log):
+        # RCVDB: Need to implement prefix-based loading to support loading from dict.
+        raise NotImplementedError("Loading from dict is currently not supported.")
+    
+        event_log = EventLog(**log['attributes'])
+        for case in log['cases']:
+            _case = Case(id=case['id'], **case['attributes'])
             for e in case['events']:
                 event = Event(name=e['name'], timestamp=e['timestamp'], **e['attributes'])
                 _case.add_event(event)
@@ -223,6 +287,8 @@ class EventLog(object):
         :param file_path: path to xes file
         :return: EventLog object
         """
+        # RCVDB: Need to implement prefix-based loading to support loading from xes.
+        raise NotImplementedError("Loading from XES is currently not supported.")
 
         # parse the log with lxml
         log = etree.parse(file_path).getroot()
@@ -325,6 +391,9 @@ class EventLog(object):
         :param file_path: path to CSV file
         :return: EventLog object
         """
+        # RCVDB: Need to implement prefix-based loading to support loading from csv.
+        raise NotImplementedError("Loading from CSV is currently not supported.")
+
         # parse file as pandas dataframe
         df = pd.read_csv(file_path)
 
@@ -348,6 +417,9 @@ class EventLog(object):
 
     @staticmethod
     def from_sql(server, database, resource, password, schema='pm'):
+        # RCVDB: Need to implement prefix-based loading to support loading from sql.
+        raise NotImplementedError("Loading from SQL is currently not supported.")
+    
         import pyodbc
         conn = pyodbc.connect(
             f'DRIVER={{ODBC Driver 17 for SQL Server}};'

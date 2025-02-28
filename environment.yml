@@ -10,11 +10,15 @@ dependencies:
   - pyg=2.3.0
   - pandas=2.0.3
   - gensim=4.3.0
+  - orange3=3.30.0 #3.37.0 Newest versions depricate needed Critical Difference Fuctions (Source Code https://github.com/biolab/orange3/tree/e2282bbe2cf3d30ba41220ea2df0b79201ca430c)
+  - ipykernel
   - pip
   - pip:
           - torch==1.13.0
           - tensorflow==2.10.0
           - pm4py==2.7.4
+          - transformers==4.46.2
+          - scipy==1.10.1
 
 # RCVDB: TODO Try to get Tensorflow on the GPU working
 # Follow instructions: https://www.tensorflow.org/install/pip#windows-wsl2

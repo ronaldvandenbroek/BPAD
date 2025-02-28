@@ -87,6 +87,35 @@ class Class(object):
     def items():
         return dict(zip(Class.keys(), Class.values()))
 
+# RCVDB: Enum representing the possible anomaly perspectives
+class Perspective(object):
+    # RCVDB: Removing normal as that isn't a perspective that needs to be predicted,
+    # All values being none indicateds a normal trace.
+    # NORMAL = 0
+    ORDER = 0
+    ATTRIBUTE = 1
+    ARRIVAL_TIME = 2
+    WORKLOAD = 3
+
+    @staticmethod
+    def values():
+        return ['Order', 'Attribute', 'Arrival Time', 'Workload'] #'Normal', 
+
+    @staticmethod
+    def colors():
+        return ['#F44336', '#3F51B5', '#F57F17', '#388E3C'] #'#F5F5F5', 
+
+    @staticmethod
+    def color(key):
+        return dict(zip(Perspective.keys(), Perspective.colors())).get(key)
+
+    @staticmethod
+    def keys():
+        return [Perspective.ORDER, Perspective.ATTRIBUTE, Perspective.ARRIVAL_TIME, Perspective.WORKLOAD] #Perspective.NORMAL,
+
+    @staticmethod
+    def items():
+        return dict(zip(Perspective.keys(), Perspective.values()))
 
 class PadMode(object):
     PRE = 'pre'
@@ -195,3 +224,87 @@ class Strategy(object):
     @staticmethod
     def items():
         return dict(zip(Strategy.keys(), Strategy.values()))
+
+
+class EncodingCategorical(Enum):
+    NONE = 'None'
+    ONE_HOT = 'One Hot'
+    EMBEDDING = 'Embedding' #Not Implemented
+    WORD_2_VEC_ATC = 'Word2Vec Average Then Concatinate'
+    WORD_2_VEC_C = 'Word2Vec Concatinate'
+    FIXED_VECTOR = 'Fixed Vector'
+    TRACE_2_VEC_ATC = 'Trace2Vec Average Then Concatinate'
+    TRACE_2_VEC_C = 'Trace2Vec Concatinate'
+    ELMO = 'ELMo' #Not Implemented
+    TOKENIZER = 'Tokenizer'
+
+    @staticmethod
+    def values():
+        return ['None', 
+                'One Hot', 
+                'Embedding', 
+                'Word2Vec Average Then Concatinate', 
+                'Word2Vec Concatinate', 
+                'Fixed Vector',
+                'Trace2Vec Average Then Concatinate',
+                'Trace2Vec Concatinate',
+                'ELMo',
+                'Tokenizer']
+    
+    @staticmethod
+    def values_short():
+        return ['None', 
+                'One-Hot', 
+                'Embedding', 
+                'W2V-ATC', 
+                'W2V-C', 
+                'Fixed-Vector',
+                'T2V-ATC',
+                'T2V-C',
+                'ELMo',
+                'Tokenizer']
+
+    @staticmethod
+    def keys():
+        return [EncodingCategorical.NONE, 
+                EncodingCategorical.ONE_HOT, 
+                EncodingCategorical.EMBEDDING, 
+                EncodingCategorical.WORD_2_VEC_ATC,
+                EncodingCategorical.WORD_2_VEC_C, 
+                EncodingCategorical.FIXED_VECTOR,
+                EncodingCategorical.TRACE_2_VEC_ATC,
+                EncodingCategorical.TRACE_2_VEC_C,
+                EncodingCategorical.ELMO,
+                EncodingCategorical.TOKENIZER]
+
+    @staticmethod
+    def items():
+        return dict(zip(EncodingCategorical.keys(), EncodingCategorical.values()))
+    
+    @staticmethod
+    def items_short():
+        return dict(zip(EncodingCategorical.keys(), EncodingCategorical.values_short()))
+    
+    @staticmethod
+    def from_string(value):
+        # Create a dictionary mapping each string value to the Enum member
+        lookup = {v.value: v for v in EncodingCategorical}
+        # Use the dictionary to return the matching enum member or raise KeyError
+        return lookup.get(value)
+    
+
+class EncodingNumerical(Enum):
+    NONE = 'None'
+    MIN_MAX_SCALING = 'Min Max Scaling'
+
+    @staticmethod
+    def values():
+        return ['None', 'Min Max Scaling']
+
+    @staticmethod
+    def keys():
+        return [EncodingNumerical.NONE, EncodingNumerical.MIN_MAX_SCALING]
+
+    @staticmethod
+    def items():
+        return dict(zip(EncodingNumerical.keys(), EncodingNumerical.values()))

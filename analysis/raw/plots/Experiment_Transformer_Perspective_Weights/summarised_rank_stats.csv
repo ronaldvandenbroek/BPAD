@@ -1,0 +1,17 @@
+model,level,rank_mean,rank_std,f1_mean,f1_std
+transformer_order_4,attribute,2.0,1.1,0.09,0.01
+transformer_order_8,attribute,2.17,0.75,0.09,0.01
+transformer_order_2,attribute,2.67,1.21,0.09,0.01
+transformer_order_1,attribute,3.17,1.33,0.09,0.01
+transformer_order_4,combined,1.5,0.55,0.21,0.01
+transformer_order_2,combined,2.5,1.05,0.21,0.01
+transformer_order_8,combined,2.67,1.03,0.21,0.01
+transformer_order_1,combined,3.33,1.21,0.21,0.02
+transformer_order_4,event,2.0,0.89,0.13,0.01
+transformer_order_8,event,2.17,0.98,0.13,0.01
+transformer_order_2,event,2.67,1.21,0.13,0.01
+transformer_order_1,event,3.17,1.33,0.13,0.01
+transformer_order_4,trace,1.67,0.82,0.42,0.03
+transformer_order_2,trace,2.17,0.75,0.42,0.03
+transformer_order_8,trace,2.83,1.47,0.42,0.03
+transformer_order_1,trace,3.33,0.82,0.42,0.03

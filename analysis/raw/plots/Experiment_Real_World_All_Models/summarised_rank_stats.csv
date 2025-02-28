@@ -1,0 +1,13 @@
+categorical_encoding,level,rank_mean,rank_std,f1_mean,f1_std
+Word2Vec Average Then Concatinate,attribute,1.22,0.42,0.07,0.02
+Trace2Vec Average Then Concatinate,attribute,1.78,0.42,0.06,0.02
+Trace2Vec Concatinate,attribute,3.0,0.0,0.03,0.0
+Word2Vec Average Then Concatinate,combined,1.18,0.39,0.15,0.03
+Trace2Vec Average Then Concatinate,combined,1.82,0.39,0.15,0.03
+Trace2Vec Concatinate,combined,3.0,0.0,0.11,0.03
+Word2Vec Average Then Concatinate,event,1.07,0.25,0.14,0.02
+Trace2Vec Average Then Concatinate,event,1.93,0.25,0.14,0.02
+Trace2Vec Concatinate,event,3.0,0.0,0.07,0.01
+Trace2Vec Average Then Concatinate,trace,1.47,0.5,0.25,0.06
+Word2Vec Average Then Concatinate,trace,1.53,0.5,0.25,0.06
+Trace2Vec Concatinate,trace,3.0,0.0,0.24,0.08
