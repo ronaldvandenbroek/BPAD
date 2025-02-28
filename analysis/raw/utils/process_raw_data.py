@@ -382,10 +382,16 @@ def reshape_data_for_scoring(results, perspective_label_indices, buckets):
         concatenate_if_not_empty(*result_trace_Order),
         concatenate_if_not_empty(*result_trace_Attribute)
     ]
-    results_trace_single_perspective = element_wise_max(*result_trace)
-    results_trace_single_perspective_OA = element_wise_max(*result_trace_OA)
-    result_trace.append(results_trace_single_perspective)
-    result_trace.append(results_trace_single_perspective_OA)
+    try:
+        results_trace_single_perspective = element_wise_max(*result_trace)
+        results_trace_single_perspective_OA = element_wise_max(*result_trace_OA)
+        result_trace.append(results_trace_single_perspective)
+        result_trace.append(results_trace_single_perspective_OA)
+    except:
+        print()
+        for r_trace in result_trace:
+            print(r_trace.shape)
+        raise
     result_trace = np.vstack(result_trace)
 
     # print("Label Trace Shapes:", labels_trace.shape)
@@ -530,7 +536,7 @@ def score(run):
     #     append_scores(scores, run, 'trace', perspective_labels[perspective], 0, 0, f1_trace, 0, 0, model_prefix='v2_')
 
     for (level, y_trues, pred_probs), perspective in itertools.product(zip(level, y_true_levels, pred_probs_levels), perspective_keys):
-        # print("Calculating scores for: Level: ", level, " Perspective: ", perspective)
+        # print("Calculating scores for: Level: ", level, " Perspective: ", perspective, y_trues[perspective].shape, pred_probs[perspective].shape)
         try:
             roc_auc, pr_auc, f1, precision, recall = calculate_scores(y_trues, pred_probs, perspective)
             # print("%.2f" % f1)

@@ -53,7 +53,7 @@ class TransformerModel(Model):
                 )
 
     def padding_mask(self, input):
-        # Create mask which marks the zero padding values in the input by a 1.0
+        # Create mask which marks the zero padding values in the input by a 0
         mask = math.equal(input, 0)
         mask = cast(mask, float32)
         mask = mask[:, newaxis, newaxis, :]

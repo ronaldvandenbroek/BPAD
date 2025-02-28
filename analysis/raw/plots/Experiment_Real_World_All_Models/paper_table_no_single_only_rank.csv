@@ -1,0 +1,13 @@
+level&categorical_encoding&rank_Average&rank_Order&rank_Attribute&rank_Arrival Time&rank_Workload
+trace&Word2Vec ATC&1.71&1.8&1.69&1.82&1.76
+trace&Trace2Vec C&2.07&2.33&2.33&1.67&1.8
+trace&Trace2Vec ATC&1.6&1.42&1.53&1.62&1.64
+event&Word2Vec ATC&1.11&1.62&1.69&1.78&1.16
+event&Trace2Vec C&3.0&2.73&2.07&2.6&3.0
+event&Trace2Vec ATC&1.89&1.47&1.62&1.36&1.84
+attribute&Word2Vec ATC&1.22&1.64&1.69&1.78&1.09
+attribute&Trace2Vec C&3.0&2.6&2.07&2.6&3.0
+attribute&Trace2Vec ATC&1.78&1.49&1.62&1.36&1.91
+combined&Word2Vec ATC&1.29&1.82&1.71&1.78&1.29
+combined&Trace2Vec C&3.0&2.53&2.33&2.2&3.0
+combined&Trace2Vec ATC&1.71&1.33&1.51&1.49&1.71

@@ -1,421 +1,181 @@
-dataset_short_name,categorical_encoding,level,f1_mean,f1_std,f1_rank
-bpic15-0.0-1/0.05,Trace2Vec Average Then Concatinate,attribute,0.04481418616163905,0.07702983587424651,2.0
-bpic15-0.0-1/0.05,Trace2Vec Average Then Concatinate,event,0.11515821655088772,0.20053833753428116,2.0
-bpic15-0.0-1/0.05,Trace2Vec Average Then Concatinate,trace,0.16409112739754042,0.22319595130413175,2.0
-bpic15-0.0-1/0.05,Trace2Vec Concatinate,attribute,0.022085336960666634,0.037734416789191844,3.0
-bpic15-0.0-1/0.05,Trace2Vec Concatinate,event,0.0634998199844879,0.11108030278484939,3.0
-bpic15-0.0-1/0.05,Trace2Vec Concatinate,trace,0.15495947610118743,0.191353606988927,3.0
-bpic15-0.0-1/0.05,Word2Vec Average Then Concatinate,attribute,0.04486704376691941,0.07697979648366698,1.0
-bpic15-0.0-1/0.05,Word2Vec Average Then Concatinate,event,0.11592047032274051,0.20146468483284835,1.0
-bpic15-0.0-1/0.05,Word2Vec Average Then Concatinate,trace,0.16580353315541338,0.22266397954494738,1.0
-bpic15-0.0-1/0.1,Trace2Vec Average Then Concatinate,attribute,0.0458129140839178,0.07671471789185842,2.0
-bpic15-0.0-1/0.1,Trace2Vec Average Then Concatinate,event,0.11130707624205512,0.19375705288084072,2.0
-bpic15-0.0-1/0.1,Trace2Vec Average Then Concatinate,trace,0.1738410957518613,0.2130152398751951,1.0
-bpic15-0.0-1/0.1,Word2Vec Average Then Concatinate,attribute,0.046246459176938724,0.07676796573558141,1.0
-bpic15-0.0-1/0.1,Word2Vec Average Then Concatinate,event,0.11257663564711658,0.19387942528961263,1.0
-bpic15-0.0-1/0.1,Word2Vec Average Then Concatinate,trace,0.17360187122427698,0.21063916539275201,2.0
-bpic15-0.0-1/0.15,Trace2Vec Average Then Concatinate,attribute,0.04805781290927288,0.07849950911093218,2.0
-bpic15-0.0-1/0.15,Trace2Vec Average Then Concatinate,event,0.11695462095152329,0.20066713222623617,2.0
-bpic15-0.0-1/0.15,Trace2Vec Average Then Concatinate,trace,0.1867623349406665,0.2125687482660752,2.0
-bpic15-0.0-1/0.15,Word2Vec Average Then Concatinate,attribute,0.04840706783481535,0.07852312942803412,1.0
-bpic15-0.0-1/0.15,Word2Vec Average Then Concatinate,event,0.11776184852868037,0.20022878434291239,1.0
-bpic15-0.0-1/0.15,Word2Vec Average Then Concatinate,trace,0.18678019824061542,0.21073593155449413,1.0
-bpic15-0.0-1/0.2,Trace2Vec Average Then Concatinate,attribute,0.0573115911672028,0.08550857343942468,2.0
-bpic15-0.0-1/0.2,Trace2Vec Average Then Concatinate,event,0.11908250174177867,0.20171702145143777,2.0
-bpic15-0.0-1/0.2,Trace2Vec Average Then Concatinate,trace,0.2192373159127577,0.19019797075269507,2.0
-bpic15-0.0-1/0.2,Word2Vec Average Then Concatinate,attribute,0.05783211807660319,0.08498878985353125,1.0
-bpic15-0.0-1/0.2,Word2Vec Average Then Concatinate,event,0.12038542975668619,0.20126534997827153,1.0
-bpic15-0.0-1/0.2,Word2Vec Average Then Concatinate,trace,0.21949901515961287,0.1879742827794605,1.0
-bpic15-0.0-1/0.25,Trace2Vec Average Then Concatinate,attribute,0.05363944363848219,0.0760126272392561,2.0
-bpic15-0.0-1/0.25,Trace2Vec Average Then Concatinate,event,0.11942209481411638,0.19462320761441007,2.0
-bpic15-0.0-1/0.25,Trace2Vec Average Then Concatinate,trace,0.23055772094475824,0.18705502855847966,2.0
-bpic15-0.0-1/0.25,Trace2Vec Concatinate,attribute,0.026952857258412746,0.03548960400359545,3.0
-bpic15-0.0-1/0.25,Trace2Vec Concatinate,event,0.06764778330039772,0.10988275451355564,3.0
-bpic15-0.0-1/0.25,Trace2Vec Concatinate,trace,0.2150651599601311,0.16167471208254655,3.0
-bpic15-0.0-1/0.25,Word2Vec Average Then Concatinate,attribute,0.05377808202443398,0.07624740694165948,1.0
-bpic15-0.0-1/0.25,Word2Vec Average Then Concatinate,event,0.12060877301560177,0.19658856138763608,1.0
-bpic15-0.0-1/0.25,Word2Vec Average Then Concatinate,trace,0.23061258195458884,0.18771321590080087,1.0
-bpic15-0.0-1/0.3,Trace2Vec Average Then Concatinate,attribute,0.05176846727396966,0.07022355772834506,2.0
-bpic15-0.0-1/0.3,Trace2Vec Average Then Concatinate,event,0.12247003996817779,0.19843596769368263,2.0
-bpic15-0.0-1/0.3,Trace2Vec Average Then Concatinate,trace,0.27697611850276427,0.16350447339269625,1.0
-bpic15-0.0-1/0.3,Word2Vec Average Then Concatinate,attribute,0.05189299392876751,0.07040472961451118,1.0
-bpic15-0.0-1/0.3,Word2Vec Average Then Concatinate,event,0.12289848329019853,0.19779065328218043,1.0
-bpic15-0.0-1/0.3,Word2Vec Average Then Concatinate,trace,0.2763323740669836,0.16223306866163043,2.0
-bpic15-0.0-1/0.35,Trace2Vec Average Then Concatinate,attribute,0.05595965330435612,0.07521627609986246,2.0
-bpic15-0.0-1/0.35,Trace2Vec Average Then Concatinate,event,0.1127143796384372,0.1789215353026763,2.0
-bpic15-0.0-1/0.35,Trace2Vec Average Then Concatinate,trace,0.3002876447443851,0.14080812977567272,2.0
-bpic15-0.0-1/0.35,Word2Vec Average Then Concatinate,attribute,0.0560890401132537,0.07501353493267705,1.0
-bpic15-0.0-1/0.35,Word2Vec Average Then Concatinate,event,0.1139520359009863,0.17932497209582224,1.0
-bpic15-0.0-1/0.35,Word2Vec Average Then Concatinate,trace,0.300625090665582,0.14019638068864795,1.0
-bpic15-0.0-1/0.4,Trace2Vec Average Then Concatinate,attribute,0.05064636390253794,0.06359058234491134,2.0
-bpic15-0.0-1/0.4,Trace2Vec Average Then Concatinate,event,0.12023148213717565,0.18885728090132117,2.0
-bpic15-0.0-1/0.4,Trace2Vec Average Then Concatinate,trace,0.31601911972827745,0.12639661570859892,2.0
-bpic15-0.0-1/0.4,Word2Vec Average Then Concatinate,attribute,0.05069294479702848,0.06364391574876063,1.0
-bpic15-0.0-1/0.4,Word2Vec Average Then Concatinate,event,0.12206668232885257,0.19138297200072654,1.0
-bpic15-0.0-1/0.4,Word2Vec Average Then Concatinate,trace,0.3167255524299493,0.12690523662173195,1.0
-bpic15-0.0-1/0.45,Trace2Vec Average Then Concatinate,attribute,0.06647988808110093,0.08317442281330228,2.0
-bpic15-0.0-1/0.45,Trace2Vec Average Then Concatinate,event,0.13339848633762882,0.2050356324298087,2.0
-bpic15-0.0-1/0.45,Trace2Vec Average Then Concatinate,trace,0.35971223211255704,0.13289197068692288,1.0
-bpic15-0.0-1/0.45,Trace2Vec Concatinate,attribute,0.03384559809704827,0.034803810815660495,3.0
-bpic15-0.0-1/0.45,Trace2Vec Concatinate,event,0.07551983597797769,0.10925886530872539,3.0
-bpic15-0.0-1/0.45,Trace2Vec Concatinate,trace,0.3285811372030499,0.10153177425650237,3.0
-bpic15-0.0-1/0.45,Word2Vec Average Then Concatinate,attribute,0.06670453278841856,0.08427160263069534,1.0
-bpic15-0.0-1/0.45,Word2Vec Average Then Concatinate,event,0.13495296832283749,0.20815595117245425,1.0
-bpic15-0.0-1/0.45,Word2Vec Average Then Concatinate,trace,0.3594256206362448,0.13255998663719865,2.0
-bpic15-0.0-2/0.05,Trace2Vec Average Then Concatinate,attribute,0.08656959875856009,0.14840945346747567,2.0
-bpic15-0.0-2/0.05,Trace2Vec Average Then Concatinate,event,0.15995971200480247,0.2776435981535324,2.0
-bpic15-0.0-2/0.05,Trace2Vec Average Then Concatinate,trace,0.18342414078825459,0.26235538825674426,2.0
-bpic15-0.0-2/0.05,Trace2Vec Concatinate,attribute,0.02993674923485982,0.04822811066404389,3.0
-bpic15-0.0-2/0.05,Trace2Vec Concatinate,event,0.07498725188599711,0.1288715757851665,3.0
-bpic15-0.0-2/0.05,Trace2Vec Concatinate,trace,0.1726346561289126,0.22879915996023883,3.0
-bpic15-0.0-2/0.05,Word2Vec Average Then Concatinate,attribute,0.08759954406032108,0.15051455361453153,1.0
-bpic15-0.0-2/0.05,Word2Vec Average Then Concatinate,event,0.16131308515069906,0.280263534354998,1.0
-bpic15-0.0-2/0.05,Word2Vec Average Then Concatinate,trace,0.18451744013165702,0.26335950896645366,1.0
-bpic15-0.0-2/0.1,Trace2Vec Average Then Concatinate,attribute,0.08697871855715754,0.15074830953514087,2.0
-bpic15-0.0-2/0.1,Trace2Vec Average Then Concatinate,event,0.15762490760089992,0.27726559362500036,2.0
-bpic15-0.0-2/0.1,Trace2Vec Average Then Concatinate,trace,0.20968088010131403,0.24879040698807897,1.0
-bpic15-0.0-2/0.1,Word2Vec Average Then Concatinate,attribute,0.08773516021339503,0.1512595322935842,1.0
-bpic15-0.0-2/0.1,Word2Vec Average Then Concatinate,event,0.16053264655625601,0.28076863341423053,1.0
-bpic15-0.0-2/0.1,Word2Vec Average Then Concatinate,trace,0.20943990284714742,0.24874927494404478,2.0
-bpic15-0.0-2/0.15,Trace2Vec Average Then Concatinate,attribute,0.08550400213691112,0.13134563617376682,1.0
-bpic15-0.0-2/0.15,Trace2Vec Average Then Concatinate,event,0.16406073084502196,0.27221799665415913,2.0
-bpic15-0.0-2/0.15,Trace2Vec Average Then Concatinate,trace,0.22640060343480561,0.23748294050233712,2.0
-bpic15-0.0-2/0.15,Word2Vec Average Then Concatinate,attribute,0.08519366161395284,0.1315780406227126,2.0
-bpic15-0.0-2/0.15,Word2Vec Average Then Concatinate,event,0.16508500192914582,0.27395186637413,1.0
-bpic15-0.0-2/0.15,Word2Vec Average Then Concatinate,trace,0.2265527090310398,0.23709570532908353,1.0
-bpic15-0.0-2/0.2,Trace2Vec Average Then Concatinate,attribute,0.0885107841431097,0.1436801797430352,2.0
-bpic15-0.0-2/0.2,Trace2Vec Average Then Concatinate,event,0.16328836304180666,0.2769367559461678,2.0
-bpic15-0.0-2/0.2,Trace2Vec Average Then Concatinate,trace,0.2475112027353364,0.23151346789246213,2.0
-bpic15-0.0-2/0.2,Word2Vec Average Then Concatinate,attribute,0.08973910989447194,0.14448916477047966,1.0
-bpic15-0.0-2/0.2,Word2Vec Average Then Concatinate,event,0.16475415778171168,0.2772955169847212,1.0
-bpic15-0.0-2/0.2,Word2Vec Average Then Concatinate,trace,0.24759616795889422,0.23066362216684058,1.0
-bpic15-0.0-2/0.25,Trace2Vec Average Then Concatinate,attribute,0.08669237820271436,0.13753529114964724,2.0
-bpic15-0.0-2/0.25,Trace2Vec Average Then Concatinate,event,0.16423315446652087,0.27816750326650985,2.0
-bpic15-0.0-2/0.25,Trace2Vec Average Then Concatinate,trace,0.25598416744100755,0.21813495488526233,2.0
-bpic15-0.0-2/0.25,Trace2Vec Concatinate,attribute,0.034074028239596744,0.048032482325710474,3.0
-bpic15-0.0-2/0.25,Trace2Vec Concatinate,event,0.07678248814199856,0.12513133975220364,3.0
-bpic15-0.0-2/0.25,Trace2Vec Concatinate,trace,0.23314660959053116,0.18604029458307778,3.0
-bpic15-0.0-2/0.25,Word2Vec Average Then Concatinate,attribute,0.0877146082896666,0.13907271439060834,1.0
-bpic15-0.0-2/0.25,Word2Vec Average Then Concatinate,event,0.16580143724119736,0.27999099782289166,1.0
-bpic15-0.0-2/0.25,Word2Vec Average Then Concatinate,trace,0.25771299719524365,0.21861336465244946,1.0
-bpic15-0.0-2/0.3,Trace2Vec Average Then Concatinate,attribute,0.09056077216373942,0.14680768784536874,1.0
-bpic15-0.0-2/0.3,Trace2Vec Average Then Concatinate,event,0.15783374402635345,0.26753366120377464,2.0
-bpic15-0.0-2/0.3,Trace2Vec Average Then Concatinate,trace,0.27806502264860494,0.19922097835815306,2.0
-bpic15-0.0-2/0.3,Word2Vec Average Then Concatinate,attribute,0.09047391373316346,0.14562302837948138,2.0
-bpic15-0.0-2/0.3,Word2Vec Average Then Concatinate,event,0.15916943698458522,0.26811136942284847,1.0
-bpic15-0.0-2/0.3,Word2Vec Average Then Concatinate,trace,0.2789238342757039,0.1990382509296425,1.0
-bpic15-0.0-2/0.35,Trace2Vec Average Then Concatinate,attribute,0.08558043048304884,0.13494280269625808,2.0
-bpic15-0.0-2/0.35,Trace2Vec Average Then Concatinate,event,0.16927806022131642,0.281875508040853,2.0
-bpic15-0.0-2/0.35,Trace2Vec Average Then Concatinate,trace,0.31051969251767075,0.19941932628667913,2.0
-bpic15-0.0-2/0.35,Word2Vec Average Then Concatinate,attribute,0.08647662942294844,0.13565387904593387,1.0
-bpic15-0.0-2/0.35,Word2Vec Average Then Concatinate,event,0.1711101555968685,0.2827763590887596,1.0
-bpic15-0.0-2/0.35,Word2Vec Average Then Concatinate,trace,0.3105441708049208,0.19935359227564864,1.0
-bpic15-0.0-2/0.4,Trace2Vec Average Then Concatinate,attribute,0.08067063027326161,0.11833725586912809,1.0
-bpic15-0.0-2/0.4,Trace2Vec Average Then Concatinate,event,0.16068541284812243,0.2631531909434386,2.0
-bpic15-0.0-2/0.4,Trace2Vec Average Then Concatinate,trace,0.33750888982407606,0.16557645833671866,2.0
-bpic15-0.0-2/0.4,Word2Vec Average Then Concatinate,attribute,0.08051447713472329,0.11802445654541033,2.0
-bpic15-0.0-2/0.4,Word2Vec Average Then Concatinate,event,0.1624156776940833,0.2651639132906925,1.0
-bpic15-0.0-2/0.4,Word2Vec Average Then Concatinate,trace,0.3375111825761265,0.16473474310922265,1.0
-bpic15-0.0-2/0.45,Trace2Vec Average Then Concatinate,attribute,0.0813654981295493,0.1191488737043877,2.0
-bpic15-0.0-2/0.45,Trace2Vec Average Then Concatinate,event,0.15507444336023324,0.250115291388943,2.0
-bpic15-0.0-2/0.45,Trace2Vec Average Then Concatinate,trace,0.3396728143059784,0.15572145851643054,1.0
-bpic15-0.0-2/0.45,Trace2Vec Concatinate,attribute,0.03553556969381201,0.04275274116575736,3.0
-bpic15-0.0-2/0.45,Trace2Vec Concatinate,event,0.07806840801737772,0.11835228338796835,3.0
-bpic15-0.0-2/0.45,Trace2Vec Concatinate,trace,0.31393088294498994,0.1265828478768157,3.0
-bpic15-0.0-2/0.45,Word2Vec Average Then Concatinate,attribute,0.0818417377596663,0.11969378024049517,1.0
-bpic15-0.0-2/0.45,Word2Vec Average Then Concatinate,event,0.155949509790199,0.25131400426596784,1.0
-bpic15-0.0-2/0.45,Word2Vec Average Then Concatinate,trace,0.3391076440801128,0.1545539614406092,2.0
-bpic15-0.0-3/0.05,Trace2Vec Average Then Concatinate,attribute,0.055795974367200935,0.09213985166839408,1.0
-bpic15-0.0-3/0.05,Trace2Vec Average Then Concatinate,event,0.11436915251643269,0.19491828292695262,2.0
-bpic15-0.0-3/0.05,Trace2Vec Average Then Concatinate,trace,0.15140554867802564,0.20303284905499425,1.0
-bpic15-0.0-3/0.05,Trace2Vec Concatinate,attribute,0.023290495885192976,0.039146652645857,3.0
-bpic15-0.0-3/0.05,Trace2Vec Concatinate,event,0.06021950584895082,0.10458722864711889,3.0
-bpic15-0.0-3/0.05,Trace2Vec Concatinate,trace,0.14738418981923404,0.19982625310928903,3.0
-bpic15-0.0-3/0.05,Word2Vec Average Then Concatinate,attribute,0.055627943229979514,0.09257518684392552,2.0
-bpic15-0.0-3/0.05,Word2Vec Average Then Concatinate,event,0.11588894996594573,0.19829358085652282,1.0
-bpic15-0.0-3/0.05,Word2Vec Average Then Concatinate,trace,0.1500782739955421,0.20260710124146314,2.0
-bpic15-0.0-3/0.1,Trace2Vec Average Then Concatinate,attribute,0.05604235135980092,0.09547920050811072,2.0
-bpic15-0.0-3/0.1,Trace2Vec Average Then Concatinate,event,0.11479326338294052,0.1978364873926311,2.0
-bpic15-0.0-3/0.1,Trace2Vec Average Then Concatinate,trace,0.17286514528058214,0.1978930424062618,1.0
-bpic15-0.0-3/0.1,Word2Vec Average Then Concatinate,attribute,0.05614253422220079,0.09509400301471645,1.0
-bpic15-0.0-3/0.1,Word2Vec Average Then Concatinate,event,0.11609911152699362,0.19910043589221949,1.0
-bpic15-0.0-3/0.1,Word2Vec Average Then Concatinate,trace,0.1716265619300624,0.19505955728586877,2.0
-bpic15-0.0-3/0.15,Trace2Vec Average Then Concatinate,attribute,0.0586574526775548,0.09410856000106071,2.0
-bpic15-0.0-3/0.15,Trace2Vec Average Then Concatinate,event,0.11447840887419743,0.19536277015401424,2.0
-bpic15-0.0-3/0.15,Trace2Vec Average Then Concatinate,trace,0.18432365161943323,0.18808963107441168,1.0
-bpic15-0.0-3/0.15,Word2Vec Average Then Concatinate,attribute,0.05983181943557127,0.09450235724306724,1.0
-bpic15-0.0-3/0.15,Word2Vec Average Then Concatinate,event,0.11540262136456143,0.1958902376222059,1.0
-bpic15-0.0-3/0.15,Word2Vec Average Then Concatinate,trace,0.1837906342343622,0.1852082892645259,2.0
-bpic15-0.0-3/0.2,Trace2Vec Average Then Concatinate,attribute,0.05883536192942243,0.08728445608735536,2.0
-bpic15-0.0-3/0.2,Trace2Vec Average Then Concatinate,event,0.12002892907481852,0.20241249937032813,2.0
-bpic15-0.0-3/0.2,Trace2Vec Average Then Concatinate,trace,0.21221995796989462,0.174292071982293,1.0
-bpic15-0.0-3/0.2,Word2Vec Average Then Concatinate,attribute,0.05888110904379914,0.08734723567795108,1.0
-bpic15-0.0-3/0.2,Word2Vec Average Then Concatinate,event,0.12089534397212362,0.20298236466127595,1.0
-bpic15-0.0-3/0.2,Word2Vec Average Then Concatinate,trace,0.21125576692434495,0.17171360288439383,2.0
-bpic15-0.0-3/0.25,Trace2Vec Average Then Concatinate,attribute,0.06575854891699315,0.09398514232025915,1.0
-bpic15-0.0-3/0.25,Trace2Vec Average Then Concatinate,event,0.12725192128829432,0.2040345056537971,2.0
-bpic15-0.0-3/0.25,Trace2Vec Average Then Concatinate,trace,0.23612232197565416,0.16439362107038294,1.0
-bpic15-0.0-3/0.25,Trace2Vec Concatinate,attribute,0.028051076278275272,0.03793195234238377,3.0
-bpic15-0.0-3/0.25,Trace2Vec Concatinate,event,0.06756555781223456,0.10843492243961575,3.0
-bpic15-0.0-3/0.25,Trace2Vec Concatinate,trace,0.2276409577208332,0.1592342953157508,3.0
-bpic15-0.0-3/0.25,Word2Vec Average Then Concatinate,attribute,0.06511527435656146,0.09545068335832306,2.0
-bpic15-0.0-3/0.25,Word2Vec Average Then Concatinate,event,0.12829394234802793,0.20852321073249902,1.0
-bpic15-0.0-3/0.25,Word2Vec Average Then Concatinate,trace,0.23484436489100607,0.16370225149170453,2.0
-bpic15-0.0-3/0.3,Trace2Vec Average Then Concatinate,attribute,0.06890457291681601,0.10553777025029926,2.0
-bpic15-0.0-3/0.3,Trace2Vec Average Then Concatinate,event,0.1272480900164677,0.21125224513788166,2.0
-bpic15-0.0-3/0.3,Trace2Vec Average Then Concatinate,trace,0.25366952030438494,0.16041705181451107,1.0
-bpic15-0.0-3/0.3,Word2Vec Average Then Concatinate,attribute,0.06952609856439049,0.1060830037963703,1.0
-bpic15-0.0-3/0.3,Word2Vec Average Then Concatinate,event,0.12914234505007233,0.2131999609872287,1.0
-bpic15-0.0-3/0.3,Word2Vec Average Then Concatinate,trace,0.2530845300173305,0.15880529590193707,2.0
-bpic15-0.0-3/0.35,Trace2Vec Average Then Concatinate,attribute,0.06488352902542456,0.09234270924515717,1.0
-bpic15-0.0-3/0.35,Trace2Vec Average Then Concatinate,event,0.12641570079017794,0.20391862101593705,2.0
-bpic15-0.0-3/0.35,Trace2Vec Average Then Concatinate,trace,0.2877728867675126,0.13130587445250955,1.0
-bpic15-0.0-3/0.35,Word2Vec Average Then Concatinate,attribute,0.06454721489218156,0.09115209015293434,2.0
-bpic15-0.0-3/0.35,Word2Vec Average Then Concatinate,event,0.1273564879668479,0.20413865123187083,1.0
-bpic15-0.0-3/0.35,Word2Vec Average Then Concatinate,trace,0.2874038648726149,0.12824822417682766,2.0
-bpic15-0.0-3/0.4,Trace2Vec Average Then Concatinate,attribute,0.0653745574466877,0.08479019299943279,1.0
-bpic15-0.0-3/0.4,Trace2Vec Average Then Concatinate,event,0.12854979382702367,0.2035802460178962,2.0
-bpic15-0.0-3/0.4,Trace2Vec Average Then Concatinate,trace,0.3062185127526764,0.12966657030898152,1.0
-bpic15-0.0-3/0.4,Word2Vec Average Then Concatinate,attribute,0.06521194786420015,0.08359944529265277,2.0
-bpic15-0.0-3/0.4,Word2Vec Average Then Concatinate,event,0.12955778406217816,0.2040134212136576,1.0
-bpic15-0.0-3/0.4,Word2Vec Average Then Concatinate,trace,0.30569274889513204,0.1276096372951191,2.0
-bpic15-0.0-3/0.45,Trace2Vec Average Then Concatinate,attribute,0.06708717810661809,0.08266958777339155,1.0
-bpic15-0.0-3/0.45,Trace2Vec Average Then Concatinate,event,0.1315260971426296,0.1980423905059819,2.0
-bpic15-0.0-3/0.45,Trace2Vec Average Then Concatinate,trace,0.352130884422728,0.10602626857157178,1.0
-bpic15-0.0-3/0.45,Trace2Vec Concatinate,attribute,0.03687464525650934,0.037328007191180124,3.0
-bpic15-0.0-3/0.45,Trace2Vec Concatinate,event,0.08027435935559182,0.11438986399727005,3.0
-bpic15-0.0-3/0.45,Trace2Vec Concatinate,trace,0.34253277309154584,0.1007186005644128,3.0
-bpic15-0.0-3/0.45,Word2Vec Average Then Concatinate,attribute,0.06703276839656448,0.0828294343933218,2.0
-bpic15-0.0-3/0.45,Word2Vec Average Then Concatinate,event,0.13291587288719495,0.201343354122076,1.0
-bpic15-0.0-3/0.45,Word2Vec Average Then Concatinate,trace,0.3516394784249305,0.10590939849246672,2.0
-bpic15-0.0-4/0.05,Trace2Vec Average Then Concatinate,attribute,0.07129385322927075,0.11893113214203477,2.0
-bpic15-0.0-4/0.05,Trace2Vec Average Then Concatinate,event,0.156317611681395,0.26988712526785846,2.0
-bpic15-0.0-4/0.05,Trace2Vec Average Then Concatinate,trace,0.1931226668098604,0.2839786955544573,2.0
-bpic15-0.0-4/0.05,Trace2Vec Concatinate,attribute,0.025429832590493175,0.04296286924585078,3.0
-bpic15-0.0-4/0.05,Trace2Vec Concatinate,event,0.06978523477744293,0.12137797538643451,3.0
-bpic15-0.0-4/0.05,Trace2Vec Concatinate,trace,0.1712829863570807,0.2410734847249694,3.0
-bpic15-0.0-4/0.05,Word2Vec Average Then Concatinate,attribute,0.07183696701855026,0.12072910082708042,1.0
-bpic15-0.0-4/0.05,Word2Vec Average Then Concatinate,event,0.15858166789936418,0.2753775013387006,1.0
-bpic15-0.0-4/0.05,Word2Vec Average Then Concatinate,trace,0.19373276286414814,0.28631856752331786,1.0
-bpic15-0.0-4/0.1,Trace2Vec Average Then Concatinate,attribute,0.07363962347692957,0.1265055864435161,2.0
-bpic15-0.0-4/0.1,Trace2Vec Average Then Concatinate,event,0.14931959011607246,0.26252708239245914,2.0
-bpic15-0.0-4/0.1,Trace2Vec Average Then Concatinate,trace,0.20652551153863824,0.27587763312304237,2.0
-bpic15-0.0-4/0.1,Word2Vec Average Then Concatinate,attribute,0.07392343772159027,0.1260486953587902,1.0
-bpic15-0.0-4/0.1,Word2Vec Average Then Concatinate,event,0.15086022027114798,0.2633471303211242,1.0
-bpic15-0.0-4/0.1,Word2Vec Average Then Concatinate,trace,0.20708824560811157,0.2750579345986589,1.0
-bpic15-0.0-4/0.15,Trace2Vec Average Then Concatinate,attribute,0.0758930343058537,0.12844179693010835,2.0
-bpic15-0.0-4/0.15,Trace2Vec Average Then Concatinate,event,0.15719923540721714,0.2744436202912936,2.0
-bpic15-0.0-4/0.15,Trace2Vec Average Then Concatinate,trace,0.22812981538774185,0.2671451447994038,2.0
-bpic15-0.0-4/0.15,Word2Vec Average Then Concatinate,attribute,0.07617124520577444,0.12731983574719993,1.0
-bpic15-0.0-4/0.15,Word2Vec Average Then Concatinate,event,0.1586824440146289,0.27391279578553207,1.0
-bpic15-0.0-4/0.15,Word2Vec Average Then Concatinate,trace,0.22898445331753473,0.2653174105590316,1.0
-bpic15-0.0-4/0.2,Trace2Vec Average Then Concatinate,attribute,0.08179542894998978,0.13045786756948702,2.0
-bpic15-0.0-4/0.2,Trace2Vec Average Then Concatinate,event,0.16339847386996809,0.27765204210972627,2.0
-bpic15-0.0-4/0.2,Trace2Vec Average Then Concatinate,trace,0.2527055860530576,0.24347353588258905,1.0
-bpic15-0.0-4/0.2,Word2Vec Average Then Concatinate,attribute,0.08188365281094342,0.12980644416719458,1.0
-bpic15-0.0-4/0.2,Word2Vec Average Then Concatinate,event,0.16575969744004848,0.2797676002073009,1.0
-bpic15-0.0-4/0.2,Word2Vec Average Then Concatinate,trace,0.252300338077722,0.24400848788835686,2.0
-bpic15-0.0-4/0.25,Trace2Vec Average Then Concatinate,attribute,0.07584101930311685,0.12059815573897856,2.0
-bpic15-0.0-4/0.25,Trace2Vec Average Then Concatinate,event,0.15877939317193343,0.26462872289654404,2.0
-bpic15-0.0-4/0.25,Trace2Vec Average Then Concatinate,trace,0.263369502207964,0.24152036289854462,1.0
-bpic15-0.0-4/0.25,Trace2Vec Concatinate,attribute,0.03054772807118671,0.04170735531879302,3.0
-bpic15-0.0-4/0.25,Trace2Vec Concatinate,event,0.07383515463037449,0.11908266394500262,3.0
-bpic15-0.0-4/0.25,Trace2Vec Concatinate,trace,0.23626741207926255,0.19580639070158778,3.0
-bpic15-0.0-4/0.25,Word2Vec Average Then Concatinate,attribute,0.0761302077486249,0.1215484066555031,1.0
-bpic15-0.0-4/0.25,Word2Vec Average Then Concatinate,event,0.1602472764241031,0.2684072782582047,1.0
-bpic15-0.0-4/0.25,Word2Vec Average Then Concatinate,trace,0.2633489779804034,0.24320712162519156,2.0
-bpic15-0.0-4/0.3,Trace2Vec Average Then Concatinate,attribute,0.07163938779357712,0.11062342282076082,2.0
-bpic15-0.0-4/0.3,Trace2Vec Average Then Concatinate,event,0.1491377308128089,0.24894592102808916,2.0
-bpic15-0.0-4/0.3,Trace2Vec Average Then Concatinate,trace,0.28540678433648786,0.21085390840193813,1.0
-bpic15-0.0-4/0.3,Word2Vec Average Then Concatinate,attribute,0.07177566851665527,0.10955555318655515,1.0
-bpic15-0.0-4/0.3,Word2Vec Average Then Concatinate,event,0.15023481569559113,0.24799416904673646,1.0
-bpic15-0.0-4/0.3,Word2Vec Average Then Concatinate,trace,0.284997966975954,0.20890189523338468,2.0
-bpic15-0.0-4/0.35,Trace2Vec Average Then Concatinate,attribute,0.07306904926699694,0.10691689387152363,2.0
-bpic15-0.0-4/0.35,Trace2Vec Average Then Concatinate,event,0.15738264192693774,0.25850210217685027,2.0
-bpic15-0.0-4/0.35,Trace2Vec Average Then Concatinate,trace,0.32761218434308187,0.1907546724704444,1.0
-bpic15-0.0-4/0.35,Word2Vec Average Then Concatinate,attribute,0.07341981628259477,0.1063876176826424,1.0
-bpic15-0.0-4/0.35,Word2Vec Average Then Concatinate,event,0.15821767056476396,0.25698392999238956,1.0
-bpic15-0.0-4/0.35,Word2Vec Average Then Concatinate,trace,0.32738946568278415,0.18939232032502384,2.0
-bpic15-0.0-4/0.4,Trace2Vec Average Then Concatinate,attribute,0.07786106962093707,0.11311739482415989,2.0
-bpic15-0.0-4/0.4,Trace2Vec Average Then Concatinate,event,0.15890651585868742,0.2588381554633723,2.0
-bpic15-0.0-4/0.4,Trace2Vec Average Then Concatinate,trace,0.344225635202687,0.18671987818540361,2.0
-bpic15-0.0-4/0.4,Word2Vec Average Then Concatinate,attribute,0.07823713738706857,0.1124774334367131,1.0
-bpic15-0.0-4/0.4,Word2Vec Average Then Concatinate,event,0.160270241112248,0.25827032581330805,1.0
-bpic15-0.0-4/0.4,Word2Vec Average Then Concatinate,trace,0.34458944232555067,0.18528455115385853,1.0
-bpic15-0.0-4/0.45,Trace2Vec Average Then Concatinate,attribute,0.08017571910016495,0.10781961781198462,2.0
-bpic15-0.0-4/0.45,Trace2Vec Average Then Concatinate,event,0.15662795625110676,0.24634541857895648,2.0
-bpic15-0.0-4/0.45,Trace2Vec Average Then Concatinate,trace,0.3762753629116252,0.16578730012502355,2.0
-bpic15-0.0-4/0.45,Trace2Vec Concatinate,attribute,0.03560753799483254,0.03695608668132955,3.0
-bpic15-0.0-4/0.45,Trace2Vec Concatinate,event,0.08209857992128208,0.11997968709550867,3.0
-bpic15-0.0-4/0.45,Trace2Vec Concatinate,trace,0.3524996907159116,0.12014165975369981,3.0
-bpic15-0.0-4/0.45,Word2Vec Average Then Concatinate,attribute,0.08060855898049497,0.1089422235229832,1.0
-bpic15-0.0-4/0.45,Word2Vec Average Then Concatinate,event,0.15796371520049207,0.24932567922021132,1.0
-bpic15-0.0-4/0.45,Word2Vec Average Then Concatinate,trace,0.37694368555600316,0.16700658920186398,1.0
-bpic15-0.0-5/0.05,Trace2Vec Average Then Concatinate,attribute,0.046441587623780194,0.07929598540654456,2.0
-bpic15-0.0-5/0.05,Trace2Vec Average Then Concatinate,event,0.11617597294175794,0.20234963316093407,2.0
-bpic15-0.0-5/0.05,Trace2Vec Average Then Concatinate,trace,0.15165578879295308,0.21942866112195739,1.0
-bpic15-0.0-5/0.05,Trace2Vec Concatinate,attribute,0.023298649413860884,0.03501046823589183,3.0
-bpic15-0.0-5/0.05,Trace2Vec Concatinate,event,0.06330099246221724,0.10372930275081946,3.0
-bpic15-0.0-5/0.05,Trace2Vec Concatinate,trace,0.14348799331165052,0.19679332211528858,3.0
-bpic15-0.0-5/0.05,Word2Vec Average Then Concatinate,attribute,0.04667404324585284,0.07989476526599934,1.0
-bpic15-0.0-5/0.05,Word2Vec Average Then Concatinate,event,0.1163637112264279,0.2032510841014857,1.0
-bpic15-0.0-5/0.05,Word2Vec Average Then Concatinate,trace,0.15042552046138288,0.21884696294121103,2.0
-bpic15-0.0-5/0.1,Trace2Vec Average Then Concatinate,attribute,0.043865327268535315,0.07330164659422625,2.0
-bpic15-0.0-5/0.1,Trace2Vec Average Then Concatinate,event,0.11369515142003998,0.1972094222599719,1.0
-bpic15-0.0-5/0.1,Trace2Vec Average Then Concatinate,trace,0.18619581867436705,0.2012339539861237,1.0
-bpic15-0.0-5/0.1,Word2Vec Average Then Concatinate,attribute,0.044172159295179446,0.07383260316158967,1.0
-bpic15-0.0-5/0.1,Word2Vec Average Then Concatinate,event,0.11354433232865557,0.1962353617426778,2.0
-bpic15-0.0-5/0.1,Word2Vec Average Then Concatinate,trace,0.1830832597033314,0.20076727405824088,2.0
-bpic15-0.0-5/0.15,Trace2Vec Average Then Concatinate,attribute,0.04637327974507145,0.0753839178563424,1.0
-bpic15-0.0-5/0.15,Trace2Vec Average Then Concatinate,event,0.11679468402345611,0.19924242573298023,1.0
-bpic15-0.0-5/0.15,Trace2Vec Average Then Concatinate,trace,0.187817479000226,0.19549646991010045,2.0
-bpic15-0.0-5/0.15,Word2Vec Average Then Concatinate,attribute,0.04635041959535143,0.07472653572923912,2.0
-bpic15-0.0-5/0.15,Word2Vec Average Then Concatinate,event,0.11663869528193453,0.19674924720919512,2.0
-bpic15-0.0-5/0.15,Word2Vec Average Then Concatinate,trace,0.18799707579353295,0.19414782964671184,1.0
-bpic15-0.0-5/0.2,Trace2Vec Average Then Concatinate,attribute,0.04230205474265218,0.0661657778807994,2.0
-bpic15-0.0-5/0.2,Trace2Vec Average Then Concatinate,event,0.116453974657132,0.19839486233248577,2.0
-bpic15-0.0-5/0.2,Trace2Vec Average Then Concatinate,trace,0.21740983839124262,0.17984524716499095,2.0
-bpic15-0.0-5/0.2,Word2Vec Average Then Concatinate,attribute,0.04237570256891875,0.0658092187942437,1.0
-bpic15-0.0-5/0.2,Word2Vec Average Then Concatinate,event,0.11679835852049683,0.19760400185208066,1.0
-bpic15-0.0-5/0.2,Word2Vec Average Then Concatinate,trace,0.21813022760953546,0.17826806424726338,1.0
-bpic15-0.0-5/0.25,Trace2Vec Average Then Concatinate,attribute,0.04708083287697447,0.06887976393682314,2.0
-bpic15-0.0-5/0.25,Trace2Vec Average Then Concatinate,event,0.11778800988925052,0.1918925371239376,1.0
-bpic15-0.0-5/0.25,Trace2Vec Average Then Concatinate,trace,0.23967412123664916,0.1675520120845799,1.0
-bpic15-0.0-5/0.25,Trace2Vec Concatinate,attribute,0.025968547097137605,0.03349161967693161,3.0
-bpic15-0.0-5/0.25,Trace2Vec Concatinate,event,0.06757231843792741,0.1063054245601499,3.0
-bpic15-0.0-5/0.25,Trace2Vec Concatinate,trace,0.22974685025096636,0.15998526190398552,3.0
-bpic15-0.0-5/0.25,Word2Vec Average Then Concatinate,attribute,0.047243492222385775,0.06931822530956966,1.0
-bpic15-0.0-5/0.25,Word2Vec Average Then Concatinate,event,0.11747504084167228,0.19283246847044397,2.0
-bpic15-0.0-5/0.25,Word2Vec Average Then Concatinate,trace,0.23852851965683164,0.1692606224952575,2.0
-bpic15-0.0-5/0.3,Trace2Vec Average Then Concatinate,attribute,0.04775610556058945,0.06859194048777227,1.0
-bpic15-0.0-5/0.3,Trace2Vec Average Then Concatinate,event,0.121442442281214,0.20222090695415476,2.0
-bpic15-0.0-5/0.3,Trace2Vec Average Then Concatinate,trace,0.25272678459478554,0.16224064783064754,1.0
-bpic15-0.0-5/0.3,Word2Vec Average Then Concatinate,attribute,0.04771360017921747,0.06827830451589022,2.0
-bpic15-0.0-5/0.3,Word2Vec Average Then Concatinate,event,0.12226239757907245,0.2018878203237959,1.0
-bpic15-0.0-5/0.3,Word2Vec Average Then Concatinate,trace,0.25187153465921513,0.15985258424350465,2.0
-bpic15-0.0-5/0.35,Trace2Vec Average Then Concatinate,attribute,0.04709784136076752,0.06426167962575191,2.0
-bpic15-0.0-5/0.35,Trace2Vec Average Then Concatinate,event,0.1121246981699904,0.18322629196615556,2.0
-bpic15-0.0-5/0.35,Trace2Vec Average Then Concatinate,trace,0.27142882216713254,0.1300531078458009,1.0
-bpic15-0.0-5/0.35,Word2Vec Average Then Concatinate,attribute,0.047118428925230424,0.06385446505641336,1.0
-bpic15-0.0-5/0.35,Word2Vec Average Then Concatinate,event,0.1123471656986363,0.1824489667947262,1.0
-bpic15-0.0-5/0.35,Word2Vec Average Then Concatinate,trace,0.27009316426721647,0.12828284947174415,2.0
-bpic15-0.0-5/0.4,Trace2Vec Average Then Concatinate,attribute,0.05307978683967257,0.06719244247050499,2.0
-bpic15-0.0-5/0.4,Trace2Vec Average Then Concatinate,event,0.12160665021825415,0.19296030655551163,2.0
-bpic15-0.0-5/0.4,Trace2Vec Average Then Concatinate,trace,0.31734887137351575,0.1298455907537524,1.0
-bpic15-0.0-5/0.4,Word2Vec Average Then Concatinate,attribute,0.05331349515448629,0.06793188657993222,1.0
-bpic15-0.0-5/0.4,Word2Vec Average Then Concatinate,event,0.12323009673750016,0.194539094358793,1.0
-bpic15-0.0-5/0.4,Word2Vec Average Then Concatinate,trace,0.31694357361984266,0.12967971948914475,2.0
-bpic15-0.0-5/0.45,Trace2Vec Average Then Concatinate,attribute,0.05370485896107058,0.06639976943662582,2.0
-bpic15-0.0-5/0.45,Trace2Vec Average Then Concatinate,event,0.125245441295614,0.19304296486516795,2.0
-bpic15-0.0-5/0.45,Trace2Vec Average Then Concatinate,trace,0.3523312537721387,0.11218359685062254,2.0
-bpic15-0.0-5/0.45,Trace2Vec Concatinate,attribute,0.030426781912151295,0.029852733363571415,3.0
-bpic15-0.0-5/0.45,Trace2Vec Concatinate,event,0.0757378424422253,0.10782193208756154,3.0
-bpic15-0.0-5/0.45,Trace2Vec Concatinate,trace,0.33965279237628476,0.09074331772878048,3.0
-bpic15-0.0-5/0.45,Word2Vec Average Then Concatinate,attribute,0.05376104055463356,0.06664469522918089,1.0
-bpic15-0.0-5/0.45,Word2Vec Average Then Concatinate,event,0.12595273467432175,0.1946932926288866,1.0
-bpic15-0.0-5/0.45,Word2Vec Average Then Concatinate,trace,0.352641165986891,0.11219243401739663,1.0
-bpic15-0.0-1/0.05,Trace2Vec Average Then Concatinate,combined,0.10802117670335572,0.1840317949771729,2.0
-bpic15-0.0-1/0.05,Trace2Vec Concatinate,combined,0.08018154434878065,0.13865669029274302,3.0
-bpic15-0.0-1/0.05,Word2Vec Average Then Concatinate,combined,0.10886368241502443,0.18456107518541393,1.0
-bpic15-0.0-1/0.1,Trace2Vec Average Then Concatinate,combined,0.11032036202594474,0.17644175866569337,2.0
-bpic15-0.0-1/0.1,Word2Vec Average Then Concatinate,combined,0.11080832201611075,0.17664031305313901,1.0
-bpic15-0.0-1/0.15,Trace2Vec Average Then Concatinate,combined,0.1172582562671542,0.180315204071592,2.0
-bpic15-0.0-1/0.15,Word2Vec Average Then Concatinate,combined,0.11764970486803704,0.18057454429517591,1.0
-bpic15-0.0-1/0.2,Trace2Vec Average Then Concatinate,combined,0.13187713627391304,0.17723283766640005,2.0
-bpic15-0.0-1/0.2,Word2Vec Average Then Concatinate,combined,0.13257218766430076,0.17720361770451631,1.0
-bpic15-0.0-1/0.25,Trace2Vec Average Then Concatinate,combined,0.13453975313245226,0.1763689342205844,2.0
-bpic15-0.0-1/0.25,Trace2Vec Concatinate,combined,0.10322193350631385,0.1388056237143876,3.0
-bpic15-0.0-1/0.25,Word2Vec Average Then Concatinate,combined,0.13499981233154154,0.17742360612916205,1.0
-bpic15-0.0-1/0.3,Trace2Vec Average Then Concatinate,combined,0.1504048752483039,0.17805717598429785,1.0
-bpic15-0.0-1/0.3,Word2Vec Average Then Concatinate,combined,0.15037461709531655,0.17804879619822817,2.0
-bpic15-0.0-1/0.35,Trace2Vec Average Then Concatinate,combined,0.1563205592290595,0.17170393331951872,2.0
-bpic15-0.0-1/0.35,Word2Vec Average Then Concatinate,combined,0.15688872222660735,0.17218771336382416,1.0
-bpic15-0.0-1/0.4,Trace2Vec Average Then Concatinate,combined,0.16229898858933034,0.17510834860346425,2.0
-bpic15-0.0-1/0.4,Word2Vec Average Then Concatinate,combined,0.16316172651861013,0.1764659286842098,1.0
-bpic15-0.0-1/0.45,Trace2Vec Average Then Concatinate,combined,0.1865302021770956,0.19424073461875724,2.0
-bpic15-0.0-1/0.45,Trace2Vec Concatinate,combined,0.14598219042602525,0.15750538908404532,3.0
-bpic15-0.0-1/0.45,Word2Vec Average Then Concatinate,combined,0.18702770724916695,0.19507651550794117,1.0
-bpic15-0.0-2/0.05,Trace2Vec Average Then Concatinate,combined,0.14331781718387238,0.2382350871234262,2.0
-bpic15-0.0-2/0.05,Trace2Vec Concatinate,combined,0.09251955241658984,0.16239707300529685,3.0
-bpic15-0.0-2/0.05,Word2Vec Average Then Concatinate,combined,0.1444766897808924,0.24004077618762854,1.0
-bpic15-0.0-2/0.1,Trace2Vec Average Then Concatinate,combined,0.15142816875312384,0.23264606878056954,2.0
-bpic15-0.0-2/0.1,Word2Vec Average Then Concatinate,combined,0.1525692365389328,0.2349962031949889,1.0
-bpic15-0.0-2/0.15,Trace2Vec Average Then Concatinate,combined,0.1586551121389129,0.22483104901679568,2.0
-bpic15-0.0-2/0.15,Word2Vec Average Then Concatinate,combined,0.15894379085804616,0.226390769287977,1.0
-bpic15-0.0-2/0.2,Trace2Vec Average Then Concatinate,combined,0.1664367833067509,0.22908391410658885,2.0
-bpic15-0.0-2/0.2,Word2Vec Average Then Concatinate,combined,0.16736314521169263,0.2298831561918642,1.0
-bpic15-0.0-2/0.25,Trace2Vec Average Then Concatinate,combined,0.1689699000367476,0.2275680936713405,2.0
-bpic15-0.0-2/0.25,Trace2Vec Concatinate,combined,0.11466770865737548,0.15574976799930854,3.0
-bpic15-0.0-2/0.25,Word2Vec Average Then Concatinate,combined,0.17040968090870254,0.22926360915438926,1.0
-bpic15-0.0-2/0.3,Trace2Vec Average Then Concatinate,combined,0.1754865129462326,0.22029853860284165,2.0
-bpic15-0.0-2/0.3,Word2Vec Average Then Concatinate,combined,0.1761890616644842,0.22113872166421294,1.0
-bpic15-0.0-2/0.35,Trace2Vec Average Then Concatinate,combined,0.1884593944073453,0.22948058763340093,2.0
-bpic15-0.0-2/0.35,Word2Vec Average Then Concatinate,combined,0.1893769852749126,0.2305517561052439,1.0
-bpic15-0.0-2/0.4,Trace2Vec Average Then Concatinate,combined,0.1929549776484867,0.21697886953869627,2.0
-bpic15-0.0-2/0.4,Word2Vec Average Then Concatinate,combined,0.19348044580164434,0.21806656690870654,1.0
-bpic15-0.0-2/0.45,Trace2Vec Average Then Concatinate,combined,0.19203758526525366,0.21201970111532303,2.0
-bpic15-0.0-2/0.45,Trace2Vec Concatinate,combined,0.14251162021872657,0.15962562747158063,3.0
-bpic15-0.0-2/0.45,Word2Vec Average Then Concatinate,combined,0.19229963054332605,0.21216199656675452,1.0
-bpic15-0.0-3/0.05,Trace2Vec Average Then Concatinate,combined,0.10719022518721975,0.17393218622323892,2.0
-bpic15-0.0-3/0.05,Trace2Vec Concatinate,combined,0.07696473051779261,0.14009879382247634,3.0
-bpic15-0.0-3/0.05,Word2Vec Average Then Concatinate,combined,0.10719838906382245,0.1750182662579232,1.0
-bpic15-0.0-3/0.1,Trace2Vec Average Then Concatinate,combined,0.11456692000777453,0.173845119169907,2.0
-bpic15-0.0-3/0.1,Word2Vec Average Then Concatinate,combined,0.1146227358930856,0.17375906710370084,1.0
-bpic15-0.0-3/0.15,Trace2Vec Average Then Concatinate,combined,0.11915317105706182,0.17028584012225398,2.0
-bpic15-0.0-3/0.15,Word2Vec Average Then Concatinate,combined,0.1196750250114983,0.16998083202844508,1.0
-bpic15-0.0-3/0.2,Trace2Vec Average Then Concatinate,combined,0.13036141632471185,0.17105951181808737,1.0
-bpic15-0.0-3/0.2,Word2Vec Average Then Concatinate,combined,0.13034407331342257,0.17088407231366076,2.0
-bpic15-0.0-3/0.25,Trace2Vec Average Then Concatinate,combined,0.14304426406031387,0.17445644746203218,1.0
-bpic15-0.0-3/0.25,Trace2Vec Concatinate,combined,0.10775253060378101,0.1413799418410167,3.0
-bpic15-0.0-3/0.25,Word2Vec Average Then Concatinate,combined,0.1427511938651985,0.17584300672680697,2.0
-bpic15-0.0-3/0.3,Trace2Vec Average Then Concatinate,combined,0.14994072774588954,0.17912043159572372,2.0
-bpic15-0.0-3/0.3,Word2Vec Average Then Concatinate,combined,0.15058432454393111,0.17979940632457636,1.0
-bpic15-0.0-3/0.35,Trace2Vec Average Then Concatinate,combined,0.15969070552770503,0.174689934316884,2.0
-bpic15-0.0-3/0.35,Word2Vec Average Then Concatinate,combined,0.15976918924388145,0.17419633626239456,1.0
-bpic15-0.0-3/0.4,Trace2Vec Average Then Concatinate,combined,0.16671428800879595,0.1774955118429466,2.0
-bpic15-0.0-3/0.4,Word2Vec Average Then Concatinate,combined,0.16682082694050346,0.17721780533535264,1.0
-bpic15-0.0-3/0.45,Trace2Vec Average Then Concatinate,combined,0.18358138655732523,0.18384665726354382,2.0
-bpic15-0.0-3/0.45,Trace2Vec Concatinate,combined,0.15322725923454902,0.16269776355330007,3.0
-bpic15-0.0-3/0.45,Word2Vec Average Then Concatinate,combined,0.18386270656956333,0.1845110093525769,1.0
-bpic15-0.0-4/0.05,Trace2Vec Average Then Concatinate,combined,0.1402447105735087,0.23991981986169317,2.0
-bpic15-0.0-4/0.05,Trace2Vec Concatinate,combined,0.08883268457500561,0.16686631513482725,3.0
-bpic15-0.0-4/0.05,Word2Vec Average Then Concatinate,combined,0.14138379926068753,0.24234995997204709,1.0
-bpic15-0.0-4/0.1,Trace2Vec Average Then Concatinate,combined,0.14316157504388008,0.23327768104593763,2.0
-bpic15-0.0-4/0.1,Word2Vec Average Then Concatinate,combined,0.14395730120028327,0.2341880440298066,1.0
-bpic15-0.0-4/0.15,Trace2Vec Average Then Concatinate,combined,0.15374069503360424,0.2367080183972328,2.0
-bpic15-0.0-4/0.15,Word2Vec Average Then Concatinate,combined,0.1546127141793127,0.23730743755581332,1.0
-bpic15-0.0-4/0.2,Trace2Vec Average Then Concatinate,combined,0.16596649629100516,0.23222694529789595,2.0
-bpic15-0.0-4/0.2,Word2Vec Average Then Concatinate,combined,0.1666478961095713,0.2339410932858057,1.0
-bpic15-0.0-4/0.25,Trace2Vec Average Then Concatinate,combined,0.16599663822767144,0.22953570008346358,2.0
-bpic15-0.0-4/0.25,Trace2Vec Concatinate,combined,0.11355009826027458,0.159526332713936,3.0
-bpic15-0.0-4/0.25,Word2Vec Average Then Concatinate,combined,0.16657548738437714,0.23111779505398122,1.0
-bpic15-0.0-4/0.3,Trace2Vec Average Then Concatinate,combined,0.16872796764762463,0.2141210343310974,2.0
-bpic15-0.0-4/0.3,Word2Vec Average Then Concatinate,combined,0.16900281706273346,0.2140339157020154,1.0
-bpic15-0.0-4/0.35,Trace2Vec Average Then Concatinate,combined,0.18602129184567218,0.21916914466740178,2.0
-bpic15-0.0-4/0.35,Word2Vec Average Then Concatinate,combined,0.18634231751004762,0.2190484774998242,1.0
-bpic15-0.0-4/0.4,Trace2Vec Average Then Concatinate,combined,0.19366440689410383,0.22200493802241553,2.0
-bpic15-0.0-4/0.4,Word2Vec Average Then Concatinate,combined,0.19436560694162242,0.22227788935973813,1.0
-bpic15-0.0-4/0.45,Trace2Vec Average Then Concatinate,combined,0.20435967942096564,0.2204324440786685,2.0
-bpic15-0.0-4/0.45,Trace2Vec Concatinate,combined,0.15673526954400874,0.17197893312867818,3.0
-bpic15-0.0-4/0.45,Word2Vec Average Then Concatinate,combined,0.2051719865789967,0.22175415306866125,1.0
-bpic15-0.0-5/0.05,Trace2Vec Average Then Concatinate,combined,0.10475778311949707,0.18181035687717845,1.0
-bpic15-0.0-5/0.05,Trace2Vec Concatinate,combined,0.07669587839590954,0.1383421147132076,3.0
-bpic15-0.0-5/0.05,Word2Vec Average Then Concatinate,combined,0.10448775831122122,0.18160944989938452,2.0
-bpic15-0.0-5/0.1,Trace2Vec Average Then Concatinate,combined,0.11458543245431412,0.17464125238063946,1.0
-bpic15-0.0-5/0.1,Word2Vec Average Then Concatinate,combined,0.11359991710905545,0.17437721329371678,2.0
-bpic15-0.0-5/0.15,Trace2Vec Average Then Concatinate,combined,0.11699514758958453,0.17345303441458743,2.0
-bpic15-0.0-5/0.15,Word2Vec Average Then Concatinate,combined,0.11699539689027298,0.17306218902142528,1.0
-bpic15-0.0-5/0.2,Trace2Vec Average Then Concatinate,combined,0.12538862259700892,0.17187693054519718,2.0
-bpic15-0.0-5/0.2,Word2Vec Average Then Concatinate,combined,0.12576809623298368,0.17169674044759317,1.0
-bpic15-0.0-5/0.25,Trace2Vec Average Then Concatinate,combined,0.13484765466762472,0.1706430711390601,1.0
-bpic15-0.0-5/0.25,Trace2Vec Concatinate,combined,0.10776257192867714,0.14231348240391276,3.0
-bpic15-0.0-5/0.25,Word2Vec Average Then Concatinate,combined,0.13441568424029657,0.17116022619569612,2.0
-bpic15-0.0-5/0.3,Trace2Vec Average Then Concatinate,combined,0.140641777478863,0.17404775825415109,1.0
-bpic15-0.0-5/0.3,Word2Vec Average Then Concatinate,combined,0.14061584413916833,0.173469382616622,2.0
-bpic15-0.0-5/0.35,Trace2Vec Average Then Concatinate,combined,0.14355045389929683,0.16278988627801833,1.0
-bpic15-0.0-5/0.35,Word2Vec Average Then Concatinate,combined,0.1431862529636944,0.16199589085925464,2.0
-bpic15-0.0-5/0.4,Trace2Vec Average Then Concatinate,combined,0.1640117694771475,0.17751161644383256,2.0
-bpic15-0.0-5/0.4,Word2Vec Average Then Concatinate,combined,0.16449572183727637,0.1781428349486205,1.0
-bpic15-0.0-5/0.45,Trace2Vec Average Then Concatinate,combined,0.1770938513429411,0.18461709654284778,2.0
-bpic15-0.0-5/0.45,Trace2Vec Concatinate,combined,0.14860580557688713,0.1598395200241903,3.0
-bpic15-0.0-5/0.45,Word2Vec Average Then Concatinate,combined,0.17745164707194877,0.18514800573403406,1.0
+dataset_short_name,model,level,f1_mean,f1_std,f1_rank
+bpic15-0.0-1/0.05,DAE,attribute,0.04590726191665626,0.06751898226739177,1.0
+bpic15-0.0-1/0.05,DAE,event,0.1472481336445412,0.21257430095547034,1.0
+bpic15-0.0-1/0.05,DAE,trace,0.21791418839696647,0.2689368253385185,1.0
+bpic15-0.0-1/0.1,DAE,attribute,0.050447370480310894,0.07044977578059435,1.0
+bpic15-0.0-1/0.1,DAE,event,0.1533594967596659,0.21727095894736848,1.0
+bpic15-0.0-1/0.1,DAE,trace,0.2284833742124416,0.25511003429562396,1.0
+bpic15-0.0-1/0.15,DAE,attribute,0.052843734752763584,0.07221200845160812,1.0
+bpic15-0.0-1/0.15,DAE,event,0.15900423691201623,0.2234729495294687,1.0
+bpic15-0.0-1/0.15,DAE,trace,0.23921613155835708,0.2564152645865193,1.0
+bpic15-0.0-1/0.2,DAE,attribute,0.061514603530063876,0.07716529417131132,1.0
+bpic15-0.0-1/0.2,DAE,event,0.1702144663518859,0.22959875322893236,1.0
+bpic15-0.0-1/0.2,DAE,trace,0.267701376556826,0.2511562183986142,1.0
+bpic15-0.0-1/0.25,DAE,attribute,0.053552788936144714,0.0667944046526633,1.0
+bpic15-0.0-1/0.25,DAE,event,0.14896138248380578,0.20226336723723412,1.0
+bpic15-0.0-1/0.25,DAE,trace,0.2787369019513258,0.22979489793082328,1.0
+bpic15-0.0-1/0.3,DAE,attribute,0.053616261178318934,0.06387437732992493,1.0
+bpic15-0.0-1/0.3,DAE,event,0.15995922446685168,0.21601334045071463,1.0
+bpic15-0.0-1/0.3,DAE,trace,0.3034739559584191,0.2296039683204985,1.0
+bpic15-0.0-1/0.35,DAE,attribute,0.05868424384773914,0.06860131495602144,1.0
+bpic15-0.0-1/0.35,DAE,event,0.1516206900243136,0.2016097610904872,1.0
+bpic15-0.0-1/0.35,DAE,trace,0.31357048890233247,0.21739746884968333,1.0
+bpic15-0.0-1/0.4,DAE,attribute,0.05132256258431247,0.0570305015605171,1.0
+bpic15-0.0-1/0.4,DAE,event,0.16032127609211763,0.21566832120878293,1.0
+bpic15-0.0-1/0.4,DAE,trace,0.3200844275699353,0.22250149771260638,1.0
+bpic15-0.0-1/0.45,DAE,attribute,0.06481558695764968,0.07391209594668832,1.0
+bpic15-0.0-1/0.45,DAE,event,0.16426562918707904,0.21960340646822207,1.0
+bpic15-0.0-1/0.45,DAE,trace,0.35737954928917653,0.21835477107417875,1.0
+bpic15-0.0-2/0.05,DAE,attribute,0.08603773000219458,0.12911557159998097,1.0
+bpic15-0.0-2/0.05,DAE,event,0.1839100282897495,0.26457958862104214,1.0
+bpic15-0.0-2/0.05,DAE,trace,0.2483883888881926,0.30267133182263994,1.0
+bpic15-0.0-2/0.1,DAE,attribute,0.09697847066724677,0.1388204826321601,1.0
+bpic15-0.0-2/0.1,DAE,event,0.19698816882351752,0.2777615987149083,1.0
+bpic15-0.0-2/0.1,DAE,trace,0.2627204560728862,0.2809863054032998,1.0
+bpic15-0.0-2/0.15,DAE,attribute,0.09231378631681372,0.12138772068036625,1.0
+bpic15-0.0-2/0.15,DAE,event,0.2033041573763595,0.2839271175136147,1.0
+bpic15-0.0-2/0.15,DAE,trace,0.28349208170396895,0.27023247326536926,1.0
+bpic15-0.0-2/0.2,DAE,attribute,0.09752786590202832,0.13159007383705085,1.0
+bpic15-0.0-2/0.2,DAE,event,0.20419970859174366,0.2766289348461776,1.0
+bpic15-0.0-2/0.2,DAE,trace,0.2808237749185038,0.25448011999333725,1.0
+bpic15-0.0-2/0.25,DAE,attribute,0.08360948609147226,0.11814663631533646,1.0
+bpic15-0.0-2/0.25,DAE,event,0.18834866925881077,0.25907397815607813,1.0
+bpic15-0.0-2/0.25,DAE,trace,0.30356504336226775,0.2421987709085504,1.0
+bpic15-0.0-2/0.3,DAE,attribute,0.0989703060471929,0.13427446110447785,1.0
+bpic15-0.0-2/0.3,DAE,event,0.19520861904897055,0.26972469461517645,1.0
+bpic15-0.0-2/0.3,DAE,trace,0.29579016098525823,0.2366847409320202,1.0
+bpic15-0.0-2/0.35,DAE,attribute,0.0931222337649186,0.12362458523947825,1.0
+bpic15-0.0-2/0.35,DAE,event,0.20328820011181606,0.28020369651300236,1.0
+bpic15-0.0-2/0.35,DAE,trace,0.3251420674779935,0.23861155432544146,1.0
+bpic15-0.0-2/0.4,DAE,attribute,0.08634270907706476,0.1083930528118064,1.0
+bpic15-0.0-2/0.4,DAE,event,0.1972081957630446,0.26641316865839465,1.0
+bpic15-0.0-2/0.4,DAE,trace,0.36121481743176753,0.2150596548624894,1.0
+bpic15-0.0-2/0.45,DAE,attribute,0.07893229394128846,0.1029901464015491,1.0
+bpic15-0.0-2/0.45,DAE,event,0.18339008710464974,0.253452614982539,1.0
+bpic15-0.0-2/0.45,DAE,trace,0.3525502194243316,0.2224368944260339,1.0
+bpic15-0.0-3/0.05,DAE,attribute,0.05041332347215904,0.07551654870702071,1.0
+bpic15-0.0-3/0.05,DAE,event,0.13114247653336233,0.18749567845324822,1.0
+bpic15-0.0-3/0.05,DAE,trace,0.20939535426110742,0.2562762756739572,1.0
+bpic15-0.0-3/0.1,DAE,attribute,0.05677168493180193,0.08318666692989524,1.0
+bpic15-0.0-3/0.1,DAE,event,0.14356900081760793,0.20207017271492023,1.0
+bpic15-0.0-3/0.1,DAE,trace,0.21328245025928105,0.24745106937493838,1.0
+bpic15-0.0-3/0.15,DAE,attribute,0.06047393496032671,0.08316449267472813,1.0
+bpic15-0.0-3/0.15,DAE,event,0.14611395962394003,0.20040039661613218,1.0
+bpic15-0.0-3/0.15,DAE,trace,0.24190424000022331,0.23336344354683786,1.0
+bpic15-0.0-3/0.2,DAE,attribute,0.05857592274911668,0.07640897316202953,1.0
+bpic15-0.0-3/0.2,DAE,event,0.15248060558407794,0.20485600841955906,1.0
+bpic15-0.0-3/0.2,DAE,trace,0.2521509818375417,0.2334933829075038,1.0
+bpic15-0.0-3/0.25,DAE,attribute,0.05851570655134103,0.07788970082006383,1.0
+bpic15-0.0-3/0.25,DAE,event,0.14410770183076008,0.19716805444675273,1.0
+bpic15-0.0-3/0.25,DAE,trace,0.27851501491483543,0.22858222504905615,1.0
+bpic15-0.0-3/0.3,DAE,attribute,0.0707804402149952,0.09353531613836874,1.0
+bpic15-0.0-3/0.3,DAE,event,0.15593425133912536,0.21245541126064052,1.0
+bpic15-0.0-3/0.3,DAE,trace,0.2860964166378895,0.22908124937795066,1.0
+bpic15-0.0-3/0.35,DAE,attribute,0.06417130974273924,0.0801413167151628,1.0
+bpic15-0.0-3/0.35,DAE,event,0.15795158946429508,0.21238203474187634,1.0
+bpic15-0.0-3/0.35,DAE,trace,0.31005673059974725,0.21309929083909301,1.0
+bpic15-0.0-3/0.4,DAE,attribute,0.06324626725315945,0.07346232313823624,1.0
+bpic15-0.0-3/0.4,DAE,event,0.16532405365561081,0.2144902033734693,1.0
+bpic15-0.0-3/0.4,DAE,trace,0.31546259747240213,0.22377097750929198,1.0
+bpic15-0.0-3/0.45,DAE,attribute,0.059439653312474076,0.06723696784178952,1.0
+bpic15-0.0-3/0.45,DAE,event,0.15027928985631492,0.19622583812442135,1.0
+bpic15-0.0-3/0.45,DAE,trace,0.36927804938846565,0.20560023478033945,1.0
+bpic15-0.0-4/0.05,DAE,attribute,0.06387947651096046,0.09765531596885285,1.0
+bpic15-0.0-4/0.05,DAE,event,0.18864532348208152,0.2789528349199705,1.0
+bpic15-0.0-4/0.05,DAE,trace,0.27740041387176984,0.349297466880067,1.0
+bpic15-0.0-4/0.1,DAE,attribute,0.07874036136181532,0.11338332755702926,1.0
+bpic15-0.0-4/0.1,DAE,event,0.20736319867816272,0.29280393353821293,1.0
+bpic15-0.0-4/0.1,DAE,trace,0.27887365246802803,0.332692340470797,1.0
+bpic15-0.0-4/0.15,DAE,attribute,0.08022619710258531,0.11430694419196774,1.0
+bpic15-0.0-4/0.15,DAE,event,0.21548799478477715,0.3026910676281512,1.0
+bpic15-0.0-4/0.15,DAE,trace,0.3032725545855328,0.33097408911409654,1.0
+bpic15-0.0-4/0.2,DAE,attribute,0.08528869923506151,0.11632267443679165,1.0
+bpic15-0.0-4/0.2,DAE,event,0.21681646250963701,0.3022304877402881,1.0
+bpic15-0.0-4/0.2,DAE,trace,0.3150214211625309,0.3224462744902022,1.0
+bpic15-0.0-4/0.25,DAE,attribute,0.06832003153636572,0.09852679590855595,1.0
+bpic15-0.0-4/0.25,DAE,event,0.1876159626908119,0.2714500030258115,1.0
+bpic15-0.0-4/0.25,DAE,trace,0.3174724405646603,0.30435479673397264,1.0
+bpic15-0.0-4/0.3,DAE,attribute,0.07356282000929197,0.09761993269015036,1.0
+bpic15-0.0-4/0.3,DAE,event,0.20181417868499898,0.27825846968533907,1.0
+bpic15-0.0-4/0.3,DAE,trace,0.3295050993426339,0.28781185339748766,1.0
+bpic15-0.0-4/0.35,DAE,attribute,0.07856649668965686,0.09814429440694773,1.0
+bpic15-0.0-4/0.35,DAE,event,0.2078172747953353,0.2830997111197181,1.0
+bpic15-0.0-4/0.35,DAE,trace,0.35113840332151697,0.2690763750694709,1.0
+bpic15-0.0-4/0.4,DAE,attribute,0.07982295650809129,0.10029665479022673,1.0
+bpic15-0.0-4/0.4,DAE,event,0.21350704380177524,0.2906743439526834,1.0
+bpic15-0.0-4/0.4,DAE,trace,0.35918943908331047,0.2848079765513171,1.0
+bpic15-0.0-4/0.45,DAE,attribute,0.07259761051526009,0.08984201548588103,1.0
+bpic15-0.0-4/0.45,DAE,event,0.19028656096101063,0.26123105959794146,1.0
+bpic15-0.0-4/0.45,DAE,trace,0.3935396878151677,0.2387675804350852,1.0
+bpic15-0.0-5/0.05,DAE,attribute,0.040160898296102414,0.0600464606142836,1.0
+bpic15-0.0-5/0.05,DAE,event,0.1274518926531263,0.18865429580287105,1.0
+bpic15-0.0-5/0.05,DAE,trace,0.21408159921850878,0.2615237533928034,1.0
+bpic15-0.0-5/0.1,DAE,attribute,0.04595015915622672,0.0654223186233412,1.0
+bpic15-0.0-5/0.1,DAE,event,0.15218690178245,0.2150007289376703,1.0
+bpic15-0.0-5/0.1,DAE,trace,0.23233810708380787,0.2471759882245696,1.0
+bpic15-0.0-5/0.15,DAE,attribute,0.04905459689666077,0.06750362594806968,1.0
+bpic15-0.0-5/0.15,DAE,event,0.15527270304367533,0.2175870249911784,1.0
+bpic15-0.0-5/0.15,DAE,trace,0.23143372077722224,0.2470902791877131,1.0
+bpic15-0.0-5/0.2,DAE,attribute,0.04472619010326461,0.05949743514563467,1.0
+bpic15-0.0-5/0.2,DAE,event,0.1508550555086025,0.20994834221984776,1.0
+bpic15-0.0-5/0.2,DAE,trace,0.25385806098576724,0.22339359024575248,1.0
+bpic15-0.0-5/0.25,DAE,attribute,0.0396196006220837,0.051877230288040824,1.0
+bpic15-0.0-5/0.25,DAE,event,0.12785120632427305,0.18265554794975264,1.0
+bpic15-0.0-5/0.25,DAE,trace,0.2648002418052568,0.22848576038944166,1.0
+bpic15-0.0-5/0.3,DAE,attribute,0.047828000826895596,0.060123981961129676,1.0
+bpic15-0.0-5/0.3,DAE,event,0.15741681659902232,0.21528276536383428,1.0
+bpic15-0.0-5/0.3,DAE,trace,0.2845050045743018,0.22304043323559783,1.0
+bpic15-0.0-5/0.35,DAE,attribute,0.046044995314809066,0.055922303876745585,1.0
+bpic15-0.0-5/0.35,DAE,event,0.146448721080733,0.19659326361701962,1.0
+bpic15-0.0-5/0.35,DAE,trace,0.2862791435455973,0.20170191889782543,1.0
+bpic15-0.0-5/0.4,DAE,attribute,0.05197268802850368,0.059332191421082064,1.0
+bpic15-0.0-5/0.4,DAE,event,0.16054417461783946,0.21291976510943236,1.0
+bpic15-0.0-5/0.4,DAE,trace,0.32265203856231783,0.20240874917738133,1.0
+bpic15-0.0-5/0.45,DAE,attribute,0.044001553788208185,0.04945809423105326,1.0
+bpic15-0.0-5/0.45,DAE,event,0.13713282206010005,0.1882733668309141,1.0
+bpic15-0.0-5/0.45,DAE,trace,0.3430005467635658,0.21997909649389777,1.0
+bpic15-0.0-1/0.05,DAE,combined,0.1370231946527213,0.2133009591795664,1.0
+bpic15-0.0-1/0.1,DAE,combined,0.14409674715080614,0.20976754443286477,1.0
+bpic15-0.0-1/0.15,DAE,combined,0.15035470107437898,0.21379885556524952,1.0
+bpic15-0.0-1/0.2,DAE,combined,0.16647681547959192,0.21739787067303679,1.0
+bpic15-0.0-1/0.25,DAE,combined,0.16041702445709208,0.2027435794570154,1.0
+bpic15-0.0-1/0.3,DAE,combined,0.17234981386786324,0.2112850367251493,1.0
+bpic15-0.0-1/0.35,DAE,combined,0.17462514092479506,0.2041590163593102,1.0
+bpic15-0.0-1/0.4,DAE,combined,0.17724275541545514,0.21198427021429125,1.0
+bpic15-0.0-1/0.45,DAE,combined,0.19548692181130176,0.22005567229917508,1.0
+bpic15-0.0-2/0.05,DAE,combined,0.17277871572671225,0.2522244772797086,1.0
+bpic15-0.0-2/0.1,DAE,combined,0.1855623651878835,0.24980986593008664,1.0
+bpic15-0.0-2/0.15,DAE,combined,0.1930366751323807,0.24821412143181498,1.0
+bpic15-0.0-2/0.2,DAE,combined,0.19418378313742524,0.24061304501653635,1.0
+bpic15-0.0-2/0.25,DAE,combined,0.19184106623751693,0.23330985799246592,1.0
+bpic15-0.0-2/0.3,DAE,combined,0.19665636202714054,0.2341435405412884,1.0
+bpic15-0.0-2/0.35,DAE,combined,0.2071841671182427,0.24218922578253824,1.0
+bpic15-0.0-2/0.4,DAE,combined,0.21492190742395897,0.23513050959438084,1.0
+bpic15-0.0-2/0.45,DAE,combined,0.20495753349008994,0.23233938102632565,1.0
+bpic15-0.0-3/0.05,DAE,combined,0.1303170514222096,0.1989038860328792,1.0
+bpic15-0.0-3/0.1,DAE,combined,0.13787437866956365,0.200002827322487,1.0
+bpic15-0.0-3/0.15,DAE,combined,0.14949737819483003,0.1973590844927658,1.0
+bpic15-0.0-3/0.2,DAE,combined,0.15440250339024544,0.19992496372728458,1.0
+bpic15-0.0-3/0.25,DAE,combined,0.16037947443231218,0.20117218187847466,1.0
+bpic15-0.0-3/0.3,DAE,combined,0.17093703606400337,0.20712899745012373,1.0
+bpic15-0.0-3/0.35,DAE,combined,0.17739320993559385,0.20552689364169432,1.0
+bpic15-0.0-3/0.4,DAE,combined,0.18134430612705746,0.21024358509299984,1.0
+bpic15-0.0-3/0.45,DAE,combined,0.1929989975190849,0.21270542086687322,1.0
+bpic15-0.0-4/0.05,DAE,combined,0.17664173795493726,0.2777108188584704,1.0
+bpic15-0.0-4/0.1,DAE,combined,0.18832573750266868,0.27530135474676704,1.0
+bpic15-0.0-4/0.15,DAE,combined,0.19966224882429842,0.2812055835151824,1.0
+bpic15-0.0-4/0.2,DAE,combined,0.2057088609690765,0.27868151335555774,1.0
+bpic15-0.0-4/0.25,DAE,combined,0.19113614493061265,0.26218955453910575,1.0
+bpic15-0.0-4/0.3,DAE,combined,0.2016273660123083,0.25873552609744693,1.0
+bpic15-0.0-4/0.35,DAE,combined,0.21250739160216972,0.2567464447807259,1.0
+bpic15-0.0-4/0.4,DAE,combined,0.21750647979772567,0.26643871670505176,1.0
+bpic15-0.0-4/0.45,DAE,combined,0.21880795309714612,0.24869591928677406,1.0
+bpic15-0.0-5/0.05,DAE,combined,0.12723146338924585,0.20188231789859606,1.0
+bpic15-0.0-5/0.1,DAE,combined,0.14349172267416155,0.2064035261935467,1.0
+bpic15-0.0-5/0.15,DAE,combined,0.14525367357251945,0.20701674173540568,1.0
+bpic15-0.0-5/0.2,DAE,combined,0.14981310219921146,0.19859256197253963,1.0
+bpic15-0.0-5/0.25,DAE,combined,0.14409034958387115,0.19465608176483934,1.0
+bpic15-0.0-5/0.3,DAE,combined,0.1632499406667399,0.20551017884118683,1.0
+bpic15-0.0-5/0.35,DAE,combined,0.15959095331371312,0.19212120644196878,1.0
+bpic15-0.0-5/0.4,DAE,combined,0.17838963373622033,0.20498004521953325,1.0
+bpic15-0.0-5/0.45,DAE,combined,0.17471164087062466,0.21041399842479147,1.0
