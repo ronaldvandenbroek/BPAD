@@ -3,7 +3,7 @@ from novel.transformer.transformer import Transformer
 from utils.enums import EncodingCategorical, EncodingNumerical, Perspective
 
 def Experiment_Transformer_Debug(repeats=1, dataset_folder='transformer_debug_synthetic'):
-    run_name = 'Experiment_Transformer_Config_Debug'
+    run_name = 'Transformer_Config_Debug'
     model_name = f'{dataset_folder}'
 
     # Static configuration
@@ -69,7 +69,7 @@ def Experiment_Synthetic_Transformer(repeats=1, dataset_folder = 'all_datasets_s
     case_limit = None # Capping the training data for development purposes, set to None for full training
     debug_logging = False
 
-    run_name = 'Experiment_Transformer_Synthetic'
+    run_name = 'Transformer_Synthetic'
     
     ads = []
     for _ in range(repeats):
@@ -111,7 +111,7 @@ def Experiment_Transformer_Prefix_Store(repeats=1, dataset_folder = 'transformer
     case_limit = None # Capping the training data for development purposes, set to None for full training
     debug_logging = False
 
-    run_name = 'Experiment_Transformer_Prefix_Store'
+    run_name = 'Transformer_Prefix_Store'
     
     ads = []
     for _ in range(repeats):
@@ -169,7 +169,7 @@ def Experiment_Transformer_Event_Positional_Encoding(repeats=1, dataset_folder =
     case_limit = None # Capping the training data for development purposes, set to None for full training
     debug_logging = False
 
-    run_name = 'Experiment_Transformer_Event_Positional_Encoding'
+    run_name = 'Transformer_Event_Positional_Encoding'
     
     ads = []
     for _ in range(repeats):
@@ -227,7 +227,7 @@ def Experiment_Transformer_Event_Multi_Task(repeats=1, dataset_folder = 'transfo
     case_limit = None # Capping the training data for development purposes, set to None for full training
     debug_logging = False
 
-    run_name = 'Experiment_Transformer_Event_Multi_Task'
+    run_name = 'Transformer_Event_Multi_Task'
     
     ads = []
     for _ in range(repeats):
@@ -281,7 +281,7 @@ def Experiment_Transformer_Perspective_Weights_Order(repeats=1, dataset_folder =
     case_limit = None # Capping the training data for development purposes, set to None for full training
     debug_logging = False
 
-    run_name = 'Experiment_Transformer_Perspective_Weights_v2'
+    run_name = 'Transformer_Perspective_Weights_v2'
     
     ads = []
     for _ in range(repeats):
@@ -386,7 +386,7 @@ def Experiment_Transformer_Perspective_Weights_Attribute(repeats=1, dataset_fold
     case_limit = None # Capping the training data for development purposes, set to None for full training
     debug_logging = False
 
-    run_name = 'Experiment_Transformer_Perspective_Weights_v2'
+    run_name = 'Transformer_Perspective_Weights_v2'
     
     ads = []
     for _ in range(repeats):
@@ -491,7 +491,7 @@ def Experiment_Transformer_Perspective_Weights_Arrival_Time(repeats=1, dataset_f
     case_limit = None # Capping the training data for development purposes, set to None for full training
     debug_logging = False
 
-    run_name = 'Experiment_Transformer_Perspective_Weights_v2'
+    run_name = 'Transformer_Perspective_Weights_v2'
     
     ads = []
     for _ in range(repeats):
@@ -596,7 +596,7 @@ def Experiment_Transformer_Perspective_Weights_Workload(repeats=1, dataset_folde
     case_limit = None # Capping the training data for development purposes, set to None for full training
     debug_logging = False
 
-    run_name = 'Experiment_Transformer_Perspective_Weights_v2'
+    run_name = 'Transformer_Perspective_Weights_v2'
     
     ads = []
     for _ in range(repeats):

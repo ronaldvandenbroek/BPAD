@@ -8,7 +8,7 @@ def Experiment_Real_World_W2V_ATC(repeats=5):
     bucket = [10,20,30,40,60,80]
     batch_size = 8
     prefix = True
-    run_name = 'Experiment_Real_World_W2V_ATC'
+    run_name = 'Real_World_W2V_ATC'
 
     ads = []
     for _ in range(repeats):
@@ -27,7 +27,7 @@ def Experiment_Real_World_T2V_ATC(repeats=5):
     bucket = [10,20,30,40,60,80]
     batch_size = 8
     prefix = True
-    run_name = 'Experiment_Real_World_T2V_ATC'
+    run_name = 'Real_World_T2V_ATC'
 
     ads = []
     for _ in range(repeats):
@@ -46,7 +46,7 @@ def Experiment_Real_World_T2V_C(repeats=5):
     bucket = [10,20,30,40,60,80]
     batch_size = 8
     prefix = True
-    run_name = 'Experiment_Real_World_T2V_C'
+    run_name = 'Real_World_T2V_C'
 
     ads = []
     for _ in range(repeats):
@@ -66,7 +66,7 @@ def Experiment_Synthetic_All_Models_FV_OH(repeats=5):
     bucket = [3,4,5,6,7,8,9]
     batch_size = 8
     prefix = True
-    run_name = 'Experiment_Synthetic_All_Models_FV_OH'
+    run_name = 'Synthetic_All_Models_FV_OH'
 
     ads = []
     for _ in range(repeats):
@@ -95,7 +95,7 @@ def Experiment_Synthetic_All_Models_W2V(repeats=5):
     bucket = [3,4,5,6,7,8,9]
     batch_size = 8
     prefix = True
-    run_name = 'Experiment_Synthetic_All_Models_W2V'
+    run_name = 'Synthetic_All_Models_W2V'
 
     ads = []
     for _ in range(repeats):
@@ -124,7 +124,7 @@ def Experiment_Synthetic_All_Models_T2V(repeats=5):
     bucket = [3,4,5,6,7,8,9]
     batch_size = 8
     prefix = True
-    run_name = 'Experiment_Synthetic_All_Models_T2V'
+    run_name = 'Synthetic_All_Models_T2V'
 
     ads = []
     for _ in range(repeats):
@@ -153,7 +153,7 @@ def Experiment_Synthetic_All_Models(repeats=5):
     bucket = [3,4,5,6,7,8,9]
     batch_size = 8
     prefix = True
-    run_name = 'Experiment_Synthetic_All_Models'
+    run_name = 'Synthetic_All_Models'
 
     ads = []
     for _ in range(repeats):
@@ -244,7 +244,7 @@ def Experiment_Batch_Size(repeats=3):
     ads_8, _ = Experiment_Anomaly_Percentage(repeats=repeats, batch_size=8, bucket=bucket, prefix=prefix)
     ads_16, _ = Experiment_Anomaly_Percentage(repeats=repeats, batch_size=16, bucket=bucket, prefix=prefix)
 
-    run_name = 'Experiment_Batch_Size'
+    run_name = 'Batch_Size'
     return ads_2 + ads_4 + ads_8 + ads_16, run_name
 
 def Experiment_Prefix(repeats=3):
@@ -268,7 +268,7 @@ def Experiment_Prefix(repeats=3):
     ads_prefix_bucket, _ = Experiment_Anomaly_Percentage(repeats=repeats, batch_size=batch_size, bucket=bucket, prefix=True)
     ads_prefix_bucket, _ = Experiment_Anomaly_Percentage(repeats=repeats, batch_size=batch_size, bucket=bucket, prefix=False)
 
-    run_name = 'Experiment_Prefix'
+    run_name = 'Bucketing'
     return ads_no_prefix + ads_prefix + ads_prefix_bucket, run_name
 
 def Experiment_Synthetic_Dataset(repeats=3):
@@ -284,7 +284,7 @@ def Experiment_Synthetic_Dataset(repeats=3):
     Use Gigantic dataset, as it scores the highest while also have one of the lowest runtimes.
     """
     ads, _ = Experiment_Anomaly_Percentage(repeats=repeats)
-    run_name = 'Experiment_Synthetic_Dataset'
+    run_name = 'Synthetic_Dataset'
 
     return ads, run_name
 
@@ -300,7 +300,7 @@ def Experiment_Anomaly_Percentage(repeats=1, batch_size=8, bucket=[3,4,5,6,7,8,9
     Conclusion:
     Use the 0.45 anomaly percentage.
     """
-    run_name = 'Experiment_Anomaly_Percentage'
+    run_name = 'Anomaly_Percentage'
 
     ads = []
     for _ in range(repeats):
@@ -328,7 +328,7 @@ def Experiment_Anomaly_Percentage(repeats=1, batch_size=8, bucket=[3,4,5,6,7,8,9
 
 
 def Experiment_Finetuning_W2V_Window_Vector_Sizes(repeats=3):
-    run_name = 'Experiment_Finetuning_W2V_Window_Vector_Sizes'
+    run_name = 'Finetuning_W2V_Window_Vector_Sizes'
     vector_sizes = [10,20,40,80,160]
     window_sizes = [2,4,8,16]
     pre_train_percentage = [0]
@@ -362,7 +362,7 @@ def Experiment_Finetuning_W2V_Window_Vector_Sizes(repeats=3):
     return ads,run_name
 
 def Experiment_Finetuning_T2V_Window_Vector_Sizes(repeats=3):
-    run_name = 'Experiment_Finetuning_T2V_Window_Vector_Sizes'
+    run_name = 'Finetuning_T2V_Window_Vector_Sizes'
     vector_sizes = [10,20,40,80,160]
     window_sizes = [2,4,8,16]
     pre_train_percentage = [0]
@@ -400,7 +400,7 @@ def Experiment_Finetuning_T2V_Window_Vector_Sizes(repeats=3):
     return ads,run_name
 
 def Experiment_Finetuning_Fixed_Vector_Vector_Sizes(repeats=3):
-    run_name = 'Experiment_Finetuning_Fixed_Vector_Vector_Sizes'
+    run_name = 'Finetuning_Fixed_Vector_Vector_Sizes'
     vector_sizes =  [10,20,40,80,160,240,320]
     batch_sizes = [8]
     buckets = [[3,4,5,6,7,8,9]]

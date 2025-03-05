@@ -16,8 +16,8 @@ environment backup v2.yml
 /results
 *.pkl
 
-analysis/raw/plots/archive/
-analysis/raw/plots/*/error_plots/
+analysis/results/archive/
+analysis/results/*/error_plots/
 
 # BiNet GitIgnore
 */binet/.idea/

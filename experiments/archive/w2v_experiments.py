@@ -3,7 +3,7 @@ from novel.dae.dae import DAE
 from utils.enums import EncodingCategorical, EncodingNumerical
 
 def Experiment_Finetuning_W2V_Window_Vector_Sizes(repeats=3):
-    run_name = 'Experiment_Finetuning_W2V_Window_Vector_Sizes'
+    run_name = 'Finetuning_W2V_Window_Vector_Sizes'
     vector_sizes = [10,20,40,80,160]
     window_sizes = [2,4,8,16]
     pre_train_percentage = [0]

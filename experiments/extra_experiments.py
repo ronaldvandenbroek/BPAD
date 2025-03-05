@@ -15,7 +15,7 @@ def Experiment_Component_Runtime_Analysis(repeats=1, dataset_folder='transformer
     case_limit = None # Capping the training data for development purposes, set to None for full training
     debug_logging = False
 
-    run_name = 'Experiment_Component_Runtime_Analysis'
+    run_name = 'Component_Runtime_Analysis'
 
     ads = []
     for _ in range(repeats):
@@ -58,7 +58,7 @@ def Experiment_Online_Viablity_DAE(repeats=1, dataset_folder='transformer_debug_
     # Static configuration
     prefix = True
     
-    run_name = 'Experiment_Online_Viablity_DAE'
+    run_name = 'Online_Viablity_DAE'
 
     ads = []
     for _ in range(repeats):
@@ -80,7 +80,7 @@ def Experiment_Online_Viablity_Transformer(repeats=1, dataset_folder='transforme
     # Static configuration
     prefix = True
     
-    run_name = 'Experiment_Online_Viablity_Transformer'
+    run_name = 'Online_Viablity_Transformer'
 
     ads = []
 
@@ -124,7 +124,7 @@ def Experiment_Offline_Training(repeats=1, dataset_folder='transformer_debug_syn
     # Static configuration
     prefix = True
     
-    run_name = 'Experiment_Offline_Training'
+    run_name = 'Offline_Training'
 
     ads = []
     # for _ in range(repeats):

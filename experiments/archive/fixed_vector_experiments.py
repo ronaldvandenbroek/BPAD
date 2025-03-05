@@ -3,7 +3,7 @@ from novel.dae.dae import DAE
 from utils.enums import EncodingCategorical, EncodingNumerical
 
 def Experiment_Finetuning_Fixed_Vector_Vector_Sizes(repeats=3):
-    run_name = 'Experiment_Finetuning_Fixed_Vector_Vector_Sizes'
+    run_name = 'Finetuning_Fixed_Vector_Vector_Sizes'
     vector_sizes =  [10,20,30,40,50,60,70,80,90,100]
     batch_sizes = [8]
     buckets = [[3,4,5,6,7,8,9]]
