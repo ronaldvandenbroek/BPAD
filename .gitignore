@@ -1,3 +1,24 @@
+## Custom ignores
+# File containing all external tooling 
+tools/
+
+# Do not upload the event logs
+eventlogs/
+eventlogs_archive/
+
+# Do not upload result files
+result_*.csv
+
+# Backup environments
+environment backup v1.yml
+environment backup v2.yml
+.vscode/launch.json
+/results
+*.pkl
+
+analysis/raw/plots/archive/
+analysis/raw/plots/*/error_plots/
+
 # BiNet GitIgnore
 */binet/.idea/
 */binet/.vscode/
@@ -165,23 +186,3 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-## Custom ignores
-# File containing all external tooling 
-tools/
-
-# Do not upload the event logs
-eventlogs/
-eventlogs_archive/
-
-# Do not upload result files
-result_*.csv
-
-# Backup environments
-environment backup v1.yml
-environment backup v2.yml
-.vscode/launch.json
-/results
-*.pkl
-
-analysis/raw/plots/archive/
-analysis/raw/plots/*/error_plots/
