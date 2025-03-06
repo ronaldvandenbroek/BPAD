@@ -1,0 +1,9 @@
+level&bucketing&rank_Average&rank_Order&rank_Attribute&rank_Arrival Time&rank_Workload
+trace&Bucketing&2.0&1.98&2.0&2.0&1.93
+trace&No Bucketing&1.0&1.02&1.0&1.0&1.07
+event&Bucketing&1.0&1.0&1.11&1.17&1.0
+event&No Bucketing&2.0&2.0&1.89&1.83&2.0
+attribute&Bucketing&1.0&1.04&1.11&1.17&1.0
+attribute&No Bucketing&2.0&1.96&1.89&1.83&2.0
+combined&Bucketing&1.93&1.81&1.98&1.96&1.57
+combined&No Bucketing&1.07&1.19&1.02&1.04&1.43
