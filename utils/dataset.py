@@ -34,6 +34,8 @@ from processmining.event import Event
 from processmining.case import Case
 from processmining.log import EventLog
 
+import matplotlib.pyplot as plt
+
 
 class Dataset(object):
     def __init__(self, 
@@ -99,22 +101,9 @@ class Dataset(object):
         el_file = EventLogFile(dataset_name)
         self.dataset_name = el_file.name
         
-        # RCVDB: Skipping caching TODO reimplement
-        # # Check for cache
-        # if el_file.cache_file.exists():
-        #     self._load_dataset_from_cache(el_file.cache_file)
-        #     self._gen_trace_graphs()
-        #     self._gen_trace_graphs_GAE()
-
-
-        # Else generator from event log
         if el_file.path.exists():
             self._event_log = EventLog.load(el_file.path, prefix)
             self.from_event_log(self._event_log)
-            # RCVDB: Skipping caching and generating graphs TODO reimplement
-            # self._cache_dataset(el_file.cache_file)
-            # self._gen_trace_graphs()
-            # self._gen_trace_graphs_GAE()
         else:
             print(el_file.path)
             raise FileNotFoundError()
@@ -254,15 +243,9 @@ class Dataset(object):
                 event:Event
                 if '_label' in event.attributes and event.attributes['_label'] is not None:
                     event_labels = event.attributes['_label']
-                    # if case_index < 2:
-                    #     print(f'{case_index} {event_index} {event_labels}')
                     for label in event_labels:
                         # Encode the label into the targets:
                         case_targets, perspective = label_to_targets(event_log, case_targets, event_index, label)
-
-                        # Debug code to see if labels are set correctly TODO can remove if not nessesary anymore
-                        # if case_index < 2:
-                        #     print(f' Setting value at {case_index},{event_index},{perspective}')
 
                         # Encode the perspective into labels
                         if perspective is not None: # If perspective is none then no anomalies need to be registered
@@ -284,12 +267,6 @@ class Dataset(object):
         # Was initially a list of strings with one label per case, now it represents all perspectives present per event in each case
         case_labels = np.asarray(labels_case_level)
         print(f'Case Labels shape: {case_labels.shape}')
-
-        # RCVDB: TODO remove debug prints after label setting has be confirmed to be correct
-        # print(f'Example target of event: \n {targets[0]}')
-        # print(f'Example labels of cases:')
-        # for i in range(5):
-        #     print(f'Case {i}: {labels[i]}')
 
         return attr_labels, event_labels, case_labels
 
@@ -437,7 +414,7 @@ class Dataset(object):
         # Get features from event log
         self._features, self._case_lens, self.attribute_types, self.encoders = self._from_event_log(event_log)
         print("Generating log from data.")
-        
+
         # Get targets and labels from event log
         self.attr_labels, self.event_labels, self.case_labels = self._get_classes_and_labels_from_event_log(event_log)
         print("Generating labels from log.")  
@@ -445,7 +422,50 @@ class Dataset(object):
         # Attribute keys (names)
         # self.attribute_keys = [a.replace(' ', '_') for a in self.event_log.event_attribute_keys]
         self.attribute_keys = [a.replace(':', '_').replace(' ', '_') for a in self.event_log.event_attribute_keys]
-        print("Generating attribute keys from log.")  
+        print("Generating attribute keys from log.")
+
+        # print("Arrival-time analysis")
+        # self.arrival_time_analysis()
+
+    def arrival_time_analysis(self):
+        print("Arrival-time analysis")
+        print(f'Average case length: {np.mean(self._case_lens)}')
+        print(f'Maximum case length: {np.max(self._case_lens)}')
+        print(f'Minimum case length: {np.min(self._case_lens)}')
+        avg_events_till_end = [np.mean(np.arange(n, 0, -1)) for n in self._case_lens]
+        print(f'Average events till end of case: {np.mean(avg_events_till_end)}')
+        arrival_times = self._features[1].flatten()
+        arrival_times_anomaly_mask = self.event_labels[:, :, Perspective.ARRIVAL_TIME].flatten()
+
+        average_arrival_time = np.mean(arrival_times)
+        average_arrival_time_excluding_zeros = np.mean(arrival_times[arrival_times > 0])
+        print(f'Average arrival time: {average_arrival_time}')
+        print(f'Average arrival time excluding zeros: {average_arrival_time_excluding_zeros}')
+
+        unique_values, counts = np.unique(arrival_times_anomaly_mask, return_counts=True)
+        counts_dict = dict(zip(unique_values, counts))
+        print(f'Anomalous arrival times: {counts_dict}')
+
+        # normal_times = arrival_times[~arrival_times_anomaly_mask]
+        # anomalous_times = arrival_times[arrival_times_anomaly_mask]
+
+        # # Plot histograms
+        # plt.figure(figsize=(10, 6))
+        # plt.hist(normal_times, bins=50, alpha=0.6, label='Normal Arrival Times', color='blue')
+        # plt.hist(anomalous_times, bins=50, alpha=0.6, label='Anomalous Arrival Times', color='red')
+
+        # # Labels and legend
+        # plt.xlabel('Arrival Time')
+        # plt.ylabel('Frequency')
+        # plt.title('Histogram of Arrival Times (Normal vs Anomalous)')
+        # plt.legend()
+
+        # plt.ylim(0, 100)
+
+        # # Save the figure
+        # plt.savefig(f"analysis/preliminaries/arrival_times/arrival_times_histogram_{self.dataset_name}.png", dpi=300)
+
+        print("Done")       
 
     def assign_to_buckets(self, bucket_boundaries):
         max_bucket_size = len(bucket_boundaries)

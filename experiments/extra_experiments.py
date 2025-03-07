@@ -2,18 +2,24 @@ from novel.dae.dae import DAE
 from novel.transformer.transformer import Transformer
 from utils.enums import EncodingCategorical, EncodingNumerical, Perspective
 
+def Experiment_Batching_Effects(dataset_folder='batching-base'):
+    ads = []
+    ads.append(dict(ad=DAE, fit_kwargs=dict( 
+        batch_size=1, 
+        prefix=False, 
+        bucket_boundaries=None,
+        categorical_encoding=EncodingCategorical.ONE_HOT,
+        numerical_encoding=EncodingNumerical.NONE,
+        pretrain_percentage=0,
+        vector_size=0,
+        window_size=0)))
+    run_name = 'Batching_Effects'
+
+    return ads, run_name, dataset_folder
+    
+
 def Template_Experiment_DAE(repeats=1, batch_size=8, bucket=[3,4,5,6,7,8,9], prefix=True):
     ads = []
-    for _ in range(repeats):
-        ads.append(dict(ad=DAE, fit_kwargs=dict( 
-            batch_size=batch_size, 
-            prefix=prefix, 
-            bucket_boundaries=bucket,
-            categorical_encoding=EncodingCategorical.ONE_HOT,
-            numerical_encoding=EncodingNumerical.MIN_MAX_SCALING,
-            pretrain_percentage=0,
-            vector_size=0,
-            window_size=0)))
     for _ in range(repeats):
         ads.append(dict(ad=DAE, fit_kwargs=dict( 
             batch_size=batch_size, 
@@ -46,7 +52,7 @@ def Template_Experiment_Transformer(repeats=1, batch_size=32, prefix=True, persp
     return ads
 
 def Experiment_DAE_Batch_Size(repeats=3, dataset_folder='transformer_debug_synthetic'):
-    bucket = [3,4,5,6,7,8,9] # As high degree of bucketing will potentially cause issues when not using prefixes
+    bucket = [3,4,5,6,7,8,9]
     prefix = True
     batch_sizes = [1,2,4,8,16]
     ads = []

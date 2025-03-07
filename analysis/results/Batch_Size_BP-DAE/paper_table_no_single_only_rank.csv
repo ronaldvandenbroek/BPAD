@@ -1,0 +1,9 @@
+level&categorical_encoding&rank_Average&rank_Order&rank_Attribute&rank_Arrival Time&rank_Workload
+trace&One-Hot&1.0&1.56&1.22&1.11&1.0
+trace&Word2Vec ATC&2.0&1.44&1.78&1.89&2.0
+event&One-Hot&2.0&2.0&2.0&2.0&2.0
+event&Word2Vec ATC&1.0&1.0&1.0&1.0&1.0
+attribute&One-Hot&2.0&2.0&2.0&2.0&2.0
+attribute&Word2Vec ATC&1.0&1.0&1.0&1.0&1.0
+combined&One-Hot&2.0&2.0&2.0&2.0&2.0
+combined&Word2Vec ATC&1.0&1.0&1.0&1.0&1.0
