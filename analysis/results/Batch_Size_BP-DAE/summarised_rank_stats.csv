@@ -1,5 +1,5 @@
 categorical_encoding,level,rank_mean,rank_std,f1_mean,f1_std
 Word2Vec Average Then Concatinate,attribute,1.0,0.0,0.03,0.02
 Word2Vec Average Then Concatinate,combined,1.0,0.0,0.13,0.04
-Word2Vec Average Then Concatinate,event,1.0,0.0,0.08,0.03
-Word2Vec Average Then Concatinate,trace,1.0,0.0,0.27,0.08
+Word2Vec Average Then Concatinate,event,1.0,0.0,0.09,0.03
+Word2Vec Average Then Concatinate,trace,1.0,0.0,0.28,0.08

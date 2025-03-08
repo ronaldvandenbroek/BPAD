@@ -1,9 +1,21 @@
-level&categorical_encoding&rank_Average&rank_Order&rank_Attribute&rank_Arrival Time&rank_Workload
-trace&One-Hot&1.0&1.56&1.22&1.11&1.0
-trace&Word2Vec ATC&2.0&1.44&1.78&1.89&2.0
-event&One-Hot&2.0&2.0&2.0&2.0&2.0
-event&Word2Vec ATC&1.0&1.0&1.0&1.0&1.0
-attribute&One-Hot&2.0&2.0&2.0&2.0&2.0
-attribute&Word2Vec ATC&1.0&1.0&1.0&1.0&1.0
-combined&One-Hot&2.0&2.0&2.0&2.0&2.0
-combined&Word2Vec ATC&1.0&1.0&1.0&1.0&1.0
+level&batch_size&rank_Average&rank_Order&rank_Attribute&rank_Arrival Time&rank_Workload
+trace&1&4.11&3.78&1.33&4.44&4.89
+trace&2&4.33&3.0&2.33&4.0&4.0
+trace&4&3.56&3.11&2.89&3.56&3.11
+trace&8&2.0&2.56&4.11&1.89&1.89
+trace&16&1.0&2.56&4.33&1.11&1.11
+event&1&5.0&3.78&3.44&3.22&5.0
+event&2&3.67&3.33&4.11&2.67&3.22
+event&4&2.89&2.78&3.44&3.11&2.56
+event&8&2.11&2.11&1.89&3.11&1.78
+event&16&1.33&3.0&2.11&2.89&2.44
+attribute&1&4.89&2.11&3.44&3.22&4.78
+attribute&2&2.67&3.22&3.0&2.67&2.89
+attribute&4&2.33&3.33&3.44&3.11&2.11
+attribute&8&2.11&3.33&2.78&3.11&2.22
+attribute&16&3.0&3.0&2.33&2.89&3.0
+combined&1&4.67&3.11&1.44&4.78&5.0
+combined&2&3.89&3.11&2.22&3.78&4.0
+combined&4&3.44&3.44&3.0&3.22&3.0
+combined&8&2.0&2.78&4.22&2.0&1.78
+combined&16&1.0&2.56&4.11&1.22&1.22
