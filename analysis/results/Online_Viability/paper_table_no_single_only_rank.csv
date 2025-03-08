@@ -1,0 +1,9 @@
+level&model&rank_Average&rank_Order&rank_Attribute&rank_Arrival Time&rank_Workload
+trace&BP-DAE&1.98&1.61&2.0&1.98&1.93
+trace&MP-Former&1.02&1.39&1.0&1.02&1.07
+event&BP-DAE&1.64&1.61&1.79&1.98&1.87
+event&MP-Former&1.36&1.39&1.21&1.02&1.13
+attribute&BP-DAE&2.0&1.98&1.84&1.98&1.89
+attribute&MP-Former&1.0&1.02&1.16&1.02&1.11
+combined&BP-DAE&2.0&1.95&1.98&2.0&1.98
+combined&MP-Former&1.0&1.05&1.02&1.0&1.02

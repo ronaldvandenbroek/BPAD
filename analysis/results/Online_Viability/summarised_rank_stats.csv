@@ -1,0 +1,9 @@
+categorical_encoding,level,rank_mean,rank_std,f1_mean,f1_std
+Tokenizer,attribute,1.0,0.0,0.07,0.02
+Word2Vec Average Then Concatinate,attribute,2.0,0.0,0.03,0.02
+Tokenizer,combined,1.0,0.0,0.17,0.04
+Word2Vec Average Then Concatinate,combined,2.0,0.0,0.13,0.04
+Tokenizer,event,1.36,0.48,0.09,0.03
+Word2Vec Average Then Concatinate,event,1.64,0.48,0.09,0.03
+Tokenizer,trace,1.02,0.13,0.35,0.08
+Word2Vec Average Then Concatinate,trace,1.98,0.13,0.27,0.07

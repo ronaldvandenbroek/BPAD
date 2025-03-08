@@ -1,0 +1,4 @@
+Total runtime (multiple scales): 
+43.67 hours 
+2620.28 minutes 
+157216.85 seconds
