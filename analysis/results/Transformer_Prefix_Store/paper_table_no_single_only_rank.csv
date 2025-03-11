@@ -1,0 +1,9 @@
+level&model&rank_Average&rank_Order&rank_Attribute&rank_Arrival Time&rank_Workload
+trace&Prefix Store&1.0&1.0&1.08&1.17&1.0
+trace&Without Prefix Store&2.0&2.0&1.92&1.83&2.0
+event&Prefix Store&1.0&1.0&1.0&1.0&1.0
+event&Without Prefix Store&2.0&2.0&2.0&2.0&2.0
+attribute&Prefix Store&1.0&1.0&1.0&1.0&1.0
+attribute&Without Prefix Store&2.0&2.0&2.0&2.0&2.0
+combined&Prefix Store&1.0&1.0&1.0&1.0&1.0
+combined&Without Prefix Store&2.0&2.0&2.0&2.0&2.0

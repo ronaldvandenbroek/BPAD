@@ -1,0 +1,9 @@
+level&model&f1_mean_Average&f1_std_Average&f1_mean_Order&f1_std_Order&f1_mean_Attribute&f1_std_Attribute&f1_mean_Arrival Time&f1_std_Arrival Time&f1_mean_Workload&f1_std_Workload&run_time_mean&run_time_std
+trace&Prefix Store&0.419&0.034&0.533&0.089&0.356&0.02&0.316&0.02&0.473&0.028&358.631&85.571
+trace&Without Prefix Store&0.352&0.026&0.451&0.071&0.331&0.017&0.277&0.006&0.35&0.039&358.654&85.72
+event&Prefix Store&0.126&0.009&0.18&0.032&0.094&0.011&0.083&0.015&0.145&0.019&358.631&85.571
+event&Without Prefix Store&0.039&0.007&0.033&0.005&0.042&0.006&0.037&0.019&0.045&0.005&358.654&85.72
+attribute&Prefix Store&0.092&0.007&0.18&0.032&0.041&0.005&0.083&0.015&0.064&0.014&358.631&85.571
+attribute&Without Prefix Store&0.025&0.006&0.033&0.005&0.016&0.002&0.037&0.019&0.014&0.002&358.654&85.72
+combined&Prefix Store&0.212&0.016&0.298&0.052&0.164&0.011&0.16&0.009&0.227&0.021&358.631&86.474
+combined&Without Prefix Store&0.139&0.008&0.173&0.026&0.129&0.008&0.117&0.014&0.136&0.014&358.654&86.625

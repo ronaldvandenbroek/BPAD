@@ -1,9 +1,5 @@
-model,level,rank_mean,rank_std,                 f1_mean,f1_std
-transformer_prefix_store_true,attribute,1.0,0.0,    0.09,0.01
-transformer_prefix_store_false,attribute,2.0,0.0,   0.03,0.01
-transformer_prefix_store_true,combined,1.0,0.0,     0.21,0.02
-transformer_prefix_store_false,combined,2.0,0.0,    0.14,0.01
-transformer_prefix_store_true,event,1.0,0.0,        0.13,0.01
-transformer_prefix_store_false,event,2.0,0.0,       0.04,0.01
-transformer_prefix_store_true,trace,1.0,0.0,        0.42,0.03
-transformer_prefix_store_false,trace,2.0,0.0,       0.35,0.03
+categorical_encoding,level,rank_mean,rank_std,f1_mean,f1_std
+Tokenizer,attribute,1.0,0.0,0.06,0.0
+Tokenizer,combined,1.0,0.0,0.18,0.01
+Tokenizer,event,1.0,0.0,0.08,0.01
+Tokenizer,trace,1.0,0.0,0.39,0.03
