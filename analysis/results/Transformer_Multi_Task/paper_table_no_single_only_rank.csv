@@ -1,0 +1,9 @@
+level&model&rank_Average&rank_Order&rank_Attribute&rank_Arrival Time&rank_Workload
+trace&Multi-Task&1.5&1.33&1.17&1.17&1.67
+trace&Without Multi-Task&1.4&1.6&1.8&1.8&1.2
+event&Multi-Task&1.33&1.67&1.0&1.33&1.5
+event&Without Multi-Task&1.6&1.2&2.0&1.6&1.4
+attribute&Multi-Task&1.83&1.83&1.17&1.33&1.67
+attribute&Without Multi-Task&1.0&1.0&1.8&1.6&1.2
+combined&Multi-Task&1.83&1.67&1.0&1.17&1.83
+combined&Without Multi-Task&1.0&1.2&2.0&1.8&1.0

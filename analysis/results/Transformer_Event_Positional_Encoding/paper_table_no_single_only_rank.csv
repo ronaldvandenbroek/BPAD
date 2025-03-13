@@ -1,0 +1,9 @@
+level&model&rank_Average&rank_Order&rank_Attribute&rank_Arrival Time&rank_Workload
+trace&Pos. Encoding&2.0&2.0&1.92&1.67&1.83
+trace&Without Pos. Encoding&1.0&1.0&1.08&1.33&1.17
+event&Pos. Encoding&2.0&2.0&2.0&1.67&1.33
+event&Without Pos. Encoding&1.0&1.0&1.0&1.33&1.67
+attribute&Pos. Encoding&2.0&2.0&2.0&1.67&1.83
+attribute&Without Pos. Encoding&1.0&1.0&1.0&1.33&1.17
+combined&Pos. Encoding&2.0&2.0&2.0&1.5&1.67
+combined&Without Pos. Encoding&1.0&1.0&1.0&1.5&1.33

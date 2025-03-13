@@ -1,9 +1,0 @@
-model,level,rank_mean,rank_std,f1_mean,f1_std
-transformer_multi_task_false,attribute,1.0,0.0,0.09,0.01
-transformer_multi_task_true,attribute,1.83,0.41,0.09,0.01
-transformer_multi_task_false,combined,1.2,0.45,0.23,0.01
-transformer_multi_task_true,combined,1.67,0.52,0.23,0.01
-transformer_multi_task_false,event,1.0,0.0,0.15,0.01
-transformer_multi_task_true,event,1.83,0.41,0.15,0.01
-transformer_multi_task_false,trace,1.2,0.45,0.47,0.03
-transformer_multi_task_true,trace,1.67,0.52,0.46,0.03

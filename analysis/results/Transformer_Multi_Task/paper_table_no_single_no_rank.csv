@@ -1,0 +1,9 @@
+level&model&f1_mean_Average&f1_std_Average&f1_mean_Order&f1_std_Order&f1_mean_Attribute&f1_std_Attribute&f1_mean_Arrival Time&f1_std_Arrival Time&f1_mean_Workload&f1_std_Workload&run_time_mean&run_time_std
+trace&Multi-Task&0.421&0.026&0.333&0.012&0.466&0.063&0.329&0.024&0.555&0.033&358.535&85.524
+trace&Without Multi-Task&0.43&0.031&0.335&0.012&0.467&0.067&0.329&0.025&0.587&0.04&2255.331&593.719
+event&Multi-Task&0.105&0.012&0.09&0.006&0.102&0.01&0.082&0.015&0.145&0.022&358.535&85.524
+event&Without Multi-Task&0.104&0.013&0.09&0.007&0.099&0.011&0.079&0.014&0.148&0.022&2255.331&593.719
+attribute&Multi-Task&0.092&0.006&0.179&0.032&0.041&0.005&0.082&0.015&0.064&0.014&358.535&85.524
+attribute&Without Multi-Task&0.093&0.006&0.184&0.033&0.04&0.005&0.079&0.014&0.07&0.018&2255.331&593.719
+combined&Multi-Task&0.206&0.011&0.201&0.009&0.203&0.026&0.165&0.007&0.255&0.018&358.535&86.181
+combined&Without Multi-Task&0.209&0.014&0.203&0.009&0.202&0.028&0.163&0.007&0.268&0.022&2255.331&597.388

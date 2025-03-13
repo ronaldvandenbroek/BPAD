@@ -1,0 +1,5 @@
+categorical_encoding,level,rank_mean,rank_std,f1_mean,f1_std
+Tokenizer,attribute,1.0,0.0,0.08,0.01
+Tokenizer,combined,1.0,0.0,0.22,0.01
+Tokenizer,event,1.0,0.0,0.12,0.01
+Tokenizer,trace,1.0,0.0,0.46,0.03
