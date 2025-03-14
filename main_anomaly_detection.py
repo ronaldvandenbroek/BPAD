@@ -67,13 +67,12 @@ def fit_and_eva(dataset_name, dataset_folder, run_name, seed, ad, fit_kwargs=Non
         runtime_results
     ) = ad.train_and_predict(dataset)
 
-
     component_runtime_tracker.start_component('save_results')
     end_time = time.time()
     run_time=end_time-start_time
     print(f'Runtime: {run_time}')
 
-    config = fit_kwargs
+    config = ad.config
     config['model'] = fit_kwargs.get('model_name',  ad.name)
     config['dataset'] = dataset_name
     config['dataset_folder'] = dataset_folder
@@ -124,18 +123,31 @@ def fit_and_eva(dataset_name, dataset_folder, run_name, seed, ad, fit_kwargs=Non
             losses=losses)
 
         # RCVDB: Loop through each perspective and handle each result level seperately
-        for anomaly_perspective in trace_level_abnormal_scores.keys():
-            fs_save.set_perspective(anomaly_perspective)
+        if isinstance(trace_level_abnormal_scores, dict):
+            for anomaly_perspective in trace_level_abnormal_scores.keys():
+                fs_save.set_perspective(anomaly_perspective)
 
+                fs_save.save_raw_results( 
+                    level='trace',
+                    results=trace_level_abnormal_scores[anomaly_perspective])
+                fs_save.save_raw_results(
+                    level='event',
+                    results=event_level_abnormal_scores[anomaly_perspective])
+                fs_save.save_raw_results(
+                    level='attribute',
+                    results=attr_level_abnormal_scores[anomaly_perspective])
+        else:
+            # If there is only one perspective
+            fs_save.set_perspective("single")
             fs_save.save_raw_results( 
                 level='trace',
-                results=trace_level_abnormal_scores[anomaly_perspective])
+                results=trace_level_abnormal_scores)
             fs_save.save_raw_results(
                 level='event',
-                results=event_level_abnormal_scores[anomaly_perspective])
+                results=event_level_abnormal_scores)
             fs_save.save_raw_results(
                 level='attribute',
-                results=attr_level_abnormal_scores[anomaly_perspective])
+                results=attr_level_abnormal_scores)            
     
     component_runtime_tracker.end_component('save_results')
     component_runtime_tracker.end_component('all')

@@ -2,6 +2,7 @@ import os
 import warnings
 import argparse
 
+from experiments.comb_experiments import Experiment_Offline_COMB, Experiment_Offline_MP_Former
 from experiments.extra_experiments import Experiment_Batching_Effects, Experiment_Component_Runtime_Analysis, Experiment_DAE_Batch_Size, Experiment_Offline_Training, Experiment_Online_Viablity_DAE, Experiment_Online_Viablity_Transformer, Experiment_Transformer_Batch_Size
 from experiments.report_experiments import Experiment_Anomaly_Percentage, Experiment_Batch_Size, Experiment_Finetuning_Fixed_Vector_Vector_Sizes, Experiment_Finetuning_T2V_Window_Vector_Sizes, Experiment_Finetuning_W2V_Window_Vector_Sizes, Experiment_Prefix, Experiment_Real_World_T2V_ATC, Experiment_Real_World_T2V_C, Experiment_Real_World_W2V_ATC, Experiment_Synthetic_All_Models, Experiment_Synthetic_All_Models_FV_OH, Experiment_Synthetic_All_Models_T2V, Experiment_Synthetic_All_Models_W2V, Experiment_Synthetic_Dataset
 from experiments.transformer_experiments import Experiment_Synthetic_Transformer, Experiment_Transformer_Debug, Experiment_Transformer_Event_Multi_Task, Experiment_Transformer_Event_Positional_Encoding, Experiment_Transformer_Perspective_Weights_Arrival_Time, Experiment_Transformer_Perspective_Weights_Attribute, Experiment_Transformer_Perspective_Weights_Order, Experiment_Transformer_Perspective_Weights_Workload, Experiment_Transformer_Prefix_Store
@@ -42,10 +43,10 @@ if __name__ == '__main__':
     # If running main locally without passing arguments set run_local to true and configure the run manually 
     run_local=False
     if run_local:
-        experiment = 'Batching_Effects'
+        experiment = 'Experiment_Offline_COMB'
         # experiment = 'Experiment_Offline_Training' #'Experiment_Transformer_Debug' #'Experiment_Transformer_Prefix_Store' #, 'Experiment_Transformer_Debug' #'Experiment_Real_World_T2V_C' #'Experiment_Prefix'
         # dataset_folder = 'transformer_debug_synthetic' #'experiment_real_world_selected_models' #'all_datasets_synthetics'
-        dataset_folder = 'batching-base-realworld'
+        dataset_folder = 'batching-base'
         repeats = 1
 
     # Configure the experiment based on the provided arguments
@@ -128,6 +129,12 @@ if __name__ == '__main__':
         ads, run_name, dataset_folder = Experiment_Transformer_Batch_Size(repeats=repeats, dataset_folder=dataset_folder)
     elif experiment == "Batching_Effects":
         ads, run_name, dataset_folder = Experiment_Batching_Effects(dataset_folder=dataset_folder)
+
+    # Offline COMB Experiments
+    elif experiment == "Experiment_Offline_COMB":
+        ads, run_name, dataset_folder = Experiment_Offline_COMB(dataset_folder=dataset_folder)
+    elif experiment == "Experiment_Offline_MP_Former":
+        ads, run_name, dataset_folder = Experiment_Offline_MP_Former(dataset_folder=dataset_folder)
 
     # If a custom name is specified
     if args.experiment_name:

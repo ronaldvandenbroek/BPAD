@@ -60,8 +60,11 @@ class FSSave():
         self.bucket_size = str(bucket_size)
 
     def set_perspective(self, perspective):
-        perspective_name = Perspective.values()[perspective]
-        self.perspective = perspective_name
+        if isinstance(perspective, str) and not isinstance(perspective, int):
+            self.perspective = perspective
+        else:
+            perspective_name = Perspective.values()[perspective]
+            self.perspective = perspective_name
 
     def _save(self, file_name, data):
         np.savez_compressed(file=os.path.join(self.path, file_name), data=data)
