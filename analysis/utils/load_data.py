@@ -40,6 +40,7 @@ def load_results(run_name, verbose=False, directory=None):
         run_path = os.path.join(RESULTS_RAW_DIR, run_name)
 
     np_files = [file for file in os.listdir(run_path) if file.endswith('.npy') or file.endswith('.npz')]
+    # print(np_files)
 
     loaded_data = {}
 
@@ -55,7 +56,10 @@ def load_results(run_name, verbose=False, directory=None):
             # Safely load .npz files and close the file afterward
             with np.load(file_path) as data:
                 if len(data.files) == 1:
-                    loaded_data[key] = data[data.files[0]]  # Extract the single array
+                    try:
+                        loaded_data[key] = data[data.files[0]]  # Extract the single array
+                    except Exception as e:
+                        print(f"Error loading file: {np_file}: {e}")
                 else:
                     raise ValueError(f"Multiple arrays in .npz file: {file_path}. Expected only one.")
 

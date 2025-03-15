@@ -504,52 +504,73 @@ def score(run):
     perspective_label_indices = get_indexes_by_value(config['attribute_perspectives_original'])
     # print("perspective_label_indices", perspective_label_indices)
 
-    (
-        labels_attribute, 
-        labels_event, 
-        labels_trace, 
-        result_attribute, 
-        result_event, 
-        result_trace
-    ) = reshape_data_for_scoring(results=sorted_results, perspective_label_indices=perspective_label_indices, buckets=buckets)
-
-    # print("Reshaped data for scoring")
-    # print("labels_attribute", len(labels_attribute), labels_attribute[0].shape)
-    # print("labels_event", labels_event.shape)
-    # print("labels_trace", labels_trace.shape)
-    # print("result_attribute", len(result_attribute), result_attribute[0].shape)
-    # print("result_event", len(result_event), result_event[0].shape)
-    # print("result_trace", len(result_trace), result_trace[0].shape)
-
-    level = ['trace', 'event', 'attribute']
-    y_true_levels = [labels_trace, labels_event, labels_attribute]
-    pred_probs_levels = [result_trace, result_event, result_attribute]
-    perspective_keys = Perspective.keys() + [4, 5] # + [4] is for the single perspective trace + [5] is for the single perspective only order and attribute
-    perspective_labels = Perspective.values() + ['Single', 'Single_OA']
-
     scores = []
-    # # Calculate the F1 score for each level and perspective
-    # for perspective in perspective_keys:
-    #     f1_attribute, f1_event, f1_trace = calculate_scores_v2(labels_attribute, labels_event, labels_trace, result_attribute, perspective)
-    #     append_scores(scores, run, 'attribute', perspective_labels[perspective], 0, 0, f1_attribute, 0, 0, model_prefix='v2_')
-    #     append_scores(scores, run, 'event', perspective_labels[perspective], 0, 0, f1_event, 0, 0, model_prefix='v2_')
-    #     append_scores(scores, run, 'trace', perspective_labels[perspective], 0, 0, f1_trace, 0, 0, model_prefix='v2_')
 
-    for (level, y_trues, pred_probs), perspective in itertools.product(zip(level, y_true_levels, pred_probs_levels), perspective_keys):
-        # print("Calculating scores for: Level: ", level, " Perspective: ", perspective, y_trues[perspective].shape, pred_probs[perspective].shape)
-        try:
-            roc_auc, pr_auc, f1, precision, recall = calculate_scores(y_trues, pred_probs, perspective)
-            # print("%.2f" % f1)
-        except Exception as e:
-            print(level, perspective)
-            print(e)
-            roc_auc, pr_auc, f1, precision, recall = 0, 0, 0, 0, 0
+    levels = ['trace', 'event', 'attribute']
+    if 'COMB' in config['run_name']:
+        model_suffix = f" ({config['n_epochs']})"
+        comb_levels = ['trace', 'event', 'attr']
+        for (level, comb_level) in zip(levels, comb_levels):
+            # ['Single', 'Single_OA']
+            # "COMB_results": {
+            #     "trace_f1": 0.7055016181229774,
+            #     "event_f1": 0.22484671257428546,
+            #     "attr_f1": 0.032704623432668244,
+            #     "trace_OA_f1": 0.43750000000000006,
+            #     "event_OA_f1": 0.1196642685851319,
+            #     "attr_OA_f1": 0.016836194868206398
+            # },
+
+            f1 = config['COMB_results'][f'{comb_level}_f1']
+            f1_OA = config['COMB_results'][f'{comb_level}_OA_f1']
+            append_scores(scores, run, level, 'Single', 0, 0, f1, 0, 0, model_suffix=model_suffix)
+            append_scores(scores, run, level, 'Single_OA', 0, 0, f1_OA, 0, 0, model_suffix=model_suffix)
+    else:
+        (
+            labels_attribute, 
+            labels_event, 
+            labels_trace, 
+            result_attribute, 
+            result_event, 
+            result_trace
+        ) = reshape_data_for_scoring(results=sorted_results, perspective_label_indices=perspective_label_indices, buckets=buckets)
+
+        # print("Reshaped data for scoring")
+        # print("labels_attribute", len(labels_attribute), labels_attribute[0].shape)
+        # print("labels_event", labels_event.shape)
+        # print("labels_trace", labels_trace.shape)
+        # print("result_attribute", len(result_attribute), result_attribute[0].shape)
+        # print("result_event", len(result_event), result_event[0].shape)
+        # print("result_trace", len(result_trace), result_trace[0].shape)
+
+        y_true_levels = [labels_trace, labels_event, labels_attribute]
+        pred_probs_levels = [result_trace, result_event, result_attribute]
+        perspective_keys = Perspective.keys() + [4, 5] # + [4] is for the single perspective trace + [5] is for the single perspective only order and attribute
+        perspective_labels = Perspective.values() + ['Single', 'Single_OA']
+
         
-        append_scores(scores, run, level, perspective_labels[perspective], roc_auc, pr_auc, f1, precision, recall)
+        # # Calculate the F1 score for each level and perspective
+        # for perspective in perspective_keys:
+        #     f1_attribute, f1_event, f1_trace = calculate_scores_v2(labels_attribute, labels_event, labels_trace, result_attribute, perspective)
+        #     append_scores(scores, run, 'attribute', perspective_labels[perspective], 0, 0, f1_attribute, 0, 0, model_prefix='v2_')
+        #     append_scores(scores, run, 'event', perspective_labels[perspective], 0, 0, f1_event, 0, 0, model_prefix='v2_')
+        #     append_scores(scores, run, 'trace', perspective_labels[perspective], 0, 0, f1_trace, 0, 0, model_prefix='v2_')
+
+        for (level, y_trues, pred_probs), perspective in itertools.product(zip(levels, y_true_levels, pred_probs_levels), perspective_keys):
+            # print("Calculating scores for: Level: ", level, " Perspective: ", perspective, y_trues[perspective].shape, pred_probs[perspective].shape)
+            try:
+                roc_auc, pr_auc, f1, precision, recall = calculate_scores(y_trues, pred_probs, perspective)
+                # print("%.2f" % f1)
+            except Exception as e:
+                print(level, perspective)
+                print(e)
+                roc_auc, pr_auc, f1, precision, recall = 0, 0, 0, 0, 0
+            
+            append_scores(scores, run, level, perspective_labels[perspective], roc_auc, pr_auc, f1, precision, recall)
 
     return pd.DataFrame(scores)
 
-def append_scores(scores, run, level, perspective, roc_auc, pr_auc, f1, precision, recall, model_prefix=''):
+def append_scores(scores, run, level, perspective, roc_auc, pr_auc, f1, precision, recall, model_prefix='', model_suffix=''):
     config = run['config']
     timestamp = run['timestamp']
     index = run['index']
@@ -557,7 +578,7 @@ def append_scores(scores, run, level, perspective, roc_auc, pr_auc, f1, precisio
     scores.append({
             # High level differentiatiors
             'run_name':config['run_name'],
-            'model':model_prefix + config['model'],
+            'model':model_prefix + config['model'] + model_suffix,
             'dataset':config['dataset'],
             'timestamp':timestamp,
             'index':index,
@@ -580,5 +601,6 @@ def append_scores(scores, run, level, perspective, roc_auc, pr_auc, f1, precisio
             'numerical_encoding': config.get('numerical_encoding', 'None'),
             'vector_size': config.get('vector_size', 'None'),
             'window_size': config.get('window_size', 'None'),
+            'epochs': config.get('n_epochs', 'None'),
         })
                   

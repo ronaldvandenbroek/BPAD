@@ -1,0 +1,17 @@
+model,level,rank_mean,rank_std,f1_mean,f1_std
+MP-Former (Offline),attribute,1.0,0.0,0.07,0.01
+MP-Former (Online),attribute,2.0,0.0,0.06,0.01
+COMB (1),attribute,3.5,0.0,0.01,0.01
+COMB (20),attribute,3.5,0.0,0.01,0.01
+MP-Former (Offline),combined,1.56,0.92,0.17,0.05
+MP-Former (Online),combined,2.78,1.0,0.15,0.05
+COMB (1),combined,2.83,0.91,0.14,0.07
+COMB (20),combined,2.83,0.91,0.14,0.07
+COMB (1),event,2.22,0.96,0.08,0.05
+COMB (20),event,2.22,0.96,0.08,0.05
+MP-Former (Offline),event,2.22,1.0,0.07,0.02
+MP-Former (Online),event,3.33,0.97,0.06,0.03
+MP-Former (Offline),trace,1.67,0.97,0.37,0.12
+COMB (1),trace,2.72,0.94,0.31,0.16
+COMB (20),trace,2.72,0.94,0.31,0.16
+MP-Former (Online),trace,2.89,1.02,0.32,0.12

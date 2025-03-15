@@ -1,0 +1,17 @@
+level&model&rank_Single_OA&f1_mean_Single_OA&f1_std_Single_OA&run_time_mean&run_time_std
+trace&COMB (1)&2.72&0.311&0.157&125.988&10.349
+trace&COMB (20)&2.72&0.311&0.157&1847.174&62.628
+trace&MP-Former (Offline)&1.67&0.368&0.115&461.272&80.711
+trace&MP-Former (Online)&2.89&0.322&0.115&232.84&44.035
+event&COMB (1)&2.22&0.083&0.052&125.988&10.349
+event&COMB (20)&2.22&0.083&0.052&1847.174&62.628
+event&MP-Former (Offline)&2.22&0.068&0.024&461.272&80.711
+event&MP-Former (Online)&3.33&0.062&0.025&232.84&44.035
+attribute&COMB (1)&3.5&0.012&0.008&125.988&10.349
+attribute&COMB (20)&3.5&0.012&0.008&1847.174&62.628
+attribute&MP-Former (Offline)&1.0&0.066&0.012&461.272&80.711
+attribute&MP-Former (Online)&2.0&0.058&0.014&232.84&44.035
+combined&COMB (1)&2.83&0.135&0.073&125.988&6.895
+combined&COMB (20)&2.83&0.135&0.073&1847.174&62.043
+combined&MP-Former (Offline)&1.56&0.167&0.049&461.272&80.835
+combined&MP-Former (Online)&2.78&0.147&0.051&232.84&42.769
